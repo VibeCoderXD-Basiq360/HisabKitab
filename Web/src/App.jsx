@@ -16,6 +16,7 @@ import SettingsPage from './pages/settings/SettingsPage';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PeoplePage from './pages/settings/PeoplePage';
 import PaymentTypesPage from './pages/settings/PaymentTypesPage';
+import RecurringPage from './pages/settings/RecurringPage';
 import ProfilePage from './pages/profile/ProfilePage';
 
 function Protected({ children }) {
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/settings/categories" element={<Protected><CategoriesPage /></Protected>} />
           <Route path="/settings/people" element={<Protected><PeoplePage /></Protected>} />
           <Route path="/settings/payment-types" element={<Protected><PaymentTypesPage /></Protected>} />
+          <Route path="/settings/recurring" element={<Protected><RecurringPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
         </Routes>
       </BrowserRouter>

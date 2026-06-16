@@ -50,6 +50,12 @@ export default function ExpenseCard({ expense, onClick }) {
             </span>
           ) : null}
 
+          {expense.recurringExpense && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+              🔁 {expense.recurringExpense.isActive ? 'Recurring' : 'Recurring (paused)'}
+            </span>
+          )}
+
           {/* Settlement log */}
           {isFullySettled && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">

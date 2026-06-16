@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 enum SplitStatus {
   PENDING
   PAYMENT_REQUESTED
@@ -30,11 +37,12 @@ model User {
   photoPublicId String?
   fcmToken      String?
 
-  categories    Category[]
-  paymentTypes  PaymentType[]
-  people        Person[]      @relation("PersonOwner")
-  linkedAs      Person[]      @relation("LinkedUser")
-  expenses      Expense[]
+  categories         Category[]
+  paymentTypes       PaymentType[]
+  people             Person[]           @relation("PersonOwner")
+  linkedAs           Person[]           @relation("LinkedUser")
+  expenses           Expense[]
+  recurringExpenses  RecurringExpense[]
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -50,7 +58,8 @@ model Category {
   color     String?
   icon      String?
 
-  expenses  Expense[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -68,7 +77,8 @@ model PaymentType {
   color     String?
   isDefault Boolean   @default(false)
 
-  expenses  Expense[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -115,8 +125,11 @@ model Expense {
   paymentTypeId String
   paymentType   PaymentType     @relation(fields: [paymentTypeId], references: [id])
 
-  paidForPersonId String?
-  paidForPerson   Person?         @relation("PaidFor", fields: [paidForPersonId], references: [id], onDelete: SetNull)
+  paidForPersonId    String?
+  paidForPerson      Person?          @relation("PaidFor", fields: [paidForPersonId], references: [id], onDelete: SetNull)
+
+  recurringExpenseId String?
+  recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
 
   people        ExpensePerson[]
   splits        ExpenseSplit[]
@@ -169,4 +182,28 @@ model PaymentRequest {
   updatedAt DateTime             @updatedAt
 
   @@index([splitId])
+}
+
+model RecurringExpense {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Decimal             @db.Decimal(10, 2)
+  currency      String              @default("INR")
+  title         String?
+  note          String?
+  categoryId    String?
+  category      Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentTypeId String
+  paymentType   PaymentType         @relation(fields: [paymentTypeId], references: [id])
+  frequency     RecurrenceFrequency
+  nextDueDate   DateTime
+  isActive      Boolean             @default(true)
+
+  instances     Expense[]
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([userId, isActive, nextDueDate])
 }

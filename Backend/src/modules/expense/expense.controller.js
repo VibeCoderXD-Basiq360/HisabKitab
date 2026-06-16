@@ -1,11 +1,24 @@
+const { addDays, addWeeks, addMonths, addYears } = require('date-fns');
 const prisma = require('../../lib/prisma');
 const { sendNotification } = require('../../lib/notify');
+const { processDueRecurring } = require('../recurring/recurring.controller');
+
+function recurringNextDate(base, frequency) {
+  const d = new Date(base);
+  switch (frequency) {
+    case 'DAILY':   return addDays(d, 1);
+    case 'WEEKLY':  return addWeeks(d, 1);
+    case 'YEARLY':  return addYears(d, 1);
+    default:        return addMonths(d, 1);
+  }
+}
 
 const include = {
   category: true,
   paymentType: true,
   people: { include: { person: true } },
   paidForPerson: true,
+  recurringExpense: { select: { id: true, frequency: true, isActive: true } },
   splits: {
     include: {
       person: true,
@@ -63,6 +76,8 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, p
 }
 
 const list = async (req, res) => {
+  await processDueRecurring(req.user.userId);
+
   const { fromDate, toDate, categoryId, paymentTypeId, personId, search, page = 1, limit = 20 } = req.query;
 
   const where = { userId: req.user.userId };
@@ -89,9 +104,27 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
+
+  let recurringExpenseId = null;
+  if (isRecurring && frequency) {
+    const rec = await prisma.recurringExpense.create({
+      data: {
+        userId: req.user.userId,
+        amount,
+        currency: currency || 'INR',
+        title,
+        note,
+        categoryId: categoryId || null,
+        paymentTypeId,
+        frequency,
+        nextDueDate: recurringNextDate(expenseDate || new Date(), frequency),
+      },
+    });
+    recurringExpenseId = rec.id;
+  }
 
   const expense = await prisma.expense.create({
     data: {
@@ -104,6 +137,7 @@ const create = async (req, res) => {
       categoryId: categoryId || null,
       paymentTypeId,
       paidForPersonId: paidForPersonId || null,
+      recurringExpenseId,
       people: { create: splitPeopleIds.map((personId) => ({ personId })) },
     },
     include,

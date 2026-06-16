@@ -10,6 +10,13 @@ import Input from '../../components/ui/Input';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
+const FREQ_OPTIONS = [
+  { value: 'DAILY',   label: 'Daily' },
+  { value: 'WEEKLY',  label: 'Weekly' },
+  { value: 'MONTHLY', label: 'Monthly' },
+  { value: 'YEARLY',  label: 'Yearly' },
+];
+
 const EMPTY = {
   amount: '',
   title: '',
@@ -20,6 +27,8 @@ const EMPTY = {
   peopleIds: [],
   paidForPersonId: '',
   forMode: 'self',
+  isRecurring: false,
+  frequency: 'MONTHLY',
 };
 
 export default function AddEditExpensePage() {
@@ -77,6 +86,8 @@ export default function AddEditExpensePage() {
       paymentTypeId: form.paymentTypeId,
       peopleIds: form.forMode === 'other' ? [] : form.peopleIds,
       paidForPersonId: form.forMode === 'other' ? form.paidForPersonId || null : null,
+      isRecurring: !isEdit && form.isRecurring,
+      frequency: form.frequency,
     };
     if (isEdit) {
       await updateExpense.mutateAsync({ id, ...payload });
@@ -236,6 +247,46 @@ export default function AddEditExpensePage() {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {!isEdit && (
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, isRecurring: !f.isRecurring }))}
+              className="flex items-center justify-between min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🔁</span>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-gray-800">Make this recurring</p>
+                  <p className="text-xs text-gray-400">Auto-add this expense on a schedule</p>
+                </div>
+              </div>
+              <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.isRecurring ? 'bg-primary-500' : 'bg-gray-200'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isRecurring ? 'translate-x-4' : 'translate-x-0'}`} />
+              </div>
+            </button>
+
+            {form.isRecurring && (
+              <div className="flex gap-2">
+                {FREQ_OPTIONS.map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => setForm((f) => ({ ...f, frequency: opt.value }))}
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                      form.frequency === opt.value
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'border-gray-200 text-gray-600 bg-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         )}

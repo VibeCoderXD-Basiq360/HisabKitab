@@ -10,6 +10,7 @@ const categoryRoutes = require('./modules/category/category.routes');
 const personRoutes = require('./modules/person/person.routes');
 const paymentTypeRoutes = require('./modules/paymentType/paymentType.routes');
 const splitsRoutes = require('./modules/splits/splits.routes');
+const recurringRoutes = require('./modules/recurring/recurring.routes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/people', personRoutes);
 app.use('/api/payment-types', paymentTypeRoutes);
 app.use('/api/splits', splitsRoutes);
+app.use('/api/recurring', recurringRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
