@@ -27,18 +27,21 @@ const uploadProfileImage = async (req, res) => {
   const result = await new Promise((resolve, reject) => {
     cloudinary.uploader
       .upload_stream(
-        { folder: 'hisabkitab/profiles', transformation: [{ width: 200, height: 200, crop: 'fill' }] },
+        { folder: 'hisabkitab/profiles' },
         (err, data) => (err ? reject(err) : resolve(data))
       )
       .end(req.file.buffer);
   });
 
+  // Apply 200×200 crop via URL transformation
+  const photoUrl = result.secure_url.replace('/upload/', '/upload/w_200,h_200,c_fill,g_face/');
+
   const user = await prisma.user.update({
     where: { id: req.user.userId },
-    data: { photoUrl: result.secure_url, photoPublicId: result.public_id },
+    data: { photoUrl, photoPublicId: result.public_id },
   });
 
-  res.json({ photoUrl: user.photoUrl });
+  res.json({ photoUrl });
 };
 
 const saveFcmToken = async (req, res) => {
