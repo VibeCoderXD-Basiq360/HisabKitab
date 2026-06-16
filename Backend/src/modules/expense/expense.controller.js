@@ -5,6 +5,7 @@ const include = {
   category: true,
   paymentType: true,
   people: { include: { person: true } },
+  paidForPerson: true,
   splits: {
     include: {
       person: true,
@@ -14,8 +15,28 @@ const include = {
   },
 };
 
-async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds) {
+async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId) {
   await prisma.expenseSplit.deleteMany({ where: { expenseId } });
+
+  const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { name: true } });
+  const payerName = payer?.name || 'Someone';
+
+  if (paidForPersonId) {
+    const split = await prisma.expenseSplit.create({
+      data: { expenseId, personId: paidForPersonId, amount },
+      include: { person: { include: { linkedUser: { select: { fcmToken: true } } } } },
+    });
+    const fcmToken = split.person.linkedUser?.fcmToken;
+    if (fcmToken) {
+      await sendNotification(fcmToken, {
+        title: 'Expense paid on your behalf',
+        body: `${payerName} paid ₹${amount} for "${expenseTitle || 'an expense'}" for you`,
+        data: { type: 'PAID_FOR_CREATED', splitId: split.id },
+      });
+    }
+    return;
+  }
+
   if (!peopleIds.length) return;
 
   const share = Math.round((amount / (peopleIds.length + 1)) * 100) / 100;
@@ -28,9 +49,6 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds) {
       })
     )
   );
-
-  const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { name: true } });
-  const payerName = payer?.name || 'Someone';
 
   for (const split of splits) {
     const linkedUser = split.person.linkedUser;
@@ -71,7 +89,9 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [] } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId } = req.body;
+
+  const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
   const expense = await prisma.expense.create({
     data: {
@@ -83,12 +103,13 @@ const create = async (req, res) => {
       expenseDate: new Date(expenseDate),
       categoryId: categoryId || null,
       paymentTypeId,
-      people: { create: peopleIds.map((personId) => ({ personId })) },
+      paidForPersonId: paidForPersonId || null,
+      people: { create: splitPeopleIds.map((personId) => ({ personId })) },
     },
     include,
   });
 
-  await syncSplits(expense.id, title, req.user.userId, Number(amount), peopleIds);
+  await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null);
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.status(201).json(full);
@@ -109,7 +130,9 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Expense not found' });
 
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [] } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId } = req.body;
+
+  const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
   const expense = await prisma.expense.update({
     where: { id: req.params.id },
@@ -121,15 +144,16 @@ const update = async (req, res) => {
       expenseDate: new Date(expenseDate),
       categoryId: categoryId || null,
       paymentTypeId,
+      paidForPersonId: paidForPersonId || null,
       people: {
         deleteMany: {},
-        create: peopleIds.map((personId) => ({ personId })),
+        create: splitPeopleIds.map((personId) => ({ personId })),
       },
     },
     include,
   });
 
-  await syncSplits(expense.id, title, req.user.userId, Number(amount), peopleIds);
+  await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null);
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.json(full);

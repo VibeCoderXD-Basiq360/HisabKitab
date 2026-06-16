@@ -18,6 +18,8 @@ const EMPTY = {
   categoryId: '',
   paymentTypeId: '',
   peopleIds: [],
+  paidForPersonId: '',
+  forMode: 'self',
 };
 
 export default function AddEditExpensePage() {
@@ -38,6 +40,7 @@ export default function AddEditExpensePage() {
 
   useEffect(() => {
     if (existing) {
+      const hasPaidFor = !!existing.paidForPersonId;
       setForm({
         amount: String(existing.amount),
         title: existing.title || '',
@@ -45,7 +48,9 @@ export default function AddEditExpensePage() {
         expenseDate: existing.expenseDate.slice(0, 10),
         categoryId: existing.categoryId || '',
         paymentTypeId: existing.paymentTypeId,
-        peopleIds: existing.people.map((p) => p.personId),
+        peopleIds: hasPaidFor ? [] : existing.people.map((p) => p.personId),
+        paidForPersonId: existing.paidForPersonId || '',
+        forMode: hasPaidFor ? 'other' : 'self',
       });
     }
   }, [existing]);
@@ -64,9 +69,14 @@ export default function AddEditExpensePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = {
-      ...form,
       amount: Number(form.amount),
+      title: form.title,
+      note: form.note,
+      expenseDate: form.expenseDate,
       categoryId: form.categoryId || null,
+      paymentTypeId: form.paymentTypeId,
+      peopleIds: form.forMode === 'other' ? [] : form.peopleIds,
+      paidForPersonId: form.forMode === 'other' ? form.paidForPersonId || null : null,
     };
     if (isEdit) {
       await updateExpense.mutateAsync({ id, ...payload });
@@ -145,38 +155,87 @@ export default function AddEditExpensePage() {
 
         {people.length > 0 && (
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">Split with</label>
-            <div className="flex flex-wrap gap-2">
-              {people.map((p) => {
-                const selected = form.peopleIds.includes(p.id);
-                return (
-                  <button
-                    type="button"
-                    key={p.id}
-                    onClick={() => togglePerson(p.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                      selected
-                        ? 'bg-primary-500 text-white border-primary-500'
-                        : 'border-gray-200 text-gray-600 bg-white'
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                );
-              })}
+            <label className="text-sm font-medium text-gray-700">This expense is for</label>
+            <div className="flex gap-2">
+              {['self', 'other'].map((mode) => (
+                <button
+                  type="button"
+                  key={mode}
+                  onClick={() => setForm((f) => ({ ...f, forMode: mode, paidForPersonId: '', peopleIds: [] }))}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                    form.forMode === mode
+                      ? 'bg-primary-500 text-white border-primary-500'
+                      : 'border-gray-200 text-gray-600 bg-white'
+                  }`}
+                >
+                  {mode === 'self' ? 'Myself' : 'Someone else'}
+                </button>
+              ))}
             </div>
-            {form.peopleIds.length > 0 && Number(form.amount) > 0 && (
-              <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center gap-3">
-                <span className="text-lg">⚖️</span>
-                <div>
-                  <p className="text-sm font-semibold text-primary-700">
-                    ₹{(Number(form.amount) / (form.peopleIds.length + 1)).toFixed(2)} each
-                  </p>
-                  <p className="text-xs text-primary-500">
-                    Split equally · you + {form.peopleIds.length} {form.peopleIds.length === 1 ? 'person' : 'people'}
-                  </p>
+
+            {form.forMode === 'other' && (
+              <>
+                <select
+                  value={form.paidForPersonId}
+                  onChange={field('paidForPersonId')}
+                  required={form.forMode === 'other'}
+                  className="min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white text-base outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                >
+                  <option value="">Select person…</option>
+                  {people.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {form.paidForPersonId && Number(form.amount) > 0 && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <span className="text-lg">🧾</span>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-700">
+                        {people.find((p) => p.id === form.paidForPersonId)?.name} owes you ₹{Number(form.amount).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-amber-500">Full amount — they pay you back</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {form.forMode === 'self' && (
+              <>
+                <label className="text-sm font-medium text-gray-700 mt-1">Split with</label>
+                <div className="flex flex-wrap gap-2">
+                  {people.map((p) => {
+                    const selected = form.peopleIds.includes(p.id);
+                    return (
+                      <button
+                        type="button"
+                        key={p.id}
+                        onClick={() => togglePerson(p.id)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                          selected
+                            ? 'bg-primary-500 text-white border-primary-500'
+                            : 'border-gray-200 text-gray-600 bg-white'
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
+                {form.peopleIds.length > 0 && Number(form.amount) > 0 && (
+                  <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center gap-3">
+                    <span className="text-lg">⚖️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-primary-700">
+                        ₹{(Number(form.amount) / (form.peopleIds.length + 1)).toFixed(2)} each
+                      </p>
+                      <p className="text-xs text-primary-500">
+                        Split equally · you + {form.peopleIds.length} {form.peopleIds.length === 1 ? 'person' : 'people'}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

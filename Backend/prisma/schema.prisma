@@ -86,8 +86,9 @@ model Person {
   linkedUserId String?
   linkedUser   User?           @relation("LinkedUser", fields: [linkedUserId], references: [id])
 
-  expenses     ExpensePerson[]
-  splits       ExpenseSplit[]
+  expenses        ExpensePerson[]
+  splits          ExpenseSplit[]
+  paidForExpenses Expense[]       @relation("PaidFor")
 
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
@@ -114,6 +115,9 @@ model Expense {
   paymentTypeId String
   paymentType   PaymentType     @relation(fields: [paymentTypeId], references: [id])
 
+  paidForPersonId String?
+  paidForPerson   Person?         @relation("PaidFor", fields: [paidForPersonId], references: [id], onDelete: SetNull)
+
   people        ExpensePerson[]
   splits        ExpenseSplit[]
 
@@ -121,6 +125,7 @@ model Expense {
   updatedAt     DateTime        @updatedAt
 
   @@index([userId, expenseDate(sort: Desc)])
+  @@index([userId, paidForPersonId])
   @@index([userId, categoryId])
   @@index([userId, paymentTypeId])
 }

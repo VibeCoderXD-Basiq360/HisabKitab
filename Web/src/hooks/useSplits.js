@@ -8,12 +8,33 @@ export function useBalances() {
   });
 }
 
+export function usePaidForSummary() {
+  return useQuery({
+    queryKey: ['paidForSummary'],
+    queryFn: () => api.get('/splits/paid-for').then((r) => r.data),
+  });
+}
+
+export function usePaidForPerson(personId) {
+  return useQuery({
+    queryKey: ['paidForPerson', personId],
+    queryFn: () => api.get(`/splits/paid-for/${personId}`).then((r) => r.data),
+    enabled: !!personId,
+  });
+}
+
+function invalidateAll(qc) {
+  qc.invalidateQueries({ queryKey: ['balances'] });
+  qc.invalidateQueries({ queryKey: ['paidForSummary'] });
+  qc.invalidateQueries({ queryKey: ['paidForPerson'] });
+}
+
 export function useRequestPayment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ splitId, note }) =>
       api.post(`/splits/${splitId}/pay`, { note }).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['balances'] }),
+    onSuccess: () => invalidateAll(qc),
   });
 }
 
@@ -22,7 +43,7 @@ export function useAcceptPayment() {
   return useMutation({
     mutationFn: (splitId) => api.post(`/splits/${splitId}/accept`).then((r) => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['balances'] });
+      invalidateAll(qc);
       qc.invalidateQueries({ queryKey: ['expenses'] });
     },
   });
@@ -32,6 +53,6 @@ export function useRejectPayment() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (splitId) => api.post(`/splits/${splitId}/reject`).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['balances'] }),
+    onSuccess: () => invalidateAll(qc),
   });
 }

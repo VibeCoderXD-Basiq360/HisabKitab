@@ -11,6 +11,7 @@ import HomePage from './pages/home/HomePage';
 import AddEditExpensePage from './pages/expense/AddEditExpensePage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
 import BalancesPage from './pages/balances/BalancesPage';
+import PersonExpensesPage from './pages/balances/PersonExpensesPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PeoplePage from './pages/settings/PeoplePage';
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/expense/:id" element={<Protected><AddEditExpensePage /></Protected>} />
           <Route path="/analytics" element={<Protected><AnalyticsPage /></Protected>} />
           <Route path="/balances" element={<Protected><BalancesPage /></Protected>} />
+          <Route path="/balances/person/:personId" element={<Protected><PersonExpensesPage /></Protected>} />
           <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
           <Route path="/settings/categories" element={<Protected><CategoriesPage /></Protected>} />
           <Route path="/settings/people" element={<Protected><PeoplePage /></Protected>} />

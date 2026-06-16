@@ -118,6 +118,7 @@ const acceptPayment = async (req, res) => {
           user: { select: { name: true } },
           category: { select: { name: true } },
           paymentType: { select: { name: true } },
+          paidForPerson: { select: { id: true } },
         },
       },
       paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
@@ -148,8 +149,8 @@ const acceptPayment = async (req, res) => {
   // Create a real expense in the ower's account so it shows on their home page
   if (linkedUserId) {
     const origExpense = split.expense;
+    const isPaidFor = origExpense.paidForPersonId === split.personId;
 
-    // Match category and payment type by name in their account
     const [matchedCat, matchedType, fallbackType] = await Promise.all([
       origExpense.category
         ? prisma.category.findFirst({ where: { userId: linkedUserId, name: origExpense.category.name } })
@@ -163,13 +164,18 @@ const acceptPayment = async (req, res) => {
     const paymentTypeId = matchedType?.id || fallbackType?.id;
 
     if (paymentTypeId) {
+      const expenseTitle = isPaidFor
+        ? origExpense.title || 'Expense'
+        : origExpense.title ? `Split: ${origExpense.title}` : 'Split expense';
+      const expenseNote = `Settled — paid to ${origExpense.user?.name || 'someone'}`;
+
       await prisma.expense.create({
         data: {
           userId: linkedUserId,
           amount: splitAmount,
           currency: origExpense.currency || 'INR',
-          title: origExpense.title ? `Split: ${origExpense.title}` : 'Split expense',
-          note: `Settled — paid to ${origExpense.user?.name || 'someone'}`,
+          title: expenseTitle,
+          note: expenseNote,
           expenseDate: new Date(),
           categoryId: matchedCat?.id || null,
           paymentTypeId,
@@ -228,4 +234,66 @@ const rejectPayment = async (req, res) => {
   res.json({ ok: true });
 };
 
-module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment };
+const getPaidForSummary = async (req, res) => {
+  const myId = req.user.userId;
+
+  const expenses = await prisma.expense.findMany({
+    where: { userId: myId, paidForPersonId: { not: null } },
+    include: {
+      paidForPerson: true,
+      splits: {
+        include: { paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      },
+    },
+    orderBy: { expenseDate: 'desc' },
+  });
+
+  const personMap = {};
+  for (const expense of expenses) {
+    const person = expense.paidForPerson;
+    if (!person) continue;
+    const split = expense.splits[0];
+    const status = split?.status || 'PENDING';
+    if (!personMap[person.id]) {
+      personMap[person.id] = {
+        personId: person.id,
+        personName: person.name,
+        personEmail: person.email,
+        linkedUserId: person.linkedUserId,
+        totalOutstanding: 0,
+        totalSettled: 0,
+        expenseCount: 0,
+      };
+    }
+    const amount = Number(expense.amount);
+    if (status === 'CONFIRMED') {
+      personMap[person.id].totalSettled = Math.round((personMap[person.id].totalSettled + amount) * 100) / 100;
+    } else {
+      personMap[person.id].totalOutstanding = Math.round((personMap[person.id].totalOutstanding + amount) * 100) / 100;
+    }
+    personMap[person.id].expenseCount += 1;
+  }
+
+  res.json(Object.values(personMap));
+};
+
+const getPaidForPerson = async (req, res) => {
+  const myId = req.user.userId;
+  const { personId } = req.params;
+
+  const expenses = await prisma.expense.findMany({
+    where: { userId: myId, paidForPersonId: personId },
+    include: {
+      paidForPerson: true,
+      category: true,
+      splits: {
+        include: { paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 } },
+      },
+    },
+    orderBy: { expenseDate: 'desc' },
+  });
+
+  res.json(expenses);
+};
+
+module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, getPaidForSummary, getPaidForPerson };
