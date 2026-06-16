@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+backend.log
+backend-err.log
+
+# Prisma engine binaries
+Backend/node_modules/.prisma/client/query_engine-windows.dll.node
+
+# Build output
+Web/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

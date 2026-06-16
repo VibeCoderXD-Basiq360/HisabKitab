@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SplitStatus {
+  PENDING
+  PAYMENT_REQUESTED
+  CONFIRMED
+  REJECTED
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id            String        @id @default(cuid())
+  firebaseUid   String        @unique
+  email         String        @unique
+  name          String?
+  phone         String?
+  photoUrl      String?
+  photoPublicId String?
+  fcmToken      String?
+
+  categories    Category[]
+  paymentTypes  PaymentType[]
+  people        Person[]      @relation("PersonOwner")
+  linkedAs      Person[]      @relation("LinkedUser")
+  expenses      Expense[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([firebaseUid])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  color     String?
+  icon      String?
+
+  expenses  Expense[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model PaymentType {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  icon      String?
+  color     String?
+  isDefault Boolean   @default(false)
+
+  expenses  Expense[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Person {
+  id           String          @id @default(cuid())
+  userId       String
+  user         User            @relation("PersonOwner", fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  email        String?
+  linkedUserId String?
+  linkedUser   User?           @relation("LinkedUser", fields: [linkedUserId], references: [id])
+
+  expenses     ExpensePerson[]
+  splits       ExpenseSplit[]
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@index([linkedUserId])
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amount        Decimal         @db.Decimal(10, 2)
+  currency      String          @default("INR")
+  title         String?
+  note          String?
+  expenseDate   DateTime
+
+  categoryId    String?
+  category      Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  paymentTypeId String
+  paymentType   PaymentType     @relation(fields: [paymentTypeId], references: [id])
+
+  people        ExpensePerson[]
+  splits        ExpenseSplit[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([userId, expenseDate(sort: Desc)])
+  @@index([userId, categoryId])
+  @@index([userId, paymentTypeId])
+}
+
+model ExpensePerson {
+  expenseId String
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  personId  String
+  person    Person  @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@id([expenseId, personId])
+}
+
+model ExpenseSplit {
+  id        String       @id @default(cuid())
+  expenseId String
+  expense   Expense      @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  personId  String
+  person    Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+  amount    Decimal      @db.Decimal(10, 2)
+  status    SplitStatus  @default(PENDING)
+
+  paymentRequests PaymentRequest[]
+
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([expenseId, personId])
+  @@index([expenseId])
+  @@index([personId])
+}
+
+model PaymentRequest {
+  id        String               @id @default(cuid())
+  splitId   String
+  split     ExpenseSplit         @relation(fields: [splitId], references: [id], onDelete: Cascade)
+  note      String?
+  status    PaymentRequestStatus @default(PENDING)
+
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  @@index([splitId])
+}
