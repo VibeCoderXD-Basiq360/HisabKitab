@@ -169,4 +169,52 @@ const remove = async (req, res) => {
   res.status(204).end();
 };
 
-module.exports = { list, create, getOne, update, remove };
+const analytics = async (req, res) => {
+  const { fromDate, toDate } = req.query;
+  const where = { userId: req.user.userId };
+  if (fromDate || toDate) {
+    where.expenseDate = {};
+    if (fromDate) where.expenseDate.gte = new Date(fromDate);
+    if (toDate) where.expenseDate.lte = new Date(toDate);
+  }
+
+  const expenses = await prisma.expense.findMany({
+    where,
+    select: {
+      amount: true,
+      paymentTypeId: true,
+      paymentType: { select: { name: true, icon: true, color: true } },
+      categoryId: true,
+      category: { select: { name: true, icon: true, color: true } },
+    },
+  });
+
+  const byPaymentType = {};
+  const byCategory = {};
+  let total = 0;
+
+  for (const e of expenses) {
+    const amount = Number(e.amount);
+    total += amount;
+
+    const ptKey = e.paymentTypeId;
+    if (!byPaymentType[ptKey]) {
+      byPaymentType[ptKey] = { id: ptKey, name: e.paymentType?.name, icon: e.paymentType?.icon, color: e.paymentType?.color, total: 0, count: 0 };
+    }
+    byPaymentType[ptKey].total = Math.round((byPaymentType[ptKey].total + amount) * 100) / 100;
+    byPaymentType[ptKey].count++;
+
+    const catKey = e.categoryId || '__none__';
+    if (!byCategory[catKey]) {
+      byCategory[catKey] = { id: e.categoryId, name: e.category?.name || 'Uncategorised', icon: e.category?.icon || '📦', color: e.category?.color, total: 0, count: 0 };
+    }
+    byCategory[catKey].total = Math.round((byCategory[catKey].total + amount) * 100) / 100;
+    byCategory[catKey].count++;
+  }
+
+  const sort = (map) => Object.values(map).sort((a, b) => b.total - a.total);
+
+  res.json({ total: Math.round(total * 100) / 100, byPaymentType: sort(byPaymentType), byCategory: sort(byCategory) });
+};
+
+module.exports = { list, create, getOne, update, remove, analytics };

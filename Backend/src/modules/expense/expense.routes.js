@@ -1,8 +1,9 @@
 const { Router } = require('express');
 const auth = require('../../middleware/auth');
-const { list, create, getOne, update, remove } = require('./expense.controller');
+const { list, create, getOne, update, remove, analytics } = require('./expense.controller');
 
 const router = Router();
+router.get('/analytics', auth, analytics);
 router.get('/', auth, list);
 router.post('/', auth, create);
 router.get('/:id', auth, getOne);

@@ -40,3 +40,10 @@ export function useDeleteExpense() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['expenses'] }),
   });
 }
+
+export function useAnalytics(params = {}) {
+  return useQuery({
+    queryKey: ['analytics', params],
+    queryFn: () => api.get('/expenses/analytics', { params }).then((r) => r.data),
+  });
+}
