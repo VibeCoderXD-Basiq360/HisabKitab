@@ -63,18 +63,11 @@ export default function ImageCropModal({ imageSrc, onDone, onCancel, uploading }
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80">
-        <button onClick={onCancel} className="text-gray-400 text-sm px-1 py-1">
-          Cancel
+      <div className="flex items-center justify-center px-4 py-3 bg-black/80 relative">
+        <button onClick={onCancel} className="absolute left-4 text-gray-400 text-sm">
+          ✕
         </button>
         <p className="text-white text-sm font-medium">Edit Photo</p>
-        <button
-          onClick={handleSave}
-          disabled={uploading}
-          className="text-primary-400 text-sm font-semibold px-1 py-1 disabled:opacity-50"
-        >
-          {uploading ? 'Saving…' : 'Save'}
-        </button>
       </div>
 
       {/* Crop area */}
@@ -124,7 +117,7 @@ export default function ImageCropModal({ imageSrc, onDone, onCancel, uploading }
         </div>
 
         {/* Quick rotate buttons */}
-        <div className="flex gap-2 justify-center mt-1">
+        <div className="flex gap-2 justify-center">
           <button
             onClick={() => rotate(-90)}
             className="flex-1 py-2 rounded-xl bg-gray-800 text-white text-sm flex items-center justify-center gap-1.5"
@@ -142,6 +135,23 @@ export default function ImageCropModal({ imageSrc, onDone, onCancel, uploading }
             className="flex-1 py-2 rounded-xl bg-gray-800 text-white text-sm flex items-center justify-center gap-1.5"
           >
             <span>+90°</span> ↻
+          </button>
+        </div>
+
+        {/* Save / Cancel */}
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl border border-gray-700 text-gray-300 text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={uploading}
+            className="flex-1 py-3 rounded-2xl bg-primary-500 text-white text-sm font-semibold disabled:opacity-50"
+          >
+            {uploading ? 'Saving…' : 'Save Photo'}
           </button>
         </div>
       </div>

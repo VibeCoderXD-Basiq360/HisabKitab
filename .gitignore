@@ -24,3 +24,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Claude memory hook — local secrets & event logs
+.claude/memory/vault/secrets.local.md
+.claude/memory/vault/*.key
+.claude/memory/vault/*.pem
+.claude/memory/sessions/.*.events.jsonl
