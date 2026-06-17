@@ -69,7 +69,31 @@ const getBalances = async (req, res) => {
     owedToMe: Object.values(owedMap),
     iOwe: Object.values(iOweMap),
   });
+
+  // Fire-and-forget: nudge if any split has been PENDING > 7 days
+  checkSettleReminder(myId, iOweSplits).catch(() => {});
 };
+
+async function checkSettleReminder(userId, iOweSplits) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const old = iOweSplits.filter((s) => s.status === 'PENDING' && new Date(s.createdAt) < sevenDaysAgo);
+  if (!old.length) return;
+
+  // Only send once per week
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const existing = await prisma.notification.findFirst({
+    where: { userId, type: 'SETTLE_REMINDER', createdAt: { gte: weekAgo } },
+  });
+  if (existing) return;
+
+  const total = old.reduce((s, sp) => s + Number(sp.amount), 0);
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { fcmToken: true } });
+  await notify(userId, user?.fcmToken, {
+    title: '⏰ Pending settlements',
+    body: `You have ₹${Math.round(total)} in splits pending for over a week. Don't forget to settle up!`,
+    data: { type: 'SETTLE_REMINDER' },
+  });
+}
 
 const requestPayment = async (req, res) => {
   const { splitId } = req.params;

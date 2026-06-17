@@ -1,5 +1,6 @@
 const { addDays, addWeeks, addMonths, addYears } = require('date-fns');
 const prisma = require('../../lib/prisma');
+const { notify } = require('../../lib/notify');
 
 function nextDate(from, frequency) {
   const base = new Date(from);
@@ -41,6 +42,16 @@ async function processDueRecurring(userId) {
 
     if (toCreate.length > 0) {
       await prisma.expense.createMany({ data: toCreate });
+
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { fcmToken: true } });
+      const label = toCreate.length === 1
+        ? `"${toCreate[0].title}" ₹${Number(toCreate[0].amount)} auto-added`
+        : `${toCreate.length} recurring expenses auto-added`;
+      notify(userId, user?.fcmToken, {
+        title: '🔁 Recurring expense',
+        body: label,
+        data: { type: 'RECURRING_CREATED' },
+      }).catch(() => {});
     }
 
     const updates = { nextDueDate: cursor };

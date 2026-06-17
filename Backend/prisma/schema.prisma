@@ -149,6 +149,8 @@ model Expense {
   groupId       String?
   group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
 
+  receiptUrl    String?
+
   people        ExpensePerson[]
   splits        ExpenseSplit[]
 

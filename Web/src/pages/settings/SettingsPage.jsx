@@ -9,6 +9,7 @@ const items = [
   { to: '/settings/recurring',   label: 'Recurring Expenses',  icon: '🔁', desc: 'Auto-create expenses on a schedule' },
   { to: '/settings/budgets',     label: 'Budget Limits',       icon: '💰', desc: 'Set monthly spending limits per category' },
   { to: '/settings/export',      label: 'Export CSV',           icon: '📤', desc: 'Download expenses as a spreadsheet' },
+  { to: '/calendar',             label: 'Calendar View',        icon: '📅', desc: 'Browse expenses by day on a calendar' },
 ];
 
 export default function SettingsPage() {

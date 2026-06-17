@@ -54,13 +54,16 @@ function MemberAvatarsRow({ members, max = 5 }) {
 // ─── Expenses Tab ─────────────────────────────────────────────────────────────
 
 function ExpensesTab({ group, currentUser }) {
+  const [search, setSearch] = useState('');
   const deleteExpense = useDeleteGroupExpense(group.id);
-  const expenses = group.groupExpenses || [];
+  const allExpenses = group.groupExpenses || [];
+  const expenses = search.trim()
+    ? allExpenses.filter((e) => e.title?.toLowerCase().includes(search.toLowerCase()))
+    : allExpenses;
 
-  // Find current user's GroupMember record
   const myMember = group.members?.find((m) => m.userId === currentUser?.uid);
 
-  if (expenses.length === 0) {
+  if (allExpenses.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-3">
         <span className="text-5xl">💸</span>
@@ -72,6 +75,22 @@ function ExpensesTab({ group, currentUser }) {
 
   return (
     <div className="px-4 py-3 space-y-3">
+      {/* Search */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">🔍</span>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search expenses…"
+          className="w-full bg-gray-100 rounded-xl pl-8 pr-4 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-primary-100"
+        />
+      </div>
+
+      {expenses.length === 0 && (
+        <p className="text-center text-sm text-gray-400 py-8">No results for "{search}"</p>
+      )}
+
       {[...expenses]
         .sort((a, b) => new Date(b.expenseDate || b.createdAt) - new Date(a.expenseDate || a.createdAt))
         .map((exp) => {
@@ -298,21 +317,28 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
     const me = members.find((m) => m.userId === currentUser?.uid);
     return me?.id || members[0]?.id || '';
   });
-  const [splitEqual, setSplitEqual] = useState(true);
+  const [splitMode, setSplitMode] = useState('equal'); // 'equal' | 'amount' | 'percent'
   const [customSplits, setCustomSplits] = useState({});
   const [note, setNote] = useState('');
 
   const numAmount = parseFloat(amount) || 0;
   const equalShare = members.length > 0 ? numAmount / members.length : 0;
+  const totalCustom = splitMode === 'amount'
+    ? members.reduce((s, m) => s + (parseFloat(customSplits[m.id]) || 0), 0)
+    : members.reduce((s, m) => s + (parseFloat(customSplits[m.id]) || 0), 0);
+  const percentOk = splitMode === 'percent' && Math.abs(totalCustom - 100) < 0.01;
+  const amountOk = splitMode === 'amount' && Math.abs(totalCustom - numAmount) < 0.01;
 
   function handleSubmit() {
     if (!title.trim() || numAmount <= 0) return;
-    const shares = splitEqual
+    if (splitMode === 'percent' && !percentOk) return;
+    if (splitMode === 'amount' && !amountOk) return;
+
+    const shares = splitMode === 'equal'
       ? members.map((m) => ({ memberId: m.id, amount: equalShare }))
-      : members.map((m) => ({
-          memberId: m.id,
-          amount: parseFloat(customSplits[m.id] || 0),
-        }));
+      : splitMode === 'percent'
+        ? members.map((m) => ({ memberId: m.id, amount: Math.round((parseFloat(customSplits[m.id] || 0) / 100) * numAmount * 100) / 100 }))
+        : members.map((m) => ({ memberId: m.id, amount: parseFloat(customSplits[m.id] || 0) }));
 
     addExpense.mutate(
       {
@@ -320,7 +346,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
         amount: numAmount,
         expenseDate,
         paidByMemberId,
-        splitType: splitEqual ? 'EQUAL' : 'EXACT',
+        splitType: splitMode === 'equal' ? 'EQUAL' : 'EXACT',
         note: note.trim() || undefined,
         shares,
       },
@@ -422,54 +448,62 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Split */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Split
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Equal</span>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+              Split
+            </label>
+            <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-3">
+              {[['equal', 'Equal'], ['amount', 'By ₹'], ['percent', 'By %']].map(([mode, label]) => (
                 <button
-                  onClick={() => setSplitEqual((v) => !v)}
-                  className={`w-10 h-6 rounded-full transition-colors relative ${
-                    splitEqual ? 'bg-primary-500' : 'bg-gray-200'
+                  key={mode}
+                  onClick={() => { setSplitMode(mode); setCustomSplits({}); }}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    splitMode === mode ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'
                   }`}
                 >
-                  <span
-                    className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-                      splitEqual ? 'translate-x-5' : 'translate-x-1'
-                    }`}
-                  />
+                  {label}
                 </button>
-              </div>
+              ))}
             </div>
 
-            {splitEqual ? (
-              numAmount > 0 && (
-                <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
-                  {fmt(equalShare)} per person ({members.length} members)
-                </p>
-              )
-            ) : (
+            {splitMode === 'equal' && numAmount > 0 && (
+              <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
+                {fmt(equalShare)} per person ({members.length} members)
+              </p>
+            )}
+
+            {(splitMode === 'amount' || splitMode === 'percent') && (
               <div className="space-y-2">
                 {members.map((m) => (
                   <div key={m.id} className="flex items-center gap-3">
                     <span className="text-sm text-gray-700 w-20 truncate">{m.name.split(' ')[0]}</span>
                     <div className="relative flex-1">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        ₹
+                        {splitMode === 'percent' ? '%' : '₹'}
                       </span>
                       <input
                         type="number"
                         value={customSplits[m.id] || ''}
-                        onChange={(e) =>
-                          setCustomSplits((prev) => ({ ...prev, [m.id]: e.target.value }))
-                        }
+                        onChange={(e) => setCustomSplits((prev) => ({ ...prev, [m.id]: e.target.value }))}
                         placeholder="0"
                         className="w-full bg-gray-50 rounded-xl pl-7 pr-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-primary-200"
                       />
                     </div>
+                    {splitMode === 'percent' && customSplits[m.id] && numAmount > 0 && (
+                      <span className="text-xs text-gray-400 w-14 text-right shrink-0">
+                        {fmt((parseFloat(customSplits[m.id]) / 100) * numAmount)}
+                      </span>
+                    )}
                   </div>
                 ))}
+                <div className={`text-xs text-right px-1 ${
+                  splitMode === 'percent'
+                    ? percentOk ? 'text-green-500' : 'text-red-400'
+                    : amountOk ? 'text-green-500' : 'text-red-400'
+                }`}>
+                  {splitMode === 'percent'
+                    ? `Total: ${totalCustom.toFixed(1)}% ${percentOk ? '✓' : '(must equal 100%)'}`
+                    : `Total: ${fmt(totalCustom)} ${amountOk ? '✓' : `(must equal ${fmt(numAmount)})`}`}
+                </div>
               </div>
             )}
           </div>
@@ -490,7 +524,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           <button
             onClick={handleSubmit}
-            disabled={!title.trim() || numAmount <= 0 || addExpense.isPending}
+            disabled={!title.trim() || numAmount <= 0 || addExpense.isPending || (splitMode === 'percent' && !percentOk) || (splitMode === 'amount' && !amountOk)}
             className="w-full py-3.5 bg-primary-600 text-white rounded-2xl font-semibold text-base disabled:opacity-40 active:bg-primary-700 flex items-center justify-center gap-2"
           >
             {addExpense.isPending ? (

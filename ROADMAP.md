@@ -34,14 +34,14 @@
 
 ### Medium Effort (2–4 days)
 
-- [ ] **Smart insights card on home** — rotating insight: "You've spent 40% more on Food vs last month" or "Biggest spend day was ₹3,200 on Jun 12". Derived from existing analytics endpoint, no new data needed.
-- [ ] **Settle-up reminder notification** — if a split has been PENDING for 7+ days, send an FCM nudge to the ower. Scheduled check, no new infra.
-- [ ] **Receipt photo on expense** — attach a Cloudinary image to an expense (same upload pattern as profile photo). Useful for reimbursements and audits.
-- [ ] **Calendar view** — see expenses plotted on a monthly calendar; tap a day to expand that day's list. Good complement to existing charts.
-- [ ] **Voice input on Add Expense** — Web Speech API, say "500 rupees food UPI" and auto-fill the form fields. Works well on mobile PWAs.
-- [ ] **Unequal / percentage splits in groups** — currently groups support equal or exact amount only. Add percentage-based splits (e.g. 60/40) to cover more real-world scenarios.
-- [ ] **Expense search in Groups** — search bar on GroupDetailPage to filter group expenses by title.
-- [ ] **Recurring expense auto-create push** — notify the user when a recurring expense is auto-generated (e.g. "Netflix ₹649 auto-added for June").
+- [x] **Smart insights card on home** — rotating insight derived from existing data: budget near-limit, top category, biggest expense.
+- [x] **Settle-up reminder notification** — if a split has been PENDING for 7+ days, send an FCM nudge to the ower; deduplicates via Notification table (once per 7 days).
+- [x] **Receipt photo on expense** — attach a Cloudinary image to an expense (same upload pattern as profile photo); shown as thumbnail; viewable full-screen.
+- [x] **Calendar view** — monthly calendar grid with colored dots per day; tap a day to expand expense list; prev/next navigation.
+- [x] **Voice input on Add Expense** — Web Speech API, say "500 rupees food UPI" and auto-fill amount, category, payment type, and title.
+- [x] **Unequal / percentage splits in groups** — GroupDetailPage supports Equal / By ₹ / By % modes with live validation.
+- [x] **Expense search in Groups** — search bar on GroupDetailPage filters group expenses by title.
+- [x] **Recurring expense auto-create push** — FCM notification sent when recurring expenses are auto-generated (e.g. "Netflix ₹649 auto-added for June").
 
 ### Larger Features (1–2 weeks)
 

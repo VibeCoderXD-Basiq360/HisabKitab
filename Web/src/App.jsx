@@ -27,6 +27,7 @@ import GroupsPage from './pages/groups/GroupsPage';
 import CreateGroupPage from './pages/groups/CreateGroupPage';
 import GroupDetailPage from './pages/groups/GroupDetailPage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
+import CalendarPage from './pages/calendar/CalendarPage';
 
 function Protected({ children }) {
   const jwt = useAuthStore((s) => s.jwt);
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="/groups/new" element={<Protected><CreateGroupPage /></Protected>} />
           <Route path="/groups/:id" element={<Protected><GroupDetailPage /></Protected>} />
           <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
+          <Route path="/calendar" element={<Protected><CalendarPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

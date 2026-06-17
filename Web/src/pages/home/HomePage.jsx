@@ -34,6 +34,29 @@ export default function HomePage() {
   const isSearching = query.length > 0;
 
   const { data: budgets = [] } = useBudgets();
+
+  // Smart insight derived from already-loaded data — no extra API call
+  const insight = (() => {
+    if (!monthData?.data?.length) return null;
+    const expenses = monthData.data;
+    // Biggest single expense
+    const top = [...expenses].sort((a, b) => Number(b.amount) - Number(a.amount))[0];
+    // Most-spent category
+    const catMap = {};
+    for (const e of expenses) {
+      if (e.category?.name) catMap[e.category.name] = (catMap[e.category.name] || 0) + Number(e.amount);
+    }
+    const topCat = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
+    // Budget closest to limit
+    const nearBudget = budgets.filter((b) => b.budget && b.percentage >= 70)
+      .sort((a, b) => b.percentage - a.percentage)[0];
+
+    if (nearBudget) return `⚠️ ${nearBudget.category.icon} ${nearBudget.category.name} budget at ${nearBudget.percentage}% — ₹${(nearBudget.budget.amount - nearBudget.spent).toLocaleString('en-IN')} left`;
+    if (topCat) return `📊 Most spent on ${topCat[0]} — ₹${Math.round(topCat[1]).toLocaleString('en-IN')} this month`;
+    if (top) return `💸 Biggest expense: "${top.title}" — ₹${Number(top.amount).toLocaleString('en-IN')}`;
+    return null;
+  })();
+
   const budgetRows = budgets.filter((b) => b.budget);
   const totalBudget = budgetRows.reduce((s, b) => s + b.budget.amount, 0);
   const totalBudgetSpent = budgetRows.reduce((s, b) => s + b.spent, 0);
@@ -150,6 +173,13 @@ export default function HomePage() {
               ₹{totalBudgetSpent.toLocaleString('en-IN')} spent of ₹{totalBudget.toLocaleString('en-IN')} · tap to manage
             </p>
           </button>
+        )}
+
+        {/* Smart insight */}
+        {!isSearching && insight && (
+          <div className="mx-4 mt-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3">
+            <p className="text-xs text-indigo-700 font-medium">{insight}</p>
+          </div>
         )}
 
         {/* Balance nudge cards */}

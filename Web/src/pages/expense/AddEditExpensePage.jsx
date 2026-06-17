@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import api from '../../lib/api';
 import { addDays, addWeeks, addMonths, addYears, format } from 'date-fns';
 import { useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense } from '../../hooks/useExpenses';
 import { useCategories } from '../../hooks/useCategories';
@@ -61,6 +62,63 @@ export default function AddEditExpensePage() {
   const deleteExpense = useDeleteExpense();
 
   const [form, setForm] = useState(EMPTY);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptUrl, setReceiptUrl] = useState('');
+  const [receiptPreview, setReceiptPreview] = useState('');
+
+  useEffect(() => {
+    if (!receiptFile) { setReceiptPreview(''); return; }
+    const url = URL.createObjectURL(receiptFile);
+    setReceiptPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [receiptFile]);
+
+  function startVoice() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert('Voice input not supported on this browser.');
+    const rec = new SpeechRecognition();
+    rec.lang = 'en-IN';
+    rec.interimResults = false;
+    rec.onresult = (e) => {
+      const text = e.results[0][0].transcript.toLowerCase();
+      // Extract amount — digits or simple number words
+      const amountMatch = text.match(/(\d+[\d,]*(?:\.\d+)?)/);
+      const amount = amountMatch ? amountMatch[1].replace(/,/g, '') : '';
+      // Match category by name
+      const matchedCat = categories.find((c) => text.includes(c.name.toLowerCase()));
+      // Match payment type by name
+      const matchedPt = paymentTypes.find((p) => text.includes(p.name.toLowerCase()));
+      // Title: remove amount + matched names, clean up
+      let title = text
+        .replace(/(\d+[\d,]*(?:\.\d+)?)/g, '')
+        .replace(matchedCat?.name.toLowerCase() || '__NOMATCH__', '')
+        .replace(matchedPt?.name.toLowerCase() || '__NOMATCH__', '')
+        .replace(/rupees?|rs\.?|inr/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+      setForm((f) => ({
+        ...f,
+        ...(amount && { amount }),
+        ...(title && { title }),
+        ...(matchedCat && { categoryId: matchedCat.id }),
+        ...(matchedPt && { paymentTypeId: matchedPt.id }),
+      }));
+      setListening(false);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    recognitionRef.current = rec;
+    rec.start();
+    setListening(true);
+  }
+
+  function stopVoice() {
+    recognitionRef.current?.stop();
+    setListening(false);
+  }
 
   useEffect(() => {
     if (existing) {
@@ -76,6 +134,7 @@ export default function AddEditExpensePage() {
         paidForPersonId: existing.paidForPersonId || '',
         forMode: hasPaidFor ? 'other' : 'self',
       });
+      setReceiptUrl(existing.receiptUrl || '');
     }
   }, [existing]);
 
@@ -106,10 +165,17 @@ export default function AddEditExpensePage() {
       recurringStartAt: form.recurringStartAt || null,
       recurringEndDate: form.recurringEndDate || null,
     };
+    let expenseId = id;
     if (isEdit) {
       await updateExpense.mutateAsync({ id, ...payload });
     } else {
-      await createExpense.mutateAsync(payload);
+      const res = await createExpense.mutateAsync(payload);
+      expenseId = res?.id;
+    }
+    if (receiptFile && expenseId) {
+      const fd = new FormData();
+      fd.append('image', receiptFile);
+      await api.post(`/expenses/${expenseId}/receipt`, fd).catch(() => {});
     }
     navigate(-1);
   };
@@ -124,6 +190,22 @@ export default function AddEditExpensePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <TopBar title={isEdit ? 'Edit Expense' : 'Add Expense'} showBack />
+
+      {!isEdit && (
+        <div className="px-4 pt-3">
+          <button
+            type="button"
+            onClick={listening ? stopVoice : startVoice}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-medium transition-colors ${
+              listening
+                ? 'bg-red-500 text-white animate-pulse'
+                : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+            }`}
+          >
+            🎤 {listening ? 'Listening… tap to stop' : 'Fill with voice'}
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-4 flex flex-col gap-4 pb-10">
         <Input
@@ -180,6 +262,36 @@ export default function AddEditExpensePage() {
         </div>
 
         <Input label="Note" value={form.note} onChange={field('note')} placeholder="Optional note" />
+
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-gray-700">Receipt photo</label>
+          {receiptPreview || receiptUrl ? (
+            <div className="relative">
+              <img
+                src={receiptPreview || receiptUrl}
+                alt="Receipt"
+                className="w-full max-h-52 object-cover rounded-xl border border-gray-200"
+              />
+              <button
+                type="button"
+                onClick={() => { setReceiptFile(null); setReceiptUrl(''); }}
+                className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm leading-none"
+              >
+                ✕
+              </button>
+              <label className="absolute bottom-2 right-2 bg-black/50 text-white rounded-lg px-2 py-1 text-xs cursor-pointer">
+                Replace
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
+              </label>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 cursor-pointer hover:border-primary-300 hover:text-primary-600 transition-colors">
+              <span className="text-xl">📷</span>
+              Attach receipt photo
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
+            </label>
+          )}
+        </div>
 
         {people.length > 0 && (
           <div className="flex flex-col gap-2">

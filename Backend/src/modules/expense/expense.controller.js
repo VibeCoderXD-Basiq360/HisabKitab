@@ -1,6 +1,7 @@
 const { addDays, addWeeks, addMonths, addYears, subMonths, startOfMonth, endOfMonth, format } = require('date-fns');
 const prisma = require('../../lib/prisma');
 const { notify } = require('../../lib/notify');
+const cloudinary = require('../../config/cloudinary');
 const { processDueRecurring } = require('../recurring/recurring.controller');
 
 async function checkBudgetAlert(userId, categoryId) {
@@ -363,6 +364,24 @@ const trend = async (req, res) => {
   res.json(months);
 };
 
+const uploadReceipt = async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const expense = await prisma.expense.findFirst({
+    where: { id: req.params.id, userId: req.user.userId },
+  });
+  if (!expense) return res.status(404).json({ error: 'Expense not found' });
+
+  const result = await new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream({ folder: 'hisabkitab/receipts' }, (err, data) => (err ? reject(err) : resolve(data)))
+      .end(req.file.buffer);
+  });
+
+  const receiptUrl = result.secure_url.replace('/upload/', '/upload/w_1200,q_auto/');
+  await prisma.expense.update({ where: { id: req.params.id }, data: { receiptUrl } });
+  res.json({ receiptUrl });
+};
+
 const exportCsv = async (req, res) => {
   const { fromDate, toDate } = req.query;
   const where = { userId: req.user.userId };
@@ -410,4 +429,4 @@ const exportCsv = async (req, res) => {
   res.send(csv);
 };
 
-module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv };
+module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt };
