@@ -10,6 +10,8 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import HomePage from './pages/home/HomePage';
 import AddEditExpensePage from './pages/expense/AddEditExpensePage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
+import CategoryExpensesPage from './pages/analytics/CategoryExpensesPage';
+import PaymentExpensesPage from './pages/analytics/PaymentExpensesPage';
 import BalancesPage from './pages/balances/BalancesPage';
 import PersonExpensesPage from './pages/balances/PersonExpensesPage';
 import SettingsPage from './pages/settings/SettingsPage';
@@ -17,7 +19,14 @@ import CategoriesPage from './pages/settings/CategoriesPage';
 import PeoplePage from './pages/settings/PeoplePage';
 import PaymentTypesPage from './pages/settings/PaymentTypesPage';
 import RecurringPage from './pages/settings/RecurringPage';
+import BudgetsPage from './pages/settings/BudgetsPage';
+import CategoryBudgetPage from './pages/settings/CategoryBudgetPage';
+import ExportPage from './pages/settings/ExportPage';
 import ProfilePage from './pages/profile/ProfilePage';
+import GroupsPage from './pages/groups/GroupsPage';
+import CreateGroupPage from './pages/groups/CreateGroupPage';
+import GroupDetailPage from './pages/groups/GroupDetailPage';
+import NotificationsPage from './pages/notifications/NotificationsPage';
 
 function Protected({ children }) {
   const jwt = useAuthStore((s) => s.jwt);
@@ -44,6 +53,8 @@ export default function App() {
           <Route path="/expense/new" element={<Protected><AddEditExpensePage /></Protected>} />
           <Route path="/expense/:id" element={<Protected><AddEditExpensePage /></Protected>} />
           <Route path="/analytics" element={<Protected><AnalyticsPage /></Protected>} />
+          <Route path="/analytics/category/:categoryId" element={<Protected><CategoryExpensesPage /></Protected>} />
+          <Route path="/analytics/payment/:paymentTypeId" element={<Protected><PaymentExpensesPage /></Protected>} />
           <Route path="/balances" element={<Protected><BalancesPage /></Protected>} />
           <Route path="/balances/person/:personId" element={<Protected><PersonExpensesPage /></Protected>} />
           <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
@@ -51,7 +62,14 @@ export default function App() {
           <Route path="/settings/people" element={<Protected><PeoplePage /></Protected>} />
           <Route path="/settings/payment-types" element={<Protected><PaymentTypesPage /></Protected>} />
           <Route path="/settings/recurring" element={<Protected><RecurringPage /></Protected>} />
+          <Route path="/settings/budgets" element={<Protected><BudgetsPage /></Protected>} />
+          <Route path="/settings/budgets/:categoryId" element={<Protected><CategoryBudgetPage /></Protected>} />
+          <Route path="/settings/export" element={<Protected><ExportPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
+          <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
+          <Route path="/groups/new" element={<Protected><CreateGroupPage /></Protected>} />
+          <Route path="/groups/:id" element={<Protected><GroupDetailPage /></Protected>} />
+          <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

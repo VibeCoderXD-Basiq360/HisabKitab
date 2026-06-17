@@ -64,6 +64,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <TopBar
         title="HisabKitab"
+        showBell
         action={
           <button
             onClick={() => navigate('/expense/new')}

@@ -47,3 +47,11 @@ export function useAnalytics(params = {}) {
     queryFn: () => api.get('/expenses/analytics', { params }).then((r) => r.data),
   });
 }
+
+export function useTrend() {
+  return useQuery({
+    queryKey: ['analytics-trend'],
+    queryFn: () => api.get('/expenses/analytics/trend').then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+}

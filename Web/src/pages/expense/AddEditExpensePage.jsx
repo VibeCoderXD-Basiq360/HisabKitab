@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { addDays, addWeeks, addMonths, addYears, format } from 'date-fns';
 import { useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense } from '../../hooks/useExpenses';
 import { useCategories } from '../../hooks/useCategories';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
@@ -9,6 +10,18 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
+
+function defaultRecurringStart(expenseDateStr, frequency) {
+  const base = new Date((expenseDateStr || todayISO()) + 'T09:00');
+  let next;
+  switch (frequency) {
+    case 'DAILY':   next = addDays(base, 1); break;
+    case 'WEEKLY':  next = addWeeks(base, 1); break;
+    case 'YEARLY':  next = addYears(base, 1); break;
+    default:        next = addMonths(base, 1);
+  }
+  return format(next, "yyyy-MM-dd'T'HH:mm");
+}
 
 const FREQ_OPTIONS = [
   { value: 'DAILY',   label: 'Daily' },
@@ -29,6 +42,8 @@ const EMPTY = {
   forMode: 'self',
   isRecurring: false,
   frequency: 'MONTHLY',
+  recurringStartAt: '',
+  recurringEndDate: '',
 };
 
 export default function AddEditExpensePage() {
@@ -88,6 +103,8 @@ export default function AddEditExpensePage() {
       paidForPersonId: form.forMode === 'other' ? form.paidForPersonId || null : null,
       isRecurring: !isEdit && form.isRecurring,
       frequency: form.frequency,
+      recurringStartAt: form.recurringStartAt || null,
+      recurringEndDate: form.recurringEndDate || null,
     };
     if (isEdit) {
       await updateExpense.mutateAsync({ id, ...payload });
@@ -255,7 +272,14 @@ export default function AddEditExpensePage() {
           <div className="flex flex-col gap-2">
             <button
               type="button"
-              onClick={() => setForm((f) => ({ ...f, isRecurring: !f.isRecurring }))}
+              onClick={() => setForm((f) => {
+                const isOn = !f.isRecurring;
+                return {
+                  ...f,
+                  isRecurring: isOn,
+                  recurringStartAt: isOn ? defaultRecurringStart(f.expenseDate, f.frequency) : '',
+                };
+              })}
               className="flex items-center justify-between min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white"
             >
               <div className="flex items-center gap-2">
@@ -271,21 +295,58 @@ export default function AddEditExpensePage() {
             </button>
 
             {form.isRecurring && (
-              <div className="flex gap-2">
-                {FREQ_OPTIONS.map((opt) => (
-                  <button
-                    type="button"
-                    key={opt.value}
-                    onClick={() => setForm((f) => ({ ...f, frequency: opt.value }))}
-                    className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
-                      form.frequency === opt.value
-                        ? 'bg-primary-500 text-white border-primary-500'
-                        : 'border-gray-200 text-gray-600 bg-white'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  {FREQ_OPTIONS.map((opt) => (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() => setForm((f) => ({ ...f, frequency: opt.value }))}
+                      className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                        form.frequency === opt.value
+                          ? 'bg-primary-500 text-white border-primary-500'
+                          : 'border-gray-200 text-gray-600 bg-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">First auto-create on</label>
+                    <input
+                      type="datetime-local"
+                      value={form.recurringStartAt}
+                      onChange={field('recurringStartAt')}
+                      className="min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+                    />
+                    <p className="text-xs text-gray-400">Day & time the first auto-expense gets created</p>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-gray-500">End date (optional)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        value={form.recurringEndDate}
+                        onChange={field('recurringEndDate')}
+                        className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+                      />
+                      {form.recurringEndDate && (
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, recurringEndDate: '' }))}
+                          className="text-gray-400 text-lg px-2"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400">Leave empty to repeat forever</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

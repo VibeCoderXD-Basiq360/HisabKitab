@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum BulkPaymentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
 enum RecurrenceFrequency {
   DAILY
   WEEKLY
@@ -19,6 +26,7 @@ enum SplitStatus {
   PAYMENT_REQUESTED
   CONFIRMED
   REJECTED
+  WAIVED
 }
 
 enum PaymentRequestStatus {
@@ -43,6 +51,12 @@ model User {
   linkedAs           Person[]           @relation("LinkedUser")
   expenses           Expense[]
   recurringExpenses  RecurringExpense[]
+  budgets              Budget[]
+  bulkPaymentsSent     BulkPayment[] @relation("BulkFrom")
+  bulkPaymentsReceived BulkPayment[] @relation("BulkTo")
+  groupsCreated        Group[]       @relation("GroupCreator")
+  groupMemberships     GroupMember[] @relation("GroupMemberUser")
+  notifications        Notification[]
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -60,6 +74,7 @@ model Category {
 
   expenses          Expense[]
   recurringExpenses RecurringExpense[]
+  budgets           Budget[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -131,6 +146,9 @@ model Expense {
   recurringExpenseId String?
   recurringExpense   RecurringExpense? @relation(fields: [recurringExpenseId], references: [id], onDelete: SetNull)
 
+  groupId       String?
+  group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
   people        ExpensePerson[]
   splits        ExpenseSplit[]
 
@@ -141,6 +159,7 @@ model Expense {
   @@index([userId, paidForPersonId])
   @@index([userId, categoryId])
   @@index([userId, paymentTypeId])
+  @@index([groupId])
 }
 
 model ExpensePerson {
@@ -161,7 +180,8 @@ model ExpenseSplit {
   amount    Decimal      @db.Decimal(10, 2)
   status    SplitStatus  @default(PENDING)
 
-  paymentRequests PaymentRequest[]
+  paymentRequests   PaymentRequest[]
+  bulkPaymentSplits BulkPaymentSplit[]
 
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -198,6 +218,7 @@ model RecurringExpense {
   paymentType   PaymentType         @relation(fields: [paymentTypeId], references: [id])
   frequency     RecurrenceFrequency
   nextDueDate   DateTime
+  endDate       DateTime?
   isActive      Boolean             @default(true)
 
   instances     Expense[]
@@ -206,4 +227,172 @@ model RecurringExpense {
   updatedAt     DateTime            @updatedAt
 
   @@index([userId, isActive, nextDueDate])
+}
+
+model BulkPayment {
+  id          String            @id @default(cuid())
+  fromUserId  String
+  fromUser    User              @relation("BulkFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId    String
+  toUser      User              @relation("BulkTo", fields: [toUserId], references: [id], onDelete: Cascade)
+  totalAmount Decimal           @db.Decimal(10, 2)
+  note        String?
+  status      BulkPaymentStatus @default(PENDING)
+  splits      BulkPaymentSplit[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fromUserId, status])
+  @@index([toUserId, status])
+}
+
+model BulkPaymentSplit {
+  bulkPaymentId String
+  bulkPayment   BulkPayment  @relation(fields: [bulkPaymentId], references: [id], onDelete: Cascade)
+  splitId       String
+  split         ExpenseSplit @relation(fields: [splitId], references: [id], onDelete: Cascade)
+
+  @@id([bulkPaymentId, splitId])
+  @@index([splitId])
+}
+
+enum GroupType {
+  TRIP
+  HOME
+  WORK
+  COUPLE
+  OTHER
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+enum GroupSplitType {
+  EQUAL
+  EXACT
+  PERCENTAGE
+}
+
+model Group {
+  id              String            @id @default(cuid())
+  name            String
+  icon            String            @default("👥")
+  type            GroupType         @default(OTHER)
+  createdByUserId String
+  createdBy       User              @relation("GroupCreator", fields: [createdByUserId], references: [id])
+  members         GroupMember[]
+  groupExpenses   GroupExpense[]
+  settlements     GroupSettlement[]
+  linkedExpenses  Expense[]
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([createdByUserId])
+}
+
+model GroupMember {
+  id        String    @id @default(cuid())
+  groupId   String
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?     @relation("GroupMemberUser", fields: [userId], references: [id])
+  name      String
+  email     String?
+  role      GroupRole @default(MEMBER)
+
+  expensesPaid    GroupExpense[]    @relation("GroupExpensePayer")
+  expensesAdded   GroupExpense[]    @relation("GroupExpenseAdder")
+  shares          GroupExpenseShare[]
+  settlementsFrom GroupSettlement[] @relation("SettleFrom")
+  settlementsTo   GroupSettlement[] @relation("SettleTo")
+
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model GroupExpense {
+  id              String           @id @default(cuid())
+  groupId         String
+  group           Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  addedByMemberId String
+  addedBy         GroupMember      @relation("GroupExpenseAdder", fields: [addedByMemberId], references: [id])
+  paidByMemberId  String
+  paidBy          GroupMember      @relation("GroupExpensePayer", fields: [paidByMemberId], references: [id])
+  amount          Decimal          @db.Decimal(10, 2)
+  title           String
+  note            String?
+  expenseDate     DateTime
+  splitType       GroupSplitType   @default(EQUAL)
+  shares          GroupExpenseShare[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([groupId])
+  @@index([paidByMemberId])
+}
+
+model GroupExpenseShare {
+  id             String       @id @default(cuid())
+  groupExpenseId String
+  groupExpense   GroupExpense @relation(fields: [groupExpenseId], references: [id], onDelete: Cascade)
+  memberId       String
+  member         GroupMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(10, 2)
+
+  @@unique([groupExpenseId, memberId])
+  @@index([memberId])
+}
+
+model GroupSettlement {
+  id           String      @id @default(cuid())
+  groupId      String
+  group        Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromMemberId String
+  fromMember   GroupMember @relation("SettleFrom", fields: [fromMemberId], references: [id])
+  toMemberId   String
+  toMember     GroupMember @relation("SettleTo", fields: [toMemberId], references: [id])
+  amount       Decimal     @db.Decimal(10, 2)
+  note         String?
+  createdAt    DateTime    @default(now())
+
+  @@index([groupId])
+  @@index([fromMemberId])
+  @@index([toMemberId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String?
+  data      Json?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, isRead])
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  amount     Decimal  @db.Decimal(10, 2)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, categoryId])
+  @@index([userId])
 }

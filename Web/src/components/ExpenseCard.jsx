@@ -1,8 +1,11 @@
+import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/currency';
 import { formatDate } from '../utils/date';
 
 export default function ExpenseCard({ expense, onClick }) {
+  const navigate = useNavigate();
   const confirmedSplits = expense.splits?.filter((s) => s.status === 'CONFIRMED') || [];
+  const waivedSplits = expense.splits?.filter((s) => s.status === 'WAIVED') || [];
   const settledAmount = confirmedSplits.reduce((s, sp) => s + Number(sp.amount), 0);
   const currentAmount = Number(expense.amount);
   const originalAmount = currentAmount + settledAmount;
@@ -15,6 +18,13 @@ export default function ExpenseCard({ expense, onClick }) {
     : settledNames.length === 2
       ? `${settledNames[0]} & ${settledNames[1]}`
       : `${settledNames.length} people`;
+
+  const waivedNames = waivedSplits.map((s) => s.person?.name).filter(Boolean);
+  const waivedLabel = waivedNames.length === 1
+    ? waivedNames[0]
+    : waivedNames.length === 2
+      ? `${waivedNames[0]} & ${waivedNames[1]}`
+      : `${waivedNames.length} people`;
 
   return (
     <button
@@ -44,7 +54,7 @@ export default function ExpenseCard({ expense, onClick }) {
             <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
               🧾 Paid for {expense.paidForPerson?.name}
             </span>
-          ) : expense.splits?.length > 0 && !isFullySettled ? (
+          ) : expense.splits?.length > 0 && !isFullySettled && expense.splits.some((s) => ['PENDING', 'PAYMENT_REQUESTED'].includes(s.status)) ? (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
               ⚖️ Split
             </span>
@@ -65,6 +75,22 @@ export default function ExpenseCard({ expense, onClick }) {
           {isPartiallySettled && (
             <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
               ↩ ₹{settledAmount.toFixed(0)} back from {settledLabel}
+            </span>
+          )}
+          {waivedSplits.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+              🎁 Waived for {waivedLabel}
+            </span>
+          )}
+          {expense.group && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); navigate(`/groups/${expense.group.id}`); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); navigate(`/groups/${expense.group.id}`); } }}
+              className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full cursor-pointer"
+            >
+              {expense.group.icon} {expense.group.name}
             </span>
           )}
         </div>

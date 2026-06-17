@@ -1,15 +1,92 @@
+import { useState } from 'react';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
-import { useRecurring, useToggleRecurring, useDeleteRecurring } from '../../hooks/useRecurring';
+import { useRecurring, useToggleRecurring, useDeleteRecurring, useEditSchedule } from '../../hooks/useRecurring';
 
 const FREQ_LABEL = { DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly', YEARLY: 'Yearly' };
 const FREQ_ICON  = { DAILY: '📅', WEEKLY: '🗓️', MONTHLY: '📆', YEARLY: '🎯' };
+
+function toLocalDatetimeInput(isoString) {
+  const d = new Date(isoString);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function ScheduleSheet({ item, onClose }) {
+  const [nextDueDate, setNextDueDate] = useState(toLocalDatetimeInput(item.nextDueDate));
+  const [endDate, setEndDate] = useState(item.endDate ? item.endDate.slice(0, 10) : '');
+  const edit = useEditSchedule();
+
+  const handleSave = () => {
+    edit.mutate(
+      { id: item.id, nextDueDate, endDate: endDate || null },
+      { onSuccess: onClose }
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative w-full bg-white rounded-t-3xl p-6 pb-10 flex flex-col gap-4">
+        <div className="flex items-center gap-3 mb-1">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0"
+            style={{ backgroundColor: item.category?.color ? `${item.category.color}25` : '#f3f4f6' }}
+          >
+            {item.category?.icon || '💸'}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Edit schedule</p>
+            <p className="text-xs text-gray-400">{item.title || item.category?.name || 'Recurring expense'}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">Next auto-create on</label>
+          <input
+            type="datetime-local"
+            value={nextDueDate}
+            onChange={(e) => setNextDueDate(e.target.value)}
+            className="min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-xs font-medium text-gray-500">End date (optional)</label>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+            />
+            {endDate && (
+              <button type="button" onClick={() => setEndDate('')} className="text-gray-400 text-lg px-2">
+                ✕
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-gray-400">Leave empty to repeat forever</p>
+        </div>
+
+        <button
+          onClick={handleSave}
+          disabled={edit.isPending || !nextDueDate}
+          className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
+        >
+          {edit.isPending ? 'Saving…' : 'Save Schedule'}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function RecurringPage() {
   const { data: items = [], isLoading } = useRecurring();
   const toggle = useToggleRecurring();
   const del = useDeleteRecurring();
+  const [editItem, setEditItem] = useState(null);
 
   const handleDelete = (id, title) => {
     if (window.confirm(`Delete recurring "${title || 'expense'}"? Past instances are kept.`)) {
@@ -29,7 +106,7 @@ export default function RecurringPage() {
             <span className="text-5xl">🔁</span>
             <p className="text-sm text-gray-500 font-medium">No recurring expenses yet</p>
             <p className="text-xs text-gray-400 text-center">
-              When adding an expense, enable "Make this recurring" to auto-create it every day / week / month / year.
+              When adding an expense, enable "Make this recurring" to auto-create it on a schedule.
             </p>
           </div>
         )}
@@ -52,8 +129,16 @@ export default function RecurringPage() {
                   {item.paymentType?.name} · {FREQ_ICON[item.frequency]} {FREQ_LABEL[item.frequency]}
                 </p>
                 <p className="text-xs text-gray-400">
-                  Next: {format(new Date(item.nextDueDate), 'd MMM yyyy')}
+                  Next: {format(new Date(item.nextDueDate), 'd MMM yyyy, h:mm a')}
                 </p>
+                {item.endDate && (
+                  <p className="text-xs text-orange-400 mt-0.5">
+                    Ends: {format(new Date(item.endDate), 'd MMM yyyy')}
+                  </p>
+                )}
+                {!item.isActive && item.endDate && new Date(item.nextDueDate) > new Date(item.endDate) && (
+                  <p className="text-xs text-red-400 mt-0.5">Completed — past end date</p>
+                )}
               </div>
 
               <div className="text-right shrink-0">
@@ -77,6 +162,12 @@ export default function RecurringPage() {
                 {item.isActive ? '⏸ Pause' : '▶ Resume'}
               </button>
               <button
+                onClick={() => setEditItem(item)}
+                className="flex-1 py-2 rounded-xl text-xs font-medium border border-gray-200 text-gray-600 bg-white"
+              >
+                🗓 Schedule
+              </button>
+              <button
                 onClick={() => handleDelete(item.id, item.title)}
                 disabled={del.isPending}
                 className="flex-1 py-2 rounded-xl text-xs font-medium border border-red-100 text-red-500 bg-red-50"
@@ -89,6 +180,8 @@ export default function RecurringPage() {
       </div>
 
       <BottomNav />
+
+      {editItem && <ScheduleSheet item={editItem} onClose={() => setEditItem(null)} />}
     </div>
   );
 }

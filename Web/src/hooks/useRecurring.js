@@ -23,3 +23,12 @@ export function useDeleteRecurring() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['recurring'] }),
   });
 }
+
+export function useEditSchedule() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, nextDueDate, endDate }) =>
+      api.patch(`/recurring/${id}`, { nextDueDate, endDate }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['recurring'] }),
+  });
+}

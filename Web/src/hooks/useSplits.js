@@ -56,3 +56,25 @@ export function useRejectPayment() {
     onSuccess: () => invalidateAll(qc),
   });
 }
+
+export function useMarkReceived() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (splitId) => api.post(`/splits/${splitId}/mark-received`).then((r) => r.data),
+    onSuccess: () => {
+      invalidateAll(qc);
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+}
+
+export function useWaiveSplit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (splitId) => api.post(`/splits/${splitId}/waive`).then((r) => r.data),
+    onSuccess: () => {
+      invalidateAll(qc);
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+}

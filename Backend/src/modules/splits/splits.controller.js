@@ -1,5 +1,5 @@
 const prisma = require('../../lib/prisma');
-const { sendNotification } = require('../../lib/notify');
+const { notify } = require('../../lib/notify');
 
 const ACTIVE = ['PENDING', 'PAYMENT_REQUESTED'];
 
@@ -94,13 +94,11 @@ const requestPayment = async (req, res) => {
   ]);
 
   const payer = split.expense.user;
-  if (payer.fcmToken) {
-    await sendNotification(payer.fcmToken, {
-      title: 'Payment claim received',
-      body: `${split.person.name} says they paid ₹${split.amount} for "${split.expense.title || 'an expense'}"`,
-      data: { type: 'PAYMENT_REQUESTED', splitId },
-    });
-  }
+  await notify(payer.id, payer.fcmToken, {
+    title: 'Payment claim received',
+    body: `${split.person.name} says they paid ₹${split.amount} for "${split.expense.title || 'an expense'}"`,
+    data: { type: 'PAYMENT_REQUESTED', splitId },
+  });
 
   res.json({ ok: true });
 };
@@ -184,14 +182,11 @@ const acceptPayment = async (req, res) => {
     }
   }
 
-  const fcmToken = split.person.linkedUser?.fcmToken;
-  if (fcmToken) {
-    await sendNotification(fcmToken, {
-      title: 'Payment confirmed!',
-      body: `Your payment of ₹${splitAmount} for "${split.expense.title || 'an expense'}" was accepted`,
-      data: { type: 'PAYMENT_ACCEPTED', splitId },
-    });
-  }
+  await notify(linkedUserId, split.person.linkedUser?.fcmToken, {
+    title: 'Payment confirmed!',
+    body: `Your payment of ₹${splitAmount} for "${split.expense.title || 'an expense'}" was accepted`,
+    data: { type: 'PAYMENT_ACCEPTED', splitId },
+  });
 
   res.json({ ok: true });
 };
@@ -203,7 +198,7 @@ const rejectPayment = async (req, res) => {
   const split = await prisma.expenseSplit.findUnique({
     where: { id: splitId },
     include: {
-      person: { include: { linkedUser: { select: { fcmToken: true } } } },
+      person: { include: { linkedUser: { select: { id: true, fcmToken: true } } } },
       expense: { select: { userId: true, title: true } },
       paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
     },
@@ -222,14 +217,11 @@ const rejectPayment = async (req, res) => {
       : []),
   ]);
 
-  const fcmToken = split.person.linkedUser?.fcmToken;
-  if (fcmToken) {
-    await sendNotification(fcmToken, {
-      title: 'Payment rejected',
-      body: `Your payment claim for "${split.expense.title || 'an expense'}" was rejected. ₹${split.amount} is still pending`,
-      data: { type: 'PAYMENT_REJECTED', splitId },
-    });
-  }
+  await notify(split.person.linkedUser?.id, split.person.linkedUser?.fcmToken, {
+    title: 'Payment rejected',
+    body: `Your payment claim for "${split.expense.title || 'an expense'}" was rejected. ₹${split.amount} is still pending`,
+    data: { type: 'PAYMENT_REJECTED', splitId },
+  });
 
   res.json({ ok: true });
 };
@@ -296,4 +288,126 @@ const getPaidForPerson = async (req, res) => {
   res.json(expenses);
 };
 
-module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, getPaidForSummary, getPaidForPerson };
+const markReceived = async (req, res) => {
+  const { splitId } = req.params;
+  const myId = req.user.userId;
+
+  const split = await prisma.expenseSplit.findUnique({
+    where: { id: splitId },
+    include: {
+      person: { include: { linkedUser: { select: { id: true, name: true, fcmToken: true } } } },
+      expense: {
+        include: {
+          user: { select: { id: true, name: true } },
+          category: { select: { name: true } },
+          paymentType: { select: { name: true } },
+          paidForPerson: { select: { id: true } },
+        },
+      },
+      paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
+    },
+  });
+
+  if (!split) return res.status(404).json({ error: 'Split not found' });
+  if (split.expense.userId !== myId) return res.status(403).json({ error: 'Not your expense' });
+  if (split.status === 'CONFIRMED' || split.status === 'WAIVED') return res.status(400).json({ error: 'Already settled' });
+
+  const latestRequest = split.paymentRequests[0];
+  const linkedUserId = split.person.linkedUser?.id;
+  const splitAmount = Number(split.amount);
+
+  await prisma.$transaction([
+    prisma.expenseSplit.update({ where: { id: splitId }, data: { status: 'CONFIRMED' } }),
+    prisma.expense.update({
+      where: { id: split.expenseId },
+      data: { amount: { decrement: splitAmount } },
+    }),
+    ...(latestRequest
+      ? [prisma.paymentRequest.update({ where: { id: latestRequest.id }, data: { status: 'ACCEPTED' } })]
+      : []),
+  ]);
+
+  // Create expense in the debtor's account so it appears on their home page
+  if (linkedUserId) {
+    const origExpense = split.expense;
+    const isPaidFor = origExpense.paidForPersonId === split.personId;
+
+    const [matchedCat, matchedType, fallbackType] = await Promise.all([
+      origExpense.category
+        ? prisma.category.findFirst({ where: { userId: linkedUserId, name: origExpense.category.name } })
+        : null,
+      origExpense.paymentType
+        ? prisma.paymentType.findFirst({ where: { userId: linkedUserId, name: origExpense.paymentType.name } })
+        : null,
+      prisma.paymentType.findFirst({ where: { userId: linkedUserId } }),
+    ]);
+
+    const paymentTypeId = matchedType?.id || fallbackType?.id;
+
+    if (paymentTypeId) {
+      const expenseTitle = isPaidFor
+        ? origExpense.title || 'Expense'
+        : origExpense.title ? `Split: ${origExpense.title}` : 'Split expense';
+
+      await prisma.expense.create({
+        data: {
+          userId: linkedUserId,
+          amount: splitAmount,
+          currency: origExpense.currency || 'INR',
+          title: expenseTitle,
+          note: `Recorded by ${split.expense.user?.name || 'payer'}`,
+          expenseDate: new Date(),
+          categoryId: matchedCat?.id || null,
+          paymentTypeId,
+        },
+      });
+    }
+  }
+
+  await notify(linkedUserId, split.person.linkedUser?.fcmToken, {
+    title: '✅ Payment recorded',
+    body: `${split.expense.user?.name || 'Someone'} marked your ₹${splitAmount} for "${split.expense.title || 'an expense'}" as received`,
+    data: { type: 'PAYMENT_ACCEPTED', splitId },
+  });
+
+  res.json({ ok: true });
+};
+
+const waiveSplit = async (req, res) => {
+  const { splitId } = req.params;
+  const myId = req.user.userId;
+
+  const split = await prisma.expenseSplit.findUnique({
+    where: { id: splitId },
+    include: {
+      person: { include: { linkedUser: { select: { id: true, fcmToken: true } } } },
+      expense: { select: { userId: true, title: true, amount: true } },
+      paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
+    },
+  });
+
+  if (!split) return res.status(404).json({ error: 'Split not found' });
+  if (split.expense.userId !== myId) return res.status(403).json({ error: 'Not your expense' });
+  if (split.status === 'CONFIRMED') return res.status(400).json({ error: 'Already settled' });
+
+  const latestRequest = split.paymentRequests[0];
+
+  await prisma.$transaction([
+    // Mark waived — does NOT decrement expense amount (absorbed into your spend)
+    prisma.expenseSplit.update({ where: { id: splitId }, data: { status: 'WAIVED' } }),
+    ...(latestRequest
+      ? [prisma.paymentRequest.update({ where: { id: latestRequest.id }, data: { status: 'ACCEPTED' } })]
+      : []),
+  ]);
+
+  // Notify the person their debt was forgiven
+  await notify(split.person.linkedUser?.id, split.person.linkedUser?.fcmToken, {
+    title: '🎁 Debt forgiven',
+    body: `Your ₹${split.amount} for "${split.expense.title || 'an expense'}" has been waived off — you don't owe anything!`,
+    data: { type: 'SPLIT_WAIVED', splitId },
+  });
+
+  res.json({ ok: true });
+};
+
+module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, getPaidForSummary, getPaidForPerson };

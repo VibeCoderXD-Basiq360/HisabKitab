@@ -1,6 +1,6 @@
-const { addDays, addWeeks, addMonths, addYears } = require('date-fns');
+const { addDays, addWeeks, addMonths, addYears, subMonths, startOfMonth, endOfMonth, format } = require('date-fns');
 const prisma = require('../../lib/prisma');
-const { sendNotification } = require('../../lib/notify');
+const { notify } = require('../../lib/notify');
 const { processDueRecurring } = require('../recurring/recurring.controller');
 
 function recurringNextDate(base, frequency) {
@@ -19,6 +19,7 @@ const include = {
   people: { include: { person: true } },
   paidForPerson: true,
   recurringExpense: { select: { id: true, frequency: true, isActive: true } },
+  group: { select: { id: true, name: true, icon: true } },
   splits: {
     include: {
       person: true,
@@ -37,16 +38,14 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, p
   if (paidForPersonId) {
     const split = await prisma.expenseSplit.create({
       data: { expenseId, personId: paidForPersonId, amount },
-      include: { person: { include: { linkedUser: { select: { fcmToken: true } } } } },
+      include: { person: { include: { linkedUser: { select: { id: true, fcmToken: true } } } } },
     });
-    const fcmToken = split.person.linkedUser?.fcmToken;
-    if (fcmToken) {
-      await sendNotification(fcmToken, {
-        title: 'Expense paid on your behalf',
-        body: `${payerName} paid ₹${amount} for "${expenseTitle || 'an expense'}" for you`,
-        data: { type: 'PAID_FOR_CREATED', splitId: split.id },
-      });
-    }
+    const linkedUser = split.person.linkedUser;
+    await notify(linkedUser?.id, linkedUser?.fcmToken, {
+      title: 'Expense paid on your behalf',
+      body: `${payerName} paid ₹${amount} for "${expenseTitle || 'an expense'}" for you`,
+      data: { type: 'PAID_FOR_CREATED', splitId: split.id },
+    });
     return;
   }
 
@@ -65,8 +64,8 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, p
 
   for (const split of splits) {
     const linkedUser = split.person.linkedUser;
-    if (linkedUser?.fcmToken) {
-      await sendNotification(linkedUser.fcmToken, {
+    if (linkedUser?.id) {
+      await notify(linkedUser.id, linkedUser.fcmToken, {
         title: 'New expense split',
         body: `${payerName} added "${expenseTitle || 'an expense'}" — you owe ₹${share}`,
         data: { type: 'SPLIT_CREATED', splitId: split.id },
@@ -104,12 +103,15 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
   let recurringExpenseId = null;
   if (isRecurring && frequency) {
+    const firstRun = recurringStartAt
+      ? new Date(recurringStartAt)
+      : recurringNextDate(expenseDate || new Date(), frequency);
     const rec = await prisma.recurringExpense.create({
       data: {
         userId: req.user.userId,
@@ -120,7 +122,8 @@ const create = async (req, res) => {
         categoryId: categoryId || null,
         paymentTypeId,
         frequency,
-        nextDueDate: recurringNextDate(expenseDate || new Date(), frequency),
+        nextDueDate: firstRun,
+        endDate: recurringEndDate ? new Date(recurringEndDate) : null,
       },
     });
     recurringExpenseId = rec.id;
@@ -216,6 +219,8 @@ const analytics = async (req, res) => {
     where,
     select: {
       amount: true,
+      title: true,
+      expenseDate: true,
       paymentTypeId: true,
       paymentType: { select: { name: true, icon: true, color: true } },
       categoryId: true,
@@ -225,11 +230,17 @@ const analytics = async (req, res) => {
 
   const byPaymentType = {};
   const byCategory = {};
+  const byDayMap = {};
   let total = 0;
+  let topExpense = null;
 
   for (const e of expenses) {
     const amount = Number(e.amount);
     total += amount;
+
+    if (!topExpense || amount > topExpense.amount) {
+      topExpense = { title: e.title, amount, category: e.category };
+    }
 
     const ptKey = e.paymentTypeId;
     if (!byPaymentType[ptKey]) {
@@ -244,11 +255,115 @@ const analytics = async (req, res) => {
     }
     byCategory[catKey].total = Math.round((byCategory[catKey].total + amount) * 100) / 100;
     byCategory[catKey].count++;
+
+    const day = e.expenseDate.toISOString().slice(0, 10);
+    byDayMap[day] = Math.round(((byDayMap[day] || 0) + amount) * 100) / 100;
   }
 
   const sort = (map) => Object.values(map).sort((a, b) => b.total - a.total);
 
-  res.json({ total: Math.round(total * 100) / 100, byPaymentType: sort(byPaymentType), byCategory: sort(byCategory) });
+  const byDay = Object.entries(byDayMap)
+    .map(([date, t]) => ({ date, total: t }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const transactionCount = expenses.length;
+  const avgPerTransaction = transactionCount > 0 ? Math.round((total / transactionCount) * 100) / 100 : 0;
+
+  let daySpan = 1;
+  if (fromDate && toDate) {
+    daySpan = Math.max(1, Math.ceil((new Date(toDate) - new Date(fromDate)) / 86400000));
+  }
+  const avgPerDay = Math.round((total / daySpan) * 100) / 100;
+
+  res.json({
+    total: Math.round(total * 100) / 100,
+    transactionCount,
+    avgPerTransaction,
+    avgPerDay,
+    byPaymentType: sort(byPaymentType),
+    byCategory: sort(byCategory),
+    byDay,
+    topExpense,
+  });
 };
 
-module.exports = { list, create, getOne, update, remove, analytics };
+const trend = async (req, res) => {
+  const userId = req.user.userId;
+  const now = new Date();
+  const months = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = subMonths(now, i);
+    const from = startOfMonth(d);
+    const to = endOfMonth(d);
+
+    const [sumResult, count] = await Promise.all([
+      prisma.expense.aggregate({
+        where: { userId, expenseDate: { gte: from, lte: to } },
+        _sum: { amount: true },
+      }),
+      prisma.expense.count({
+        where: { userId, expenseDate: { gte: from, lte: to } },
+      }),
+    ]);
+
+    months.push({
+      month: format(d, 'MMM'),
+      fullMonth: format(d, 'MMM yyyy'),
+      total: Math.round(Number(sumResult._sum.amount || 0) * 100) / 100,
+      count,
+      isCurrent: i === 0,
+    });
+  }
+
+  res.json(months);
+};
+
+const exportCsv = async (req, res) => {
+  const { fromDate, toDate } = req.query;
+  const where = { userId: req.user.userId };
+  if (fromDate || toDate) {
+    where.expenseDate = {};
+    if (fromDate) where.expenseDate.gte = new Date(fromDate);
+    if (toDate) where.expenseDate.lte = new Date(toDate);
+  }
+
+  const expenses = await prisma.expense.findMany({
+    where,
+    orderBy: { expenseDate: 'desc' },
+    select: {
+      expenseDate: true,
+      title: true,
+      amount: true,
+      note: true,
+      category: { select: { name: true } },
+      paymentType: { select: { name: true } },
+      paidForPerson: { select: { name: true } },
+      group: { select: { name: true } },
+    },
+  });
+
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const headers = ['Date', 'Title', 'Category', 'Payment Type', 'Amount', 'Note', 'Paid For', 'Group'];
+  const rows = expenses.map((e) => [
+    esc(e.expenseDate.toISOString().slice(0, 10)),
+    esc(e.title),
+    esc(e.category?.name || ''),
+    esc(e.paymentType?.name || ''),
+    esc(Number(e.amount)),
+    esc(e.note || ''),
+    esc(e.paidForPerson?.name || ''),
+    esc(e.group?.name || ''),
+  ].join(','));
+
+  const total = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalRow = [esc(''), esc('TOTAL'), esc(''), esc(''), esc(Math.round(total * 100) / 100), esc(''), esc(''), esc('')].join(',');
+  const csv = [headers.map(esc).join(','), ...rows, totalRow].join('\r\n');
+  const filename = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(csv);
+};
+
+module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv };

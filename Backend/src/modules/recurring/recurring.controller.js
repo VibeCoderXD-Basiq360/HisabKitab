@@ -12,7 +12,6 @@ function nextDate(from, frequency) {
   }
 }
 
-// Called at the top of expense list — creates any overdue instances for this user
 async function processDueRecurring(userId) {
   const now = new Date();
   const due = await prisma.recurringExpense.findMany({
@@ -22,8 +21,10 @@ async function processDueRecurring(userId) {
   for (const rec of due) {
     const toCreate = [];
     let cursor = new Date(rec.nextDueDate);
+    const endDate = rec.endDate ? new Date(rec.endDate) : null;
 
     while (cursor <= now) {
+      if (endDate && cursor > endDate) break;
       toCreate.push({
         userId,
         amount: rec.amount,
@@ -40,11 +41,12 @@ async function processDueRecurring(userId) {
 
     if (toCreate.length > 0) {
       await prisma.expense.createMany({ data: toCreate });
-      await prisma.recurringExpense.update({
-        where: { id: rec.id },
-        data: { nextDueDate: cursor },
-      });
     }
+
+    const updates = { nextDueDate: cursor };
+    if (endDate && cursor > endDate) updates.isActive = false;
+
+    await prisma.recurringExpense.update({ where: { id: rec.id }, data: updates });
   }
 }
 
@@ -58,8 +60,11 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, startDate } = req.body;
-  const start = new Date(startDate || new Date());
+  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, startDate, nextRunAt, endDate } = req.body;
+
+  const firstDate = nextRunAt
+    ? new Date(nextRunAt)
+    : nextDate(new Date(startDate || new Date()), frequency);
 
   const item = await prisma.recurringExpense.create({
     data: {
@@ -71,7 +76,8 @@ const create = async (req, res) => {
       categoryId: categoryId || null,
       paymentTypeId,
       frequency,
-      nextDueDate: nextDate(start, frequency),
+      nextDueDate: firstDate,
+      endDate: endDate ? new Date(endDate) : null,
     },
     include: { category: true, paymentType: true },
   });
@@ -85,7 +91,7 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, isActive } = req.body;
+  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, isActive, nextDueDate, endDate } = req.body;
 
   const item = await prisma.recurringExpense.update({
     where: { id: req.params.id },
@@ -98,6 +104,8 @@ const update = async (req, res) => {
       ...(paymentTypeId !== undefined && { paymentTypeId }),
       ...(frequency !== undefined && { frequency }),
       ...(isActive !== undefined && { isActive }),
+      ...(nextDueDate !== undefined && { nextDueDate: new Date(nextDueDate) }),
+      ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
     },
     include: { category: true, paymentType: true },
   });
