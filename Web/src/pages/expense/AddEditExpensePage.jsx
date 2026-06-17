@@ -31,8 +31,11 @@ const FREQ_OPTIONS = [
   { value: 'YEARLY',  label: 'Yearly' },
 ];
 
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'THB', 'JPY', 'MYR', 'CAD', 'AUD'];
+
 const EMPTY = {
   amount: '',
+  currency: 'INR',
   title: '',
   note: '',
   expenseDate: todayISO(),
@@ -133,6 +136,7 @@ export default function AddEditExpensePage() {
         peopleIds: hasPaidFor ? [] : existing.people.map((p) => p.personId),
         paidForPersonId: existing.paidForPersonId || '',
         forMode: hasPaidFor ? 'other' : 'self',
+        currency: existing.currency || 'INR',
       });
       setReceiptUrl(existing.receiptUrl || '');
     }
@@ -153,6 +157,7 @@ export default function AddEditExpensePage() {
     e.preventDefault();
     const payload = {
       amount: Number(form.amount),
+      currency: form.currency,
       title: form.title,
       note: form.note,
       expenseDate: form.expenseDate,
@@ -218,6 +223,37 @@ export default function AddEditExpensePage() {
           onChange={field('amount')}
           required
         />
+
+        {form.currency !== 'INR' && (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700">Currency</label>
+            <div className="flex flex-wrap gap-2">
+              {CURRENCIES.map((c) => (
+                <button
+                  type="button"
+                  key={c}
+                  onClick={() => setForm((f) => ({ ...f, currency: c }))}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    form.currency === c
+                      ? 'bg-primary-500 text-white border-primary-500'
+                      : 'border-gray-200 text-gray-600 bg-white'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {form.currency === 'INR' && (
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, currency: 'USD' }))}
+            className="text-xs text-indigo-500 text-left -mt-2"
+          >
+            + Not in INR? Tap to change currency
+          </button>
+        )}
 
         <Input
           label="Title (optional)"

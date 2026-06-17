@@ -16,6 +16,9 @@ const bulkPaymentRoutes = require('./modules/bulkPayment/bulkPayment.routes');
 const groupRoutes = require('./modules/group/group.routes');
 const notificationRoutes = require('./modules/notification/notification.routes');
 
+// Start scheduled jobs
+require('./jobs/monthlyReport');
+
 const app = express();
 
 app.use(helmet());

@@ -28,6 +28,8 @@ import CreateGroupPage from './pages/groups/CreateGroupPage';
 import GroupDetailPage from './pages/groups/GroupDetailPage';
 import NotificationsPage from './pages/notifications/NotificationsPage';
 import CalendarPage from './pages/calendar/CalendarPage';
+import ImportPage from './pages/settings/ImportPage';
+import OfflineBar from './components/OfflineBar';
 
 function Protected({ children }) {
   const jwt = useAuthStore((s) => s.jwt);
@@ -45,6 +47,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <FCMSetup />
+        <OfflineBar />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -72,6 +75,7 @@ export default function App() {
           <Route path="/groups/:id" element={<Protected><GroupDetailPage /></Protected>} />
           <Route path="/notifications" element={<Protected><NotificationsPage /></Protected>} />
           <Route path="/calendar" element={<Protected><CalendarPage /></Protected>} />
+          <Route path="/settings/import" element={<Protected><ImportPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

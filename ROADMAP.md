@@ -45,11 +45,11 @@
 
 ### Larger Features (1–2 weeks)
 
-- [ ] **Offline support** — vite-plugin-pwa is wired in but API responses aren't cached. Add a Workbox strategy so the expense list is readable offline and queued writes sync on reconnect.
-- [ ] **Import from CSV / bank statement** — parse a bank-exported CSV, let the user map columns, auto-categorise by merchant name. Complements existing export.
-- [ ] **Share bill as image** — generate a summary card (styled div → canvas screenshot) shareable to WhatsApp. Useful after group trips.
-- [ ] **Multi-currency on group trips** — `currency` field already exists on Expense. Add a conversion layer (free exchangerate API) so group balances settle in INR even if some expenses were in THB/USD.
-- [ ] **Monthly email / PDF report** — scheduled summary via Nodemailer: total spent, top categories, budget status. Pairs with existing notification system.
+- [x] **Offline support** — NetworkFirst Workbox strategy caches API responses; OfflineBar component shows "offline" / "back online" banner.
+- [x] **Import from CSV / bank statement** — papaparse, 3-step flow (upload → column map → import), auto-detects column names, up to 500 rows, matches categories & payment types by name.
+- [x] **Share bill as image** — html2canvas captures a styled bill card in BalancesTab; uses Web Share API on mobile, downloads PNG on desktop.
+- [x] **Multi-currency on expense** — currency picker (INR/USD/EUR/GBP/AED/SGD/THB/JPY/…) on Add/Edit; stored on Expense; displayed with correct symbol on cards.
+- [x] **Monthly email report** — node-cron fires 1st of each month; Nodemailer sends HTML email with total spent, top categories, budget alerts; configurable via SMTP_* env vars.
 - [ ] **Google Drive backup** — one-tap export of all data as a JSON/CSV zip to the user's Google Drive. Pairs with existing export feature.
 
 ### Polish & Power-user

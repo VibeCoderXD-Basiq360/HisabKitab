@@ -10,6 +10,7 @@ const items = [
   { to: '/settings/budgets',     label: 'Budget Limits',       icon: '💰', desc: 'Set monthly spending limits per category' },
   { to: '/settings/export',      label: 'Export CSV',           icon: '📤', desc: 'Download expenses as a spreadsheet' },
   { to: '/calendar',             label: 'Calendar View',        icon: '📅', desc: 'Browse expenses by day on a calendar' },
+  { to: '/settings/import',      label: 'Import from CSV',      icon: '📥', desc: 'Import expenses from a bank export or spreadsheet' },
 ];
 
 export default function SettingsPage() {

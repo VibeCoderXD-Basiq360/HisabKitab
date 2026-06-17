@@ -429,4 +429,53 @@ const exportCsv = async (req, res) => {
   res.send(csv);
 };
 
-module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt };
+const importCsv = async (req, res) => {
+  const { rows = [] } = req.body;
+  const userId = req.user.userId;
+
+  const [paymentTypes, categories] = await Promise.all([
+    prisma.paymentType.findMany({ where: { userId } }),
+    prisma.category.findMany({ where: { userId } }),
+  ]);
+
+  const defaultPt = paymentTypes.find((p) => p.isDefault) || paymentTypes[0];
+  if (!defaultPt) return res.status(400).json({ error: 'Please create at least one payment type first.' });
+
+  let created = 0, skipped = 0;
+
+  for (const row of rows) {
+    const rawAmount = String(row.amount || '').replace(/[^0-9.]/g, '');
+    const amount = Math.abs(parseFloat(rawAmount));
+    if (!amount || isNaN(amount)) { skipped++; continue; }
+
+    let expenseDate;
+    try {
+      expenseDate = new Date(row.expenseDate);
+      if (isNaN(expenseDate.getTime())) throw new Error();
+    } catch { skipped++; continue; }
+
+    const cat = row.categoryName
+      ? categories.find((c) => c.name.toLowerCase() === String(row.categoryName).toLowerCase())
+      : null;
+    const pt = row.paymentTypeName
+      ? paymentTypes.find((p) => p.name.toLowerCase() === String(row.paymentTypeName).toLowerCase())
+      : null;
+
+    await prisma.expense.create({
+      data: {
+        userId,
+        amount,
+        title: row.title || null,
+        note: row.note || null,
+        expenseDate,
+        categoryId: cat?.id || null,
+        paymentTypeId: (pt || defaultPt).id,
+      },
+    });
+    created++;
+  }
+
+  res.json({ message: `Imported ${created} expenses, ${skipped} skipped`, created, skipped });
+};
+
+module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv };

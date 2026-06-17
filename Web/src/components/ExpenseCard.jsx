@@ -160,16 +160,21 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
         <div className="shrink-0 text-right">
           {isFullySettled ? (
             <>
-              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount)}</p>
+              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
               <p className="text-xs font-semibold text-green-500">₹0 net</p>
             </>
           ) : isPartiallySettled ? (
             <>
-              <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount)}</p>
-              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount)}</p>
+              <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
             </>
           ) : (
-            <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount)}</p>
+            <>
+              <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              {expense.currency && expense.currency !== 'INR' && (
+                <p className="text-[10px] text-gray-400 text-right">{expense.currency}</p>
+              )}
+            </>
           )}
         </div>
       </button>
