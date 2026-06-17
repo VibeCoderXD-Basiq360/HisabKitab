@@ -41,10 +41,11 @@ export function useDeleteExpense() {
   });
 }
 
-export function useAnalytics(params = {}) {
+export function useAnalytics(params = {}, options = {}) {
   return useQuery({
     queryKey: ['analytics', params],
     queryFn: () => api.get('/expenses/analytics', { params }).then((r) => r.data),
+    ...options,
   });
 }
 

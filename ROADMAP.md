@@ -25,12 +25,12 @@
 
 ### Quick Wins (1–2 days)
 
-- [ ] **Budget alert push notification** — when spending crosses 80% of a category budget, fire an FCM push. Infra (FCM + budgets) already exists; just needs a check in the recurring processor or a lightweight cron.
-- [ ] **UPI deep link on split request** — "Pay via UPI" button on BalancesPage that opens `upi://pay?pa=...&am=...` in GPay/PhonePe. No backend needed, one-line frontend change.
-- [ ] **Swipe to delete / long-press to duplicate** — swipe left on an expense card to delete; long-press to duplicate with today's date pre-filled.
-- [ ] **PWA shortcuts in manifest** — add `shortcuts` to manifest.json for "Add Expense" and "Add Group Expense" so they appear in the home screen long-press menu.
-- [ ] **Home screen budget summary** — compact bar on HomePage showing total spent this month vs. overall budget, visible without going to Analytics.
-- [ ] **Custom date range picker for Analytics** — from/to date picker alongside existing period chips for arbitrary period analysis.
+- [x] **Budget alert push notification** — fires at 80% and 100% of category budget after each expense create/update; deduplicates via Notification table (one alert per threshold per month).
+- [x] **UPI deep link on split request** — "Pay via UPI" button on BalancesPage I-owe cards; opens `upi://pay?pa=...` in GPay/PhonePe.
+- [x] **Swipe to delete / long-press to duplicate** — swipe left on expense card reveals red delete zone; hold 600ms to duplicate with today's date.
+- [x] **PWA shortcuts in manifest** — Add Expense, Groups, Balances shortcuts in manifest.json for home screen long-press menu.
+- [x] **Home screen budget summary** — compact progress bar on HomePage showing total month spend vs all budget limits; green/yellow/red; tappable to Budgets page.
+- [x] **Custom date range picker for Analytics** — "Custom" chip reveals from/to date inputs; query fires only when both dates are set.
 
 ### Medium Effort (2–4 days)
 

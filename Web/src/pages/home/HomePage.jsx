@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { startOfMonth, endOfMonth } from 'date-fns';
-import { useExpenses } from '../../hooks/useExpenses';
+import { useExpenses, useDeleteExpense, useCreateExpense } from '../../hooks/useExpenses';
 import { useBalances } from '../../hooks/useSplits';
+import { useBudgets } from '../../hooks/useBudgets';
 import { formatDate } from '../../utils/date';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -31,6 +32,29 @@ export default function HomePage() {
   }, [searchInput]);
 
   const isSearching = query.length > 0;
+
+  const { data: budgets = [] } = useBudgets();
+  const budgetRows = budgets.filter((b) => b.budget);
+  const totalBudget = budgetRows.reduce((s, b) => s + b.budget.amount, 0);
+  const totalBudgetSpent = budgetRows.reduce((s, b) => s + b.spent, 0);
+  const budgetPct = totalBudget > 0 ? Math.round((totalBudgetSpent / totalBudget) * 100) : 0;
+  const budgetBarColor = budgetPct >= 100 ? 'bg-red-500' : budgetPct >= 80 ? 'bg-yellow-400' : 'bg-green-500';
+
+  const deleteExpense = useDeleteExpense();
+  const createExpense = useCreateExpense();
+
+  function handleDuplicate(expense) {
+    createExpense.mutate({
+      amount: Number(expense.amount),
+      currency: expense.currency || 'INR',
+      title: expense.title,
+      note: expense.note,
+      expenseDate: new Date().toISOString(),
+      categoryId: expense.categoryId,
+      paymentTypeId: expense.paymentTypeId,
+      peopleIds: [],
+    });
+  }
 
   const { data: balances } = useBalances();
   const totalIOwe = balances?.iOwe?.reduce((s, g) => s + g.total, 0) || 0;
@@ -105,6 +129,27 @@ export default function HomePage() {
           <div className="pt-4">
             <MonthSummary total={monthTotal} count={monthCount} />
           </div>
+        )}
+
+        {/* Budget summary bar */}
+        {!isSearching && totalBudget > 0 && (
+          <button
+            onClick={() => navigate('/settings/budgets')}
+            className="mx-4 mt-3 bg-white rounded-2xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left active:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Monthly Budget</span>
+              <span className={`text-xs font-bold ${budgetPct >= 100 ? 'text-red-500' : budgetPct >= 80 ? 'text-yellow-500' : 'text-green-600'}`}>
+                {budgetPct}% used
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${budgetBarColor}`} style={{ width: `${Math.min(budgetPct, 100)}%` }} />
+            </div>
+            <p className="text-xs text-gray-400">
+              ₹{totalBudgetSpent.toLocaleString('en-IN')} spent of ₹{totalBudget.toLocaleString('en-IN')} · tap to manage
+            </p>
+          </button>
         )}
 
         {/* Balance nudge cards */}
@@ -189,7 +234,13 @@ export default function HomePage() {
                 </div>
                 <div className="divide-y divide-gray-100 bg-white mx-0">
                   {items.map((e) => (
-                    <ExpenseCard key={e.id} expense={e} onClick={() => navigate(`/expense/${e.id}`)} />
+                    <ExpenseCard
+                      key={e.id}
+                      expense={e}
+                      onClick={() => navigate(`/expense/${e.id}`)}
+                      onDelete={(id) => deleteExpense.mutate(id)}
+                      onDuplicate={handleDuplicate}
+                    />
                   ))}
                 </div>
               </div>

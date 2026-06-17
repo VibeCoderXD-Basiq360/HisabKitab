@@ -3,6 +3,48 @@ const prisma = require('../../lib/prisma');
 const { notify } = require('../../lib/notify');
 const { processDueRecurring } = require('../recurring/recurring.controller');
 
+async function checkBudgetAlert(userId, categoryId) {
+  if (!categoryId) return;
+  const budget = await prisma.budget.findFirst({ where: { userId, categoryId } });
+  if (!budget) return;
+
+  const now = new Date();
+  const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const spendResult = await prisma.expense.aggregate({
+    where: { userId, categoryId, expenseDate: { gte: fromDate } },
+    _sum: { amount: true },
+  });
+
+  const spent = Number(spendResult._sum.amount || 0);
+  const limit = Number(budget.amount);
+  const pct = (spent / limit) * 100;
+
+  const alertType = pct >= 100 ? 'BUDGET_ALERT_100' : pct >= 80 ? 'BUDGET_ALERT_80' : null;
+  if (!alertType) return;
+
+  // Don't re-notify if already sent this month for this threshold
+  const existing = await prisma.notification.findFirst({
+    where: { userId, type: alertType, createdAt: { gte: fromDate } },
+  });
+  if (existing) return;
+
+  const [category, user] = await Promise.all([
+    prisma.category.findUnique({ where: { id: categoryId }, select: { name: true, icon: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { fcmToken: true } }),
+  ]);
+
+  const label = `${category?.icon || ''} ${category?.name || 'Category'}`.trim();
+  const isOver = pct >= 100;
+  await notify(userId, user?.fcmToken, {
+    title: isOver ? `⚠️ Budget exceeded: ${label}` : `⚠️ Budget alert: ${label}`,
+    body: isOver
+      ? `You've exceeded your ${label} budget — ₹${Math.round(spent)} spent of ₹${Math.round(limit)}`
+      : `${Math.round(pct)}% of your ${label} budget used — ₹${Math.round(spent)} of ₹${Math.round(limit)}`,
+    data: { type: alertType, categoryId },
+  });
+}
+
 function recurringNextDate(base, frequency) {
   const d = new Date(base);
   switch (frequency) {
@@ -150,6 +192,7 @@ const create = async (req, res) => {
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.status(201).json(full);
+  checkBudgetAlert(req.user.userId, categoryId).catch(() => {});
 };
 
 const getOne = async (req, res) => {
@@ -194,6 +237,7 @@ const update = async (req, res) => {
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.json(full);
+  checkBudgetAlert(req.user.userId, categoryId).catch(() => {});
 };
 
 const remove = async (req, res) => {

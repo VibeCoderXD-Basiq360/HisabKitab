@@ -153,12 +153,21 @@ function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, bu
   );
 }
 
+const CUSTOM_IDX = PERIODS.length;
+
 export default function AnalyticsPage() {
   const [periodIdx, setPeriodIdx] = useState(0);
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const navigate = useNavigate();
-  const period = PERIODS[periodIdx];
 
-  const { data, isLoading } = useAnalytics(period.params);
+  const isCustom = periodIdx === CUSTOM_IDX;
+  const customReady = isCustom && customFrom && customTo;
+  const period = isCustom
+    ? { label: 'Custom', params: customReady ? { fromDate: new Date(customFrom).toISOString(), toDate: new Date(customTo + 'T23:59:59').toISOString() } : {}, showDaily: false }
+    : PERIODS[periodIdx];
+
+  const { data, isLoading } = useAnalytics(period.params, { enabled: !isCustom || customReady });
   const { data: trendData } = useTrend();
   const { data: budgets = [] } = useBudgets();
 
@@ -180,7 +189,7 @@ export default function AnalyticsPage() {
 
   // Budget per category — only for monthly periods (This month / Last month)
   const budgetByCategory = useMemo(() => {
-    if (periodIdx > 1) return {};
+    if (periodIdx > 1 || isCustom) return {};
     const map = {};
     budgets.filter((b) => b.budget).forEach((b) => {
       map[b.categoryId] = {
@@ -228,18 +237,45 @@ export default function AnalyticsPage() {
       <TopBar title="Analytics" />
 
       {/* Period selector */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 flex gap-2 sticky top-0 z-10">
-        {PERIODS.map((p, i) => (
+      <div className="bg-white border-b border-gray-100 px-4 pt-2 pb-2 sticky top-0 z-10">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          {PERIODS.map((p, i) => (
+            <button
+              key={p.label}
+              onClick={() => setPeriodIdx(i)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0 ${
+                periodIdx === i ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
           <button
-            key={p.label}
-            onClick={() => setPeriodIdx(i)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-              periodIdx === i ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'
+            onClick={() => setPeriodIdx(CUSTOM_IDX)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0 ${
+              isCustom ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-500'
             }`}
           >
-            {p.label}
+            Custom
           </button>
-        ))}
+        </div>
+        {isCustom && (
+          <div className="flex gap-2 mt-2">
+            <input
+              type="date"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-primary-400"
+            />
+            <span className="text-xs text-gray-400 self-center">to</span>
+            <input
+              type="date"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+              className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-primary-400"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-4">

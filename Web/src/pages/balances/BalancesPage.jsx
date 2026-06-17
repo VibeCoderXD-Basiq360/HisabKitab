@@ -366,15 +366,23 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
             />
           ))}
 
-        {/* Pay together button */}
+        {/* Pay together + UPI buttons */}
         {expanded && pendingSplitsCount >= 1 && !hasPendingBulk && (
-          <div className="px-4 py-3 border-t border-gray-50">
+          <div className="px-4 py-3 border-t border-gray-50 flex gap-2">
             <button
               onClick={() => setBulkOpen(true)}
-              className="w-full py-2.5 rounded-xl border-2 border-primary-400 text-primary-600 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="flex-1 py-2.5 rounded-xl border-2 border-primary-400 text-primary-600 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               💸 Pay together
             </button>
+            {group.payerEmail && (
+              <a
+                href={`upi://pay?pa=${encodeURIComponent(group.payerEmail)}&pn=${encodeURIComponent(group.payerName || '')}&am=${group.total}&cu=INR`}
+                className="px-4 py-2.5 rounded-xl border-2 border-green-400 text-green-600 text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+              >
+                Pay via UPI
+              </a>
+            )}
           </div>
         )}
       </div>
