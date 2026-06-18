@@ -32,25 +32,25 @@ function UserSearchDropdown({ q, onSelect, alreadyAdded }) {
   if (q.length < 2) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-2xl shadow-lg border border-gray-100 z-30 overflow-hidden">
+    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 z-30 overflow-hidden">
       {isLoading ? (
         <div className="flex items-center justify-center py-4">
           <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 px-4 py-3">No users found</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">No users found</p>
       ) : (
         filtered.map((u) => (
           <button
             key={u.uid}
             onClick={() => onSelect(u)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 active:bg-gray-100"
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
           >
             <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-sm font-semibold text-primary-700 flex-shrink-0">
               {initials(u.displayName || u.email)}
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{u.displayName || 'User'}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{u.displayName || 'User'}</p>
               <p className="text-xs text-gray-400">{u.email}</p>
             </div>
           </button>
@@ -137,21 +137,21 @@ export default function CreateGroupPage() {
   const step1Valid = name.trim().length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={step === 1 ? 'New Group' : 'Add Members'} showBack />
 
       <div className="flex-1 overflow-auto pb-28">
         {/* Step indicator */}
         <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200'}`} />
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`} />
+          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`} />
         </div>
 
         {step === 1 && (
           <div className="px-4 pt-4 flex flex-col gap-5">
             {/* Icon picker */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-3">Group icon</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Group icon</p>
               <div className="flex gap-3">
                 {ICON_OPTIONS.map((em) => (
                   <button
@@ -160,7 +160,7 @@ export default function CreateGroupPage() {
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-all ${
                       icon === em
                         ? 'bg-primary-100 ring-2 ring-primary-500 scale-110'
-                        : 'bg-white shadow-sm active:bg-gray-50'
+                        : 'bg-white dark:bg-gray-700 shadow-sm active:bg-gray-50 dark:active:bg-gray-600'
                     }`}
                   >
                     {em}
@@ -171,19 +171,19 @@ export default function CreateGroupPage() {
 
             {/* Name */}
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-2">Group name</label>
+              <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-2">Group name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Goa Trip 2025"
-                className="w-full bg-white rounded-2xl px-4 py-3 text-gray-800 shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-base"
+                className="w-full bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-base"
               />
             </div>
 
             {/* Type selector */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-3">Group type</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Group type</p>
               <div className="flex flex-wrap gap-2">
                 {TYPE_OPTIONS.map((t) => (
                   <button
@@ -198,7 +198,7 @@ export default function CreateGroupPage() {
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       type === t.value
                         ? 'bg-primary-600 text-white shadow-sm'
-                        : 'bg-white text-gray-600 shadow-sm active:bg-gray-50'
+                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow-sm active:bg-gray-50 dark:active:bg-gray-600'
                     }`}
                   >
                     <span>{t.icon}</span>
@@ -220,24 +220,24 @@ export default function CreateGroupPage() {
 
         {step === 2 && (
           <div className="px-4 pt-4 flex flex-col gap-5">
-            <p className="text-base font-semibold text-gray-700">
+            <p className="text-base font-semibold text-gray-700 dark:text-gray-200">
               Add members to{' '}
               <span className="text-primary-600">{name}</span>
             </p>
 
             {/* Locked creator row */}
-            <div className="bg-white rounded-2xl shadow-sm p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0">
                   {initials(user?.displayName || user?.email || 'You')}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                     {user?.displayName || 'You'}
                   </p>
                   <p className="text-xs text-gray-400">{user?.email}</p>
                 </div>
-                <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium">
+                <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full font-medium">
                   You
                 </span>
               </div>
@@ -245,7 +245,7 @@ export default function CreateGroupPage() {
 
             {/* Search HisabKitab users */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-2">Search HisabKitab users</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Search HisabKitab users</p>
               <div className="relative">
                 <input
                   ref={searchRef}
@@ -257,7 +257,7 @@ export default function CreateGroupPage() {
                   }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Search by email…"
-                  className="w-full bg-white rounded-2xl px-4 py-3 text-gray-800 shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                  className="w-full bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
                 />
                 {showDropdown && (
                   <div ref={dropdownRef}>
@@ -273,7 +273,7 @@ export default function CreateGroupPage() {
 
             {/* Add guest */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 mb-2">Add guest</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Add guest</p>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -281,7 +281,7 @@ export default function CreateGroupPage() {
                   onChange={(e) => setGuestName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddGuest()}
                   placeholder="Guest name"
-                  className="flex-1 bg-white rounded-2xl px-4 py-3 text-gray-800 shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                  className="flex-1 bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
                 />
                 <button
                   onClick={handleAddGuest}
@@ -295,22 +295,22 @@ export default function CreateGroupPage() {
 
             {/* Pending members list */}
             {members.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
                 {members.map((m) => (
                   <div
                     key={m.id}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0"
+                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-gray-700 last:border-0"
                   >
-                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-600 flex-shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300 flex-shrink-0">
                       {initials(m.name)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 truncate">{m.name}</p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{m.name}</p>
                       {m.email && (
                         <p className="text-xs text-gray-400 truncate">{m.email}</p>
                       )}
                       {m.isGuest && (
-                        <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
                           Guest
                         </span>
                       )}

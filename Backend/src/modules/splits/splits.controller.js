@@ -434,4 +434,42 @@ const waiveSplit = async (req, res) => {
   res.json({ ok: true });
 };
 
-module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, getPaidForSummary, getPaidForPerson };
+const getBalanceHistory = async (req, res) => {
+  const myId = req.user.userId;
+  const { personId } = req.params;
+
+  const person = await prisma.person.findFirst({ where: { id: personId, userId: myId } });
+  if (!person) return res.status(404).json({ error: 'Not found' });
+
+  const splits = await prisma.expenseSplit.findMany({
+    where: { expense: { userId: myId }, personId },
+    include: { expense: { select: { title: true, expenseDate: true } } },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const events = [];
+  for (const s of splits) {
+    const label = s.expense.title || 'Expense';
+    const amount = Number(s.amount);
+    events.push({ date: s.createdAt, delta: amount, label: `Added "${label}"` });
+    if (s.status === 'CONFIRMED' || s.status === 'WAIVED') {
+      events.push({
+        date: s.updatedAt,
+        delta: -amount,
+        label: s.status === 'CONFIRMED' ? `${person.name} settled "${label}"` : `Waived "${label}"`,
+      });
+    }
+  }
+
+  events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  let running = 0;
+  const timeline = events.map((e) => {
+    running += e.delta;
+    return { date: e.date, balance: Math.round(running * 100) / 100, label: e.label, delta: e.delta };
+  });
+
+  res.json({ person: { id: person.id, name: person.name }, timeline });
+};
+
+module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, getPaidForSummary, getPaidForPerson, getBalanceHistory };

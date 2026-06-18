@@ -70,6 +70,7 @@ const include = {
     },
     orderBy: { createdAt: 'asc' },
   },
+  comments: { orderBy: { createdAt: 'asc' } },
 };
 
 async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId) {
@@ -146,9 +147,19 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
+
+  // Snapshot exchange rate at time of creation
+  let rateAtTime = null;
+  if (currency && currency !== 'INR') {
+    const er = await prisma.exchangeRate.findFirst({
+      where: { userId: req.user.userId, fromCurrency: currency.toUpperCase(), toCurrency: 'INR' },
+      select: { rate: true },
+    });
+    if (er) rateAtTime = Number(er.rate);
+  }
 
   let recurringExpenseId = null;
   if (isRecurring && frequency) {
@@ -177,6 +188,7 @@ const create = async (req, res) => {
       userId: req.user.userId,
       amount,
       currency: currency || 'INR',
+      rateAtTime,
       title,
       note,
       expenseDate: new Date(expenseDate),
@@ -184,6 +196,8 @@ const create = async (req, res) => {
       paymentTypeId,
       paidForPersonId: paidForPersonId || null,
       recurringExpenseId,
+      tags: Array.isArray(tags) ? tags : [],
+      isReimbursement: !!isReimbursement,
       people: { create: splitPeopleIds.map((personId) => ({ personId })) },
     },
     include,
@@ -211,21 +225,37 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Expense not found' });
 
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, tags = [], isReimbursement } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
+
+  // Re-snapshot rate only if currency changed; keep existing rateAtTime otherwise
+  let rateAtTime = existing.rateAtTime != null ? Number(existing.rateAtTime) : null;
+  const newCurrency = currency || existing.currency;
+  if (newCurrency === 'INR') {
+    rateAtTime = null;
+  } else if (newCurrency !== existing.currency) {
+    const er = await prisma.exchangeRate.findFirst({
+      where: { userId: req.user.userId, fromCurrency: newCurrency.toUpperCase(), toCurrency: 'INR' },
+      select: { rate: true },
+    });
+    rateAtTime = er ? Number(er.rate) : null;
+  }
 
   const expense = await prisma.expense.update({
     where: { id: req.params.id },
     data: {
       amount,
       currency,
+      rateAtTime,
       title,
       note,
       expenseDate: new Date(expenseDate),
       categoryId: categoryId || null,
       paymentTypeId,
       paidForPersonId: paidForPersonId || null,
+      tags: Array.isArray(tags) ? tags : [],
+      ...(isReimbursement !== undefined && { isReimbursement: !!isReimbursement }),
       people: {
         deleteMany: {},
         create: splitPeopleIds.map((personId) => ({ personId })),
@@ -478,4 +508,51 @@ const importCsv = async (req, res) => {
   res.json({ message: `Imported ${created} expenses, ${skipped} skipped`, created, skipped });
 };
 
-module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv };
+const listTags = async (req, res) => {
+  const expenses = await prisma.expense.findMany({
+    where: { userId: req.user.userId },
+    select: { tags: true },
+  });
+  const all = new Set();
+  for (const e of expenses) for (const t of (e.tags || [])) all.add(t);
+  res.json([...all].sort());
+};
+
+const listComments = async (req, res) => {
+  const expense = await prisma.expense.findFirst({
+    where: { id: req.params.id, userId: req.user.userId },
+    select: { id: true },
+  });
+  if (!expense) return res.status(404).json({ error: 'Expense not found' });
+  const comments = await prisma.expenseComment.findMany({
+    where: { expenseId: req.params.id },
+    orderBy: { createdAt: 'asc' },
+  });
+  res.json(comments);
+};
+
+const createComment = async (req, res) => {
+  const expense = await prisma.expense.findFirst({
+    where: { id: req.params.id, userId: req.user.userId },
+    select: { id: true },
+  });
+  if (!expense) return res.status(404).json({ error: 'Expense not found' });
+  const { text } = req.body;
+  if (!text?.trim()) return res.status(400).json({ error: 'Text required' });
+  const user = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { name: true } });
+  const comment = await prisma.expenseComment.create({
+    data: { expenseId: req.params.id, userId: req.user.userId, userName: user?.name || 'You', text: text.trim() },
+  });
+  res.status(201).json(comment);
+};
+
+const deleteComment = async (req, res) => {
+  const comment = await prisma.expenseComment.findFirst({
+    where: { id: req.params.commentId, userId: req.user.userId },
+  });
+  if (!comment) return res.status(404).json({ error: 'Comment not found' });
+  await prisma.expenseComment.delete({ where: { id: req.params.commentId } });
+  res.status(204).end();
+};
+
+module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv, listTags, listComments, createComment, deleteComment };

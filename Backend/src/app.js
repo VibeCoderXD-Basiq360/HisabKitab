@@ -15,6 +15,10 @@ const budgetRoutes = require('./modules/budget/budget.routes');
 const bulkPaymentRoutes = require('./modules/bulkPayment/bulkPayment.routes');
 const groupRoutes = require('./modules/group/group.routes');
 const notificationRoutes = require('./modules/notification/notification.routes');
+const activityRoutes = require('./modules/activity/activity.routes');
+const savingsGoalRoutes = require('./modules/savingsGoal/savingsGoal.routes');
+const loanRoutes = require('./modules/loan/loan.routes');
+const exchangeRateRoutes = require('./modules/exchangeRate/exchangeRate.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
@@ -25,7 +29,10 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
 app.use(express.json());
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 300 : 2000,
+});
 app.use('/api', limiter);
 
 app.use('/api/auth', authRoutes);
@@ -40,6 +47,10 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/bulk-payments', bulkPaymentRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/savings-goal', savingsGoalRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/exchange-rates', exchangeRateRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

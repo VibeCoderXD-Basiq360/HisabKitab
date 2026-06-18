@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import api from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';
@@ -21,6 +21,26 @@ export default function SignupPage() {
     setAuth(res.data.token, res.data.user);
     navigate('/home', { replace: true });
   };
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          await handleFirebaseUser(result.user);
+        } else if (active) {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError('Google sign-in failed. Try again.');
+          setLoading(false);
+        }
+      });
+    return () => { active = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signupWithEmail = async (e) => {
     e.preventDefault();
@@ -44,17 +64,15 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
     try {
-      const { user } = await signInWithPopup(auth, new GoogleAuthProvider());
-      await handleFirebaseUser(user);
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch {
       setError('Google sign-in failed. Try again.');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-primary-600 mb-1">HisabKitab</h1>
         <p className="text-center text-gray-400 text-sm mb-8">Create your account</p>
@@ -84,16 +102,16 @@ export default function SignupPage() {
         </form>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
         <Button variant="outline" onClick={signupWithGoogle} disabled={loading} className="w-full">
           Continue with Google
         </Button>
 
-        <p className="text-center text-sm text-gray-400 mt-6">
+        <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-6">
           Have an account?{' '}
           <Link to="/login" className="text-primary-600 font-medium">
             Sign in

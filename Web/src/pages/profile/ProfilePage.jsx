@@ -65,7 +65,7 @@ export default function ProfilePage() {
         />
       )}
 
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <TopBar title="Profile" />
         <div className="flex-1 flex flex-col items-center p-6 gap-6 pb-24">
 
@@ -86,8 +86,8 @@ export default function ProfilePage() {
 
           {profile && (
             <div className="text-center">
-              <p className="text-xl font-semibold text-gray-900">{profile.name || 'No name set'}</p>
-              <p className="text-sm text-gray-400 mt-0.5">{profile.email}</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{profile.name || 'No name set'}</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{profile.email}</p>
             </div>
           )}
 

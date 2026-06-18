@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
 import api from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';
@@ -22,6 +22,27 @@ export default function LoginPage() {
     navigate('/home', { replace: true });
   };
 
+  // Pick up the result after signInWithRedirect returns to this page
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          await handleFirebaseLogin(result.user);
+        } else if (active) {
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setError('Google sign-in failed. Try again.');
+          setLoading(false);
+        }
+      });
+    return () => { active = false; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loginWithEmail = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -40,20 +61,19 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const { user } = await signInWithPopup(auth, new GoogleAuthProvider());
-      await handleFirebaseLogin(user);
+      await signInWithRedirect(auth, new GoogleAuthProvider());
+      // Page navigates away — code below won't run until user returns
     } catch {
       setError('Google sign-in failed. Try again.');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-primary-600 mb-1">HisabKitab</h1>
-        <p className="text-center text-gray-400 text-sm mb-8">Track your expenses</p>
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mb-8">Track your expenses</p>
 
         <form onSubmit={loginWithEmail} className="flex flex-col gap-4">
           <Input
@@ -79,22 +99,22 @@ export default function LoginPage() {
         </form>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
         <Button variant="outline" onClick={loginWithGoogle} disabled={loading} className="w-full">
           Continue with Google
         </Button>
 
-        <p className="text-center text-sm text-gray-400 mt-4">
+        <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-4">
           <Link to="/forgot-password" className="text-primary-600 font-medium">
             Forgot password?
           </Link>
         </p>
 
-        <p className="text-center text-sm text-gray-400 mt-3">
+        <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-3">
           No account?{' '}
           <Link to="/signup" className="text-primary-600 font-medium">
             Sign up

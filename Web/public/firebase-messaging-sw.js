@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyAbLxaNTz5t6bLEw8E4eCcSm6sKXyjy7JI',
-  authDomain: 'hisabkitab-2025.firebaseapp.com',
-  projectId: 'hisabkitab-2025',
-  storageBucket: 'hisabkitab-2025.firebasestorage.app',
-  messagingSenderId: '531671858128',
-  appId: '1:531671858128:web:38728c0958509c9defd7d5',
+  apiKey: 'AIzaSyAC8_1tmELIgt8BMhSQEj9cpPWXmZR_sks',
+  authDomain: 'hisabkitab-26.firebaseapp.com',
+  projectId: 'hisabkitab-26',
+  storageBucket: 'hisabkitab-26.firebasestorage.app',
+  messagingSenderId: '490501302269',
+  appId: '1:490501302269:web:cb1de081c6b1b7b11adb94',
 });
 
 const messaging = firebase.messaging();

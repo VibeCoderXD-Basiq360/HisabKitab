@@ -185,7 +185,7 @@ const getGroup = async (req, res) => {
 // ─── addExpense ───────────────────────────────────────────────────────────────
 
 const addExpense = async (req, res) => {
-  const { title, amount, note, expenseDate, paidByMemberId, splitType, shares = [] } = req.body;
+  const { title, amount, currency = 'INR', note, expenseDate, paidByMemberId, splitType, shares = [] } = req.body;
 
   const callerMember = await prisma.groupMember.findFirst({
     where: { groupId: req.params.id, userId: req.user.userId },
@@ -197,6 +197,16 @@ const addExpense = async (req, res) => {
     include: { members: true },
   });
   if (!group) return res.status(404).json({ error: 'Group not found' });
+
+  // Snapshot exchange rate at time of expense creation
+  let rateAtTime = null;
+  if (currency && currency !== 'INR') {
+    const er = await prisma.exchangeRate.findFirst({
+      where: { userId: req.user.userId, fromCurrency: currency.toUpperCase(), toCurrency: 'INR' },
+      select: { rate: true },
+    });
+    if (er) rateAtTime = Number(er.rate);
+  }
 
   // Resolve shares
   let resolvedShares = shares;
@@ -216,6 +226,8 @@ const addExpense = async (req, res) => {
       addedByMemberId: callerMember.id,
       paidByMemberId,
       amount: Number(amount),
+      currency,
+      rateAtTime,
       title,
       note: note || null,
       expenseDate: new Date(expenseDate),
@@ -241,6 +253,8 @@ const addExpense = async (req, res) => {
         data: {
           userId: paidByMember.userId,
           amount: Number(amount),
+          currency,
+          rateAtTime,
           title,
           note: `Group: ${group.name}`,
           expenseDate: new Date(expenseDate),

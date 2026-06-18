@@ -23,7 +23,7 @@ export default function BudgetsPage() {
   const withoutBudget = items.filter((i) => !i.budget);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Budget Limits" showBack />
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
@@ -42,12 +42,12 @@ export default function BudgetsPage() {
         {withBudget.length > 0 && (
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Active limits</p>
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
               {withBudget.map((item) => (
                 <button
                   key={item.categoryId}
                   onClick={() => navigate(`/settings/budgets/${item.categoryId}`)}
-                  className="w-full px-4 py-3 text-left active:bg-gray-50"
+                  className="w-full px-4 py-3 text-left active:bg-gray-50 dark:active:bg-gray-700"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -59,8 +59,8 @@ export default function BudgetsPage() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium text-gray-900">{item.category.name}</p>
-                        <p className="text-xs font-semibold text-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{item.category.name}</p>
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                           ₹{item.spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                           <span className="font-normal text-gray-400">
                             {' / '}₹{item.budget.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
@@ -93,12 +93,12 @@ export default function BudgetsPage() {
         {withoutBudget.length > 0 && (
           <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">No limit set</p>
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
               {withoutBudget.map((item) => (
                 <button
                   key={item.categoryId}
                   onClick={() => navigate(`/settings/budgets/${item.categoryId}`)}
-                  className="w-full px-4 py-3 text-left active:bg-gray-50"
+                  className="w-full px-4 py-3 text-left active:bg-gray-50 dark:active:bg-gray-700"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -108,8 +108,8 @@ export default function BudgetsPage() {
                       {item.category.icon || '🏷️'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{item.category.name}</p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{item.category.name}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
                         ₹{item.spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })} spent this month · tap to set limit
                       </p>
                     </div>

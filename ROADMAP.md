@@ -54,13 +54,13 @@
 
 ### Polish & Power-user
 
-- [ ] **Dark mode** — system-preference-aware (`prefers-color-scheme`), toggle in Settings.
-- [ ] **Expense comments / notes thread** — add follow-up notes to an existing expense (e.g. "reimbursed by company on Jun 20").
-- [ ] **Expense tags** — free-form tags on expenses for flexible cross-category filtering (e.g. "work", "travel", "reimbursable").
-- [ ] **Installment / EMI tracker** — track loan repayments as a series with a running balance.
-- [ ] **Savings goal** — set a monthly savings target; home screen shows how much of the goal is intact based on spending so far.
-- [ ] **Biometric / PIN lock** — WebAuthn or a simple PIN stored in IndexedDB so the app locks when backgrounded.
-- [ ] **Account deletion + full data export (GDPR)** — download everything as JSON, then wipe account. Good hygiene if the app ever goes beyond personal use.
-- [ ] **Activity feed** — timeline of all changes: who added what, who settled, who was added to a group. Useful in shared households.
-- [ ] **Net balance graph per person** — line chart showing how your balance with a specific person has changed over time.
-- [ ] **Desktop PWA keyboard shortcuts** — `N` to add expense, `/` to focus search, `G` to go to groups etc.
+- [x] **Dark mode** — system-preference-aware (`prefers-color-scheme`), toggle in Settings. All pages covered.
+- [x] **Expense tags** — free-form tags on expenses for flexible cross-category filtering (e.g. "work", "travel", "reimbursable"). `tags String[]` on Expense, TagInput chip component, shown on ExpenseCard, autocomplete from `GET /expenses/tags`.
+- [x] **Expense comments / notes thread** — add follow-up notes to an existing expense (e.g. "reimbursed by company on Jun 20"). `ExpenseComment` model, GET/POST/DELETE `/expenses/:id/comments`, comment section in AddEditExpensePage (edit mode only).
+- [x] **Account deletion (GDPR)** — wipe account with Cloudinary photo cleanup and full cascade delete. `DELETE /users/me` backend endpoint, double-confirm dialog in SettingsPage.
+- [x] **Installment / EMI tracker** — `Loan` + `LoanPayment` models (migration `20260618061003_add_loans`). Full CRUD backend. Create form with live EMI/interest preview. Detail page with full amortization table — tap any row to mark paid/unpaid, overdue rows flagged red. Accessible via Settings → EMI Tracker.
+- [x] **Savings goal** — set a monthly savings target + optional income; home screen widget shows progress bar and goal status (on track / at risk). `SavingsGoal` model, `GET/PUT/DELETE /savings-goal`, Settings → Savings Goal page.
+- [x] **Biometric / PIN lock** — 4-digit PIN (SHA-256 hashed) + optional WebAuthn biometric (TouchID/FaceID/Windows Hello via platform authenticator). Auto-locks on `visibilitychange`. Full-screen numpad LockScreen, auto-triggers biometric on lock. Toggle in Settings → App Lock.
+- [x] **Activity feed** — timeline of all changes: who added what, who settled, who was added to a group. `GET /api/activity` derives from existing tables (no migration), groups by Today/Yesterday/This Week/Earlier, accessible from Settings.
+- [x] **Net balance graph per person** — line chart showing how your balance with a specific person has changed over time. `GET /splits/balance-history/:personId`, recharts LineChart (stepAfter), event list below; reachable via 📈 button on each OwedPersonCard.
+- [x] **Desktop PWA keyboard shortcuts** — `N` new expense, `/` focus search, `G` groups, `B` balances, `A` analytics, `S` settings, `H` home, `?` help modal. Global `keydown` handler guards against input elements and modifier keys.

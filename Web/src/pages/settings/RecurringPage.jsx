@@ -28,7 +28,7 @@ function ScheduleSheet({ item, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-3xl p-6 pb-10 flex flex-col gap-4">
+      <div className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl p-6 pb-10 flex flex-col gap-4">
         <div className="flex items-center gap-3 mb-1">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0"
@@ -37,29 +37,29 @@ function ScheduleSheet({ item, onClose }) {
             {item.category?.icon || '💸'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Edit schedule</p>
-            <p className="text-xs text-gray-400">{item.title || item.category?.name || 'Recurring expense'}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Edit schedule</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{item.title || item.category?.name || 'Recurring expense'}</p>
           </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">Next auto-create on</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Next auto-create on</label>
           <input
             type="datetime-local"
             value={nextDueDate}
             onChange={(e) => setNextDueDate(e.target.value)}
-            className="min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+            className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500">End date (optional)</label>
+          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">End date (optional)</label>
           <div className="flex items-center gap-2">
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+              className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
             />
             {endDate && (
               <button type="button" onClick={() => setEndDate('')} className="text-gray-400 text-lg px-2">
@@ -67,7 +67,7 @@ function ScheduleSheet({ item, onClose }) {
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-400">Leave empty to repeat forever</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Leave empty to repeat forever</p>
         </div>
 
         <button
@@ -95,7 +95,7 @@ export default function RecurringPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Recurring Expenses" showBack />
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-3">
@@ -112,7 +112,7 @@ export default function RecurringPage() {
         )}
 
         {items.map((item) => (
-          <div key={item.id} className={`bg-white rounded-2xl shadow-sm overflow-hidden ${!item.isActive ? 'opacity-60' : ''}`}>
+          <div key={item.id} className={`bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden ${!item.isActive ? 'opacity-60' : ''}`}>
             <div className="px-4 py-3 flex items-start gap-3">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0"
@@ -122,13 +122,13 @@ export default function RecurringPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                   {item.title || item.category?.name || 'Expense'}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {item.paymentType?.name} · {FREQ_ICON[item.frequency]} {FREQ_LABEL[item.frequency]}
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-gray-400 dark:text-gray-500">
                   Next: {format(new Date(item.nextDueDate), 'd MMM yyyy, h:mm a')}
                 </p>
                 {item.endDate && (
@@ -142,28 +142,28 @@ export default function RecurringPage() {
               </div>
 
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-gray-900">
+                <p className="text-sm font-bold text-gray-900 dark:text-white">
                   ₹{Number(item.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </p>
                 <p className="text-xs text-gray-400">{FREQ_LABEL[item.frequency].toLowerCase()}</p>
               </div>
             </div>
 
-            <div className="px-4 pb-3 flex gap-2 border-t border-gray-50 pt-2">
+            <div className="px-4 pb-3 flex gap-2 border-t border-gray-50 dark:border-gray-700 pt-2">
               <button
                 onClick={() => toggle.mutate({ id: item.id, isActive: !item.isActive })}
                 disabled={toggle.isPending}
                 className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
                   item.isActive
-                    ? 'border-gray-200 text-gray-600 bg-white'
-                    : 'border-primary-200 text-primary-600 bg-primary-50'
+                    ? 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
+                    : 'border-primary-200 text-primary-600 bg-primary-50 dark:bg-primary-900/30'
                 }`}
               >
                 {item.isActive ? '⏸ Pause' : '▶ Resume'}
               </button>
               <button
                 onClick={() => setEditItem(item)}
-                className="flex-1 py-2 rounded-xl text-xs font-medium border border-gray-200 text-gray-600 bg-white"
+                className="flex-1 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700"
               >
                 🗓 Schedule
               </button>

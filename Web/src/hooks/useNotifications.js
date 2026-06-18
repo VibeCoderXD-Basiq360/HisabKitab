@@ -13,8 +13,8 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: ['notifications-unread'],
     queryFn: () => api.get('/notifications?limit=1').then(r => r.data.unreadCount),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
+    staleTime: 120_000,
+    refetchInterval: 120_000,
   });
 }
 

@@ -1,12 +1,13 @@
 const { Router } = require('express');
 const auth = require('../../middleware/auth');
 const upload = require('../../middleware/upload');
-const { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv } = require('./expense.controller');
+const { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv, listTags, listComments, createComment, deleteComment } = require('./expense.controller');
 
 const router = Router();
 router.get('/analytics/trend', auth, trend);
 router.get('/analytics', auth, analytics);
 router.get('/export', auth, exportCsv);
+router.get('/tags', auth, listTags);
 router.get('/', auth, list);
 router.post('/', auth, create);
 router.post('/import', auth, importCsv);
@@ -14,4 +15,7 @@ router.get('/:id', auth, getOne);
 router.put('/:id', auth, update);
 router.delete('/:id', auth, remove);
 router.post('/:id/receipt', auth, upload.single('image'), uploadReceipt);
+router.get('/:id/comments', auth, listComments);
+router.post('/:id/comments', auth, createComment);
+router.delete('/:id/comments/:commentId', auth, deleteComment);
 module.exports = router;

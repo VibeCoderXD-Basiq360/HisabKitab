@@ -34,7 +34,7 @@ function MemberAvatars({ members }) {
         </div>
       ))}
       {overflow > 0 && (
-        <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold text-gray-500 flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-600 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-semibold text-gray-500 dark:text-gray-300 flex-shrink-0">
           +{overflow}
         </div>
       )}
@@ -60,7 +60,7 @@ function GroupCard({ group, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-3 text-left active:scale-[0.98] transition-transform"
+      className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex flex-col gap-3 text-left active:scale-[0.98] transition-transform"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
@@ -68,8 +68,8 @@ function GroupCard({ group, onClick }) {
             {group.icon || TYPE_ICON[group.type] || '👥'}
           </div>
           <div>
-            <p className="font-semibold text-gray-900 text-base leading-tight">{group.name}</p>
-            <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-500 font-medium">
+            <p className="font-semibold text-gray-900 dark:text-white text-base leading-tight">{group.name}</p>
+            <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-500 dark:text-gray-400 font-medium">
               {TYPE_ICON[group.type]} {TYPE_LABEL[group.type] || 'Other'}
             </span>
           </div>
@@ -80,7 +80,7 @@ function GroupCard({ group, onClick }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MemberAvatars members={group.members || []} />
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-400 dark:text-gray-500">
             {group.members?.length || 0} member{group.members?.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -96,7 +96,7 @@ export default function GroupsPage() {
   const { data: groups = [], isLoading } = useGroups();
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
         title="Groups"
         action={
@@ -117,8 +117,8 @@ export default function GroupsPage() {
         ) : groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3 px-8">
             <span className="text-5xl">👥</span>
-            <p className="text-lg font-semibold text-gray-700">No groups yet</p>
-            <p className="text-sm text-gray-500 text-center">
+            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">No groups yet</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
               Start a trip or home group to split expenses
             </p>
             <button

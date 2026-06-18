@@ -39,11 +39,11 @@ export default function PeoplePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="People" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
 
-        <div className="bg-white rounded-2xl p-4 flex flex-col gap-3">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-3">
           <Input
             label={editId ? 'Edit name' : 'Name'}
             placeholder="e.g. Rahul, Priya"
@@ -70,7 +70,7 @@ export default function PeoplePage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
           {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">Loading…</p>}
           {!isLoading && people.length === 0 && (
             <p className="px-4 py-6 text-sm text-gray-400 text-center">No people yet</p>
@@ -78,7 +78,7 @@ export default function PeoplePage() {
           {people.map((p) => (
             <div key={p.id} className="flex items-center px-4 py-3 gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800">{p.name}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
                 {p.email && (
                   <p className="text-xs text-gray-400 truncate">{p.email}</p>
                 )}

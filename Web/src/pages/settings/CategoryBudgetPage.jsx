@@ -23,7 +23,7 @@ function BudgetSheet({ item, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-3xl p-6 pb-10 flex flex-col gap-4">
+      <div className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl p-6 pb-10 flex flex-col gap-4">
         <div className="flex items-center gap-3 mb-1">
           <div
             className="w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0"
@@ -32,22 +32,22 @@ function BudgetSheet({ item, onClose }) {
             {item.category.icon || '🏷️'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
               {item.budget ? 'Edit limit' : 'Set limit'} for {item.category.name}
             </p>
-            <p className="text-xs text-gray-400">Monthly spending limit</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Monthly spending limit</p>
           </div>
         </div>
 
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">₹</span>
           <input
             type="number"
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-base font-semibold text-gray-900 focus:outline-none focus:border-primary-400"
+            className="w-full pl-8 pr-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-base font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-primary-400"
             autoFocus
           />
         </div>
@@ -87,7 +87,7 @@ export default function CategoryBudgetPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <TopBar title="Budget" showBack />
         <p className="text-center text-sm text-gray-400 mt-16">Loading…</p>
         <BottomNav />
@@ -104,12 +104,12 @@ export default function CategoryBudgetPage() {
   const remaining = budget ? budget.amount - spent : null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={cat.name} showBack />
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
         {budget ? (
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <div
@@ -119,8 +119,8 @@ export default function CategoryBudgetPage() {
                   {cat.icon || '🏷️'}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">{cat.name}</p>
-                  <p className="text-xs text-gray-400">Monthly budget</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{cat.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Monthly budget</p>
                 </div>
               </div>
               <button
@@ -133,14 +133,14 @@ export default function CategoryBudgetPage() {
 
             <div className="flex items-end justify-between mb-4">
               <div>
-                <p className="text-xs text-gray-400 mb-1">Spent this month</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Spent this month</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">
                   ₹{spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-400 mb-1">Limit</p>
-                <p className="text-xl font-semibold text-gray-500">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Limit</p>
+                <p className="text-xl font-semibold text-gray-500 dark:text-gray-400">
                   ₹{budget.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export default function CategoryBudgetPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-400">{percentage}% used</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{percentage}% used</p>
               {remaining >= 0 ? (
                 <p className="text-sm font-semibold text-green-600">
                   ₹{remaining.toLocaleString('en-IN', { maximumFractionDigits: 0 })} left
@@ -167,7 +167,7 @@ export default function CategoryBudgetPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div
                 className="w-11 h-11 rounded-full flex items-center justify-center text-2xl"
@@ -176,8 +176,8 @@ export default function CategoryBudgetPage() {
                 {cat.icon || '🏷️'}
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">{cat.name}</p>
-                <p className="text-xs text-gray-400">No monthly limit set</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">{cat.name}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">No monthly limit set</p>
               </div>
             </div>
 

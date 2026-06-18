@@ -2,9 +2,17 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { formatCurrency } from '../utils/currency';
 import { formatDate } from '../utils/date';
+import { useRateMap } from '../hooks/useExchangeRates';
 
 export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate }) {
   const navigate = useNavigate();
+  const rateMap = useRateMap();
+  const isForeign = expense.currency && expense.currency !== 'INR';
+  // Prefer the rate frozen at creation time; fall back to current rate for old records
+  const rate      = isForeign
+    ? (expense.rateAtTime != null ? Number(expense.rateAtTime) : rateMap[expense.currency])
+    : null;
+  const inrEquiv  = rate ? Number(expense.amount) * rate : null;
   const [swipeX, setSwipeX] = useState(0);
   const startXRef = useRef(0);
   const isDraggingRef = useRef(false);
@@ -17,6 +25,7 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
   const originalAmount = currentAmount + settledAmount;
   const isFullySettled = settledAmount > 0 && currentAmount === 0;
   const isPartiallySettled = settledAmount > 0 && currentAmount > 0;
+  const isReimbursement = !!expense.isReimbursement;
 
   const settledNames = confirmedSplits.map((s) => s.person?.name).filter(Boolean);
   const settledLabel = settledNames.length === 1
@@ -77,7 +86,6 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
 
   return (
     <div className="relative overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-      {/* Delete zone revealed on swipe */}
       {onDelete && (
         <button
           className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex flex-col items-center justify-center gap-0.5 text-white"
@@ -88,12 +96,13 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
         </button>
       )}
 
-      {/* Card content */}
       <button
         onClick={handleClick}
         style={{ transform: `translateX(${swipeX}px)`, transition: isDraggingRef.current ? 'none' : 'transform 0.2s ease' }}
         className={`w-full flex items-center gap-3 px-4 py-3 text-left relative ${
-          isFullySettled ? 'bg-gray-50 active:bg-gray-100' : 'bg-white active:bg-gray-50'
+          isFullySettled
+            ? 'bg-gray-50 dark:bg-gray-800/50 active:bg-gray-100 dark:active:bg-gray-700'
+            : 'bg-white dark:bg-gray-800 active:bg-gray-50 dark:active:bg-gray-700'
         }`}
       >
         <div
@@ -104,42 +113,47 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium truncate ${isFullySettled ? 'text-gray-400' : 'text-gray-900'}`}>
+          <p className={`text-sm font-medium truncate ${isFullySettled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
             {expense.title || expense.category?.name || 'Expense'}
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
             {expense.paymentType?.name} · {formatDate(expense.expenseDate)}
           </p>
 
           <div className="flex flex-wrap gap-1 mt-0.5">
+            {isReimbursement && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full">
+                ↩ Reimbursement
+              </span>
+            )}
             {expense.paidForPersonId ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full">
                 🧾 Paid for {expense.paidForPerson?.name}
               </span>
             ) : expense.splits?.length > 0 && !isFullySettled && expense.splits.some((s) => ['PENDING', 'PAYMENT_REQUESTED'].includes(s.status)) ? (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded-full">
                 ⚖️ Split
               </span>
             ) : null}
 
             {expense.recurringExpense && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-violet-600 bg-violet-50 dark:bg-violet-900/30 px-2 py-0.5 rounded-full">
                 🔁 {expense.recurringExpense.isActive ? 'Recurring' : 'Recurring (paused)'}
               </span>
             )}
 
             {isFullySettled && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                 ✓ Settled · not in total
               </span>
             )}
             {isPartiallySettled && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                 ↩ ₹{settledAmount.toFixed(0)} back from {settledLabel}
               </span>
             )}
             {waivedSplits.length > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 bg-orange-50 dark:bg-orange-900/30 px-2 py-0.5 rounded-full">
                 🎁 Waived for {waivedLabel}
               </span>
             )}
@@ -149,30 +163,47 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
                 tabIndex={0}
                 onClick={(e) => { e.stopPropagation(); navigate(`/groups/${expense.group.id}`); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); navigate(`/groups/${expense.group.id}`); } }}
-                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full cursor-pointer"
               >
                 {expense.group.icon} {expense.group.name}
               </span>
             )}
           </div>
+
+          {expense.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {expense.tags.map((tag) => (
+                <span key={tag} className="text-[10px] font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded-full">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="shrink-0 text-right">
           {isFullySettled ? (
             <>
-              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
+              <p className="text-xs text-gray-300 dark:text-gray-600 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
               <p className="text-xs font-semibold text-green-500">₹0 net</p>
             </>
           ) : isPartiallySettled ? (
             <>
-              <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
-              <p className="text-xs text-gray-300 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              <p className="text-xs text-gray-300 dark:text-gray-600 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
+            </>
+          ) : isReimbursement ? (
+            <>
+              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">+{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              {inrEquiv !== null && (
+                <p className="text-[10px] text-emerald-500/70 dark:text-emerald-600 text-right">≈ {formatCurrency(inrEquiv, 'INR')}</p>
+              )}
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-gray-900">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
-              {expense.currency && expense.currency !== 'INR' && (
-                <p className="text-[10px] text-gray-400 text-right">{expense.currency}</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              {inrEquiv !== null && (
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 text-right">≈ {formatCurrency(inrEquiv, 'INR')}</p>
               )}
             </>
           )}

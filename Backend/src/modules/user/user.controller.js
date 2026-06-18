@@ -51,4 +51,20 @@ const saveFcmToken = async (req, res) => {
   res.json({ ok: true });
 };
 
-module.exports = { getMe, updateMe, uploadProfileImage, saveFcmToken };
+const deleteMe = async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+    select: { id: true, photoPublicId: true },
+  });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (user.photoPublicId) {
+    await cloudinary.uploader.destroy(user.photoPublicId).catch(() => {});
+  }
+
+  // Cascade deletes all related data via Prisma relations (Cascade on delete)
+  await prisma.user.delete({ where: { id: user.id } });
+  res.status(204).end();
+};
+
+module.exports = { getMe, updateMe, uploadProfileImage, saveFcmToken, deleteMe };

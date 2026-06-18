@@ -40,7 +40,7 @@ export default function PaymentTypesPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Payment Types" showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
         <div className="flex gap-2 items-end">
@@ -63,7 +63,7 @@ export default function PaymentTypesPage() {
           </Button>
         </div>
 
-        <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
           {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">Loading…</p>}
           {!isLoading && types.length === 0 && (
             <p className="px-4 py-6 text-sm text-gray-400 text-center">No payment types yet</p>
@@ -76,7 +76,7 @@ export default function PaymentTypesPage() {
               >
                 {t.icon || '💰'}
               </div>
-              <span className="flex-1 text-sm text-gray-800">{t.name}</span>
+              <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{t.name}</span>
               <button onClick={() => startEdit(t)} className="text-sm text-primary-600 px-2 py-1">
                 Edit
               </button>

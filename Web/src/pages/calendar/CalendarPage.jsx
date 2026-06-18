@@ -52,29 +52,29 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Calendar" showBack />
 
       {/* Month navigation */}
-      <div className="bg-white border-b border-gray-100 flex items-center justify-between px-4 py-3">
-        <button onClick={() => { setMonth((m) => subMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 text-lg rounded-xl active:bg-gray-100">‹</button>
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-4 py-3">
+        <button onClick={() => { setMonth((m) => subMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-400 text-lg rounded-xl active:bg-gray-100 dark:active:bg-gray-700">‹</button>
         <div className="text-center">
-          <p className="text-sm font-semibold text-gray-900">{format(month, 'MMMM yyyy')}</p>
-          <p className="text-xs text-gray-400">{fmt(monthTotal)} · {expenses.length} expenses</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">{format(month, 'MMMM yyyy')}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">{fmt(monthTotal)} · {expenses.length} expenses</p>
         </div>
-        <button onClick={() => { setMonth((m) => addMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 text-lg rounded-xl active:bg-gray-100">›</button>
+        <button onClick={() => { setMonth((m) => addMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-400 text-lg rounded-xl active:bg-gray-100 dark:active:bg-gray-700">›</button>
       </div>
 
       <div className="flex-1 overflow-auto pb-28">
         {/* Day of week headers */}
-        <div className="grid grid-cols-7 bg-white border-b border-gray-100">
+        <div className="grid grid-cols-7 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
           {DOW.map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-semibold text-gray-400">{d}</div>
+            <div key={d} className="py-2 text-center text-xs font-semibold text-gray-400 dark:text-gray-500">{d}</div>
           ))}
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 bg-white border-b border-gray-100">
+        <div className="grid grid-cols-7 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
           {gridDays.map((day) => {
             const key = format(day, 'yyyy-MM-dd');
             const info = dayMap[key];
@@ -86,19 +86,19 @@ export default function CalendarPage() {
               <button
                 key={key}
                 onClick={() => setSelected(isSelected ? null : day)}
-                className={`relative min-h-[64px] flex flex-col items-center pt-2 pb-1 border-b border-r border-gray-50 transition-colors ${
-                  isSelected ? 'bg-primary-50' : 'active:bg-gray-50'
+                className={`relative min-h-[64px] flex flex-col items-center pt-2 pb-1 border-b border-r border-gray-50 dark:border-gray-700 transition-colors ${
+                  isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : 'active:bg-gray-50 dark:active:bg-gray-700'
                 } ${!inMonth ? 'opacity-30' : ''}`}
               >
                 <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                  today ? 'bg-primary-500 text-white' : isSelected ? 'text-primary-600' : 'text-gray-700'
+                  today ? 'bg-primary-500 text-white' : isSelected ? 'text-primary-600' : 'text-gray-700 dark:text-gray-300'
                 }`}>
                   {format(day, 'd')}
                 </span>
                 {info && inMonth && (
                   <>
                     <div className={`w-1.5 h-1.5 rounded-full mt-1 ${dotColor(info.total)}`} />
-                    <span className="text-[9px] text-gray-400 mt-0.5 leading-none">
+                    <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 leading-none">
                       {info.total >= 1000 ? `${(info.total / 1000).toFixed(1)}k` : Math.round(info.total)}
                     </span>
                   </>
@@ -111,18 +111,18 @@ export default function CalendarPage() {
         {/* Selected day expenses */}
         {selected && (
           <div className="mt-3 px-4 mb-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
               {format(selected, 'd MMMM')} · {selectedData ? `${selectedData.count} expense${selectedData.count !== 1 ? 's' : ''} · ${fmt(selectedData.total)}` : 'No expenses'}
             </p>
             {selectedData ? (
-              <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
                 {selectedData.expenses.map((e) => (
                   <ExpenseCard key={e.id} expense={e} onClick={() => navigate(`/expense/${e.id}`)} />
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl flex items-center justify-center py-8">
-                <p className="text-sm text-gray-400">No expenses on this day</p>
+              <div className="bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center py-8">
+                <p className="text-sm text-gray-400 dark:text-gray-500">No expenses on this day</p>
               </div>
             )}
           </div>

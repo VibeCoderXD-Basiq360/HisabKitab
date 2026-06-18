@@ -6,9 +6,12 @@ import { useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense } from
 import { useCategories } from '../../hooks/useCategories';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
 import { usePeople } from '../../hooks/usePeople';
+import { useComments, useAddComment, useDeleteComment, useExpenseTags } from '../../hooks/useComments';
 import TopBar from '../../components/TopBar';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import TagInput from '../../components/ui/TagInput';
+import { format as dfFormat } from 'date-fns';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -48,6 +51,8 @@ const EMPTY = {
   frequency: 'MONTHLY',
   recurringStartAt: '',
   recurringEndDate: '',
+  tags: [],
+  isReimbursement: false,
 };
 
 export default function AddEditExpensePage() {
@@ -63,6 +68,11 @@ export default function AddEditExpensePage() {
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
+  const { data: allTags = [] } = useExpenseTags();
+  const { data: comments = [] } = useComments(isEdit ? id : null);
+  const addComment = useAddComment(id);
+  const deleteComment = useDeleteComment(id);
+  const [commentText, setCommentText] = useState('');
 
   const [form, setForm] = useState(EMPTY);
   const [listening, setListening] = useState(false);
@@ -137,6 +147,8 @@ export default function AddEditExpensePage() {
         paidForPersonId: existing.paidForPersonId || '',
         forMode: hasPaidFor ? 'other' : 'self',
         currency: existing.currency || 'INR',
+        tags: existing.tags || [],
+        isReimbursement: existing.isReimbursement || false,
       });
       setReceiptUrl(existing.receiptUrl || '');
     }
@@ -169,6 +181,8 @@ export default function AddEditExpensePage() {
       frequency: form.frequency,
       recurringStartAt: form.recurringStartAt || null,
       recurringEndDate: form.recurringEndDate || null,
+      tags: form.tags,
+      isReimbursement: form.isReimbursement,
     };
     let expenseId = id;
     if (isEdit) {
@@ -193,7 +207,7 @@ export default function AddEditExpensePage() {
   const busy = createExpense.isPending || updateExpense.isPending;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={isEdit ? 'Edit Expense' : 'Add Expense'} showBack />
 
       {!isEdit && (
@@ -204,7 +218,7 @@ export default function AddEditExpensePage() {
             className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-medium transition-colors ${
               listening
                 ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+                : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700'
             }`}
           >
             🎤 {listening ? 'Listening… tap to stop' : 'Fill with voice'}
@@ -226,7 +240,7 @@ export default function AddEditExpensePage() {
 
         {form.currency !== 'INR' && (
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700">Currency</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</label>
             <div className="flex flex-wrap gap-2">
               {CURRENCIES.map((c) => (
                 <button
@@ -236,7 +250,7 @@ export default function AddEditExpensePage() {
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     form.currency === c
                       ? 'bg-primary-500 text-white border-primary-500'
-                      : 'border-gray-200 text-gray-600 bg-white'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
                   }`}
                 >
                   {c}
@@ -249,7 +263,7 @@ export default function AddEditExpensePage() {
           <button
             type="button"
             onClick={() => setForm((f) => ({ ...f, currency: 'USD' }))}
-            className="text-xs text-indigo-500 text-left -mt-2"
+            className="text-xs text-indigo-500 dark:text-indigo-400 text-left -mt-2"
           >
             + Not in INR? Tap to change currency
           </button>
@@ -265,11 +279,11 @@ export default function AddEditExpensePage() {
         <Input label="Date" type="date" value={form.expenseDate} onChange={field('expenseDate')} required />
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Category</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
           <select
             value={form.categoryId}
             onChange={field('categoryId')}
-            className="min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white text-base outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           >
             <option value="">No category</option>
             {categories.map((c) => (
@@ -281,12 +295,12 @@ export default function AddEditExpensePage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">Payment type *</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Payment type *</label>
           <select
             value={form.paymentTypeId}
             onChange={field('paymentTypeId')}
             required
-            className="min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white text-base outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           >
             <option value="">Select…</option>
             {paymentTypes.map((p) => (
@@ -299,14 +313,23 @@ export default function AddEditExpensePage() {
 
         <Input label="Note" value={form.note} onChange={field('note')} placeholder="Optional note" />
 
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tags</label>
+          <TagInput
+            tags={form.tags}
+            onChange={(tags) => setForm((f) => ({ ...f, tags }))}
+            suggestions={allTags}
+          />
+        </div>
+
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-700">Receipt photo</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Receipt photo</label>
           {receiptPreview || receiptUrl ? (
             <div className="relative">
               <img
                 src={receiptPreview || receiptUrl}
                 alt="Receipt"
-                className="w-full max-h-52 object-cover rounded-xl border border-gray-200"
+                className="w-full max-h-52 object-cover rounded-xl border border-gray-200 dark:border-gray-600"
               />
               <button
                 type="button"
@@ -321,7 +344,7 @@ export default function AddEditExpensePage() {
               </label>
             </div>
           ) : (
-            <label className="flex items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-dashed border-gray-200 text-sm text-gray-500 cursor-pointer hover:border-primary-300 hover:text-primary-600 transition-colors">
+            <label className="flex items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-primary-300 hover:text-primary-600 transition-colors">
               <span className="text-xl">📷</span>
               Attach receipt photo
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
@@ -331,7 +354,7 @@ export default function AddEditExpensePage() {
 
         {people.length > 0 && (
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700">This expense is for</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">This expense is for</label>
             <div className="flex gap-2">
               {['self', 'other'].map((mode) => (
                 <button
@@ -341,7 +364,7 @@ export default function AddEditExpensePage() {
                   className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
                     form.forMode === mode
                       ? 'bg-primary-500 text-white border-primary-500'
-                      : 'border-gray-200 text-gray-600 bg-white'
+                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
                   }`}
                 >
                   {mode === 'self' ? 'Myself' : 'Someone else'}
@@ -355,7 +378,7 @@ export default function AddEditExpensePage() {
                   value={form.paidForPersonId}
                   onChange={field('paidForPersonId')}
                   required={form.forMode === 'other'}
-                  className="min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white text-base outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+                  className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
                 >
                   <option value="">Select person…</option>
                   {people.map((p) => (
@@ -363,7 +386,7 @@ export default function AddEditExpensePage() {
                   ))}
                 </select>
                 {form.paidForPersonId && Number(form.amount) > 0 && (
-                  <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-700 rounded-xl px-4 py-3 flex items-center gap-3">
                     <span className="text-lg">🧾</span>
                     <div>
                       <p className="text-sm font-semibold text-amber-700">
@@ -378,7 +401,7 @@ export default function AddEditExpensePage() {
 
             {form.forMode === 'self' && (
               <>
-                <label className="text-sm font-medium text-gray-700 mt-1">Split with</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">Split with</label>
                 <div className="flex flex-wrap gap-2">
                   {people.map((p) => {
                     const selected = form.peopleIds.includes(p.id);
@@ -390,7 +413,7 @@ export default function AddEditExpensePage() {
                         className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                           selected
                             ? 'bg-primary-500 text-white border-primary-500'
-                            : 'border-gray-200 text-gray-600 bg-white'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
                         }`}
                       >
                         {p.name}
@@ -399,7 +422,7 @@ export default function AddEditExpensePage() {
                   })}
                 </div>
                 {form.peopleIds.length > 0 && Number(form.amount) > 0 && (
-                  <div className="bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-700 rounded-xl px-4 py-3 flex items-center gap-3">
                     <span className="text-lg">⚖️</span>
                     <div>
                       <p className="text-sm font-semibold text-primary-700">
@@ -428,13 +451,13 @@ export default function AddEditExpensePage() {
                   recurringStartAt: isOn ? defaultRecurringStart(f.expenseDate, f.frequency) : '',
                 };
               })}
-              className="flex items-center justify-between min-h-[48px] px-4 rounded-xl border border-gray-200 bg-white"
+              className="flex items-center justify-between min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔁</span>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-800">Make this recurring</p>
-                  <p className="text-xs text-gray-400">Auto-add this expense on a schedule</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Make this recurring</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Auto-add this expense on a schedule</p>
                 </div>
               </div>
               <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.isRecurring ? 'bg-primary-500' : 'bg-gray-200'}`}>
@@ -453,7 +476,7 @@ export default function AddEditExpensePage() {
                       className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
                         form.frequency === opt.value
                           ? 'bg-primary-500 text-white border-primary-500'
-                          : 'border-gray-200 text-gray-600 bg-white'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
                       }`}
                     >
                       {opt.label}
@@ -461,44 +484,125 @@ export default function AddEditExpensePage() {
                   ))}
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-3 flex flex-col gap-3">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 flex flex-col gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">First auto-create on</label>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">First auto-create on</label>
                     <input
                       type="datetime-local"
                       value={form.recurringStartAt}
                       onChange={field('recurringStartAt')}
-                      className="min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+                      className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
                     />
-                    <p className="text-xs text-gray-400">Day & time the first auto-expense gets created</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Day & time the first auto-expense gets created</p>
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500">End date (optional)</label>
+                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">End date (optional)</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="date"
                         value={form.recurringEndDate}
                         onChange={field('recurringEndDate')}
-                        className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:border-primary-400"
+                        className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
                       />
                       {form.recurringEndDate && (
                         <button
                           type="button"
                           onClick={() => setForm((f) => ({ ...f, recurringEndDate: '' }))}
-                          className="text-gray-400 text-lg px-2"
+                          className="text-gray-400 dark:text-gray-500 text-lg px-2"
                         >
                           ✕
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400">Leave empty to repeat forever</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">Leave empty to repeat forever</p>
                   </div>
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {isEdit && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Comments</p>
+            {comments.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {comments.map((c) => (
+                  <div key={c.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">{c.userName}</p>
+                      <p className="text-sm text-gray-800 dark:text-gray-200 mt-0.5">{c.text}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        {dfFormat(new Date(c.createdAt), 'd MMM, h:mm a')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteComment.mutate(c.id)}
+                      className="text-gray-300 dark:text-gray-600 active:text-red-400 text-sm shrink-0 mt-0.5"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (commentText.trim()) {
+                      addComment.mutate(commentText, { onSuccess: () => setCommentText('') });
+                    }
+                  }
+                }}
+                placeholder="Add a comment…"
+                className="flex-1 min-h-[40px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-primary-400"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (commentText.trim()) {
+                    addComment.mutate(commentText, { onSuccess: () => setCommentText('') });
+                  }
+                }}
+                disabled={!commentText.trim() || addComment.isPending}
+                className="px-3 py-2 rounded-xl bg-primary-500 text-white text-sm font-medium disabled:opacity-40"
+              >
+                Post
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reimbursement toggle */}
+        <button
+          type="button"
+          onClick={() => setForm((f) => ({ ...f, isReimbursement: !f.isReimbursement }))}
+          className={`flex items-center justify-between min-h-[48px] px-4 rounded-xl border transition-colors ${
+            form.isReimbursement
+              ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-700'
+              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-lg">↩️</span>
+            <div className="text-left">
+              <p className={`text-sm font-medium ${form.isReimbursement ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                Reimbursement
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">Money coming back to you — counts as credit</p>
+            </div>
+          </div>
+          <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.isReimbursement ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
+            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isReimbursement ? 'translate-x-4' : 'translate-x-0'}`} />
+          </div>
+        </button>
 
         <div className="flex gap-3 mt-2">
           <Button type="submit" disabled={busy} className="flex-1">

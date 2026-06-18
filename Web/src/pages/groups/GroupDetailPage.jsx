@@ -11,9 +11,15 @@ import {
   useDeleteGroupExpense,
   useRecordSettlement,
 } from '../../hooks/useGroups';
+import { useRateMap } from '../../hooks/useExchangeRates';
 
-const fmt = (n) =>
-  `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const fmt = (n, currency = 'INR') =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(n || 0));
+
+const currencySymbol = (currency = 'INR') => {
+  try { return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: 0 }).formatToParts(0).find(p => p.type === 'currency')?.value || currency; }
+  catch { return currency; }
+};
 const fmtDate = (d) => format(new Date(d), 'd MMM');
 
 const TYPE_ICON = { TRIP: '✈️', HOME: '🏠', WORK: '💼', COUPLE: '💑', OTHER: '👥' };
@@ -44,7 +50,7 @@ function MemberAvatarsRow({ members, max = 5 }) {
         </div>
       ))}
       {overflow > 0 && (
-        <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs font-semibold text-gray-500 flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-semibold text-gray-500 dark:text-gray-300 flex-shrink-0">
           +{overflow}
         </div>
       )}
@@ -57,6 +63,7 @@ function MemberAvatarsRow({ members, max = 5 }) {
 function ExpensesTab({ group, currentUser }) {
   const [search, setSearch] = useState('');
   const deleteExpense = useDeleteGroupExpense(group.id);
+  const rateMap = useRateMap();
   const allExpenses = group.groupExpenses || [];
   const expenses = search.trim()
     ? allExpenses.filter((e) => e.title?.toLowerCase().includes(search.toLowerCase()))
@@ -84,7 +91,7 @@ function ExpensesTab({ group, currentUser }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search expenses…"
-          className="w-full bg-gray-100 rounded-xl pl-8 pr-4 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-primary-100"
+          className="w-full bg-gray-100 dark:bg-gray-700 rounded-xl pl-8 pr-4 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-100"
         />
       </div>
 
@@ -101,16 +108,23 @@ function ExpensesTab({ group, currentUser }) {
           const isAddedByMe = exp.addedBy?.userId === currentUser?.uid;
           const isPaidByMe = exp.paidBy?.userId === currentUser?.uid;
           return (
-            <div key={exp.id} className="bg-white rounded-2xl shadow-sm p-4 flex items-start gap-3">
+            <div key={exp.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-base font-bold text-primary-600 flex-shrink-0">
                 {exp.title?.[0]?.toUpperCase() || '💸'}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{exp.title}</p>
-                  <p className="text-sm font-bold text-gray-900 flex-shrink-0">{fmt(exp.amount)}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{exp.title}</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(exp.amount, exp.currency)}</p>
+                    {exp.currency && exp.currency !== 'INR' && (exp.rateAtTime != null || rateMap[exp.currency]) && (
+                      <p className="text-[10px] text-gray-400">
+                        ≈ {fmt(Number(exp.amount) * (exp.rateAtTime != null ? Number(exp.rateAtTime) : rateMap[exp.currency]), 'INR')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                   Paid by {exp.paidBy?.name || 'Someone'} · {fmtDate(exp.expenseDate || exp.createdAt)}
                 </p>
                 {exp.note && (
@@ -118,19 +132,19 @@ function ExpensesTab({ group, currentUser }) {
                 )}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {myShare && !isPaidByMe && (
-                    <span className="text-xs text-gray-400">Your share: {fmt(myShare.amount)}</span>
+                    <span className="text-xs text-gray-400">Your share: {fmt(myShare.amount, exp.currency)}</span>
                   )}
                   {isPaidByMe && (
-                    <span className="text-xs bg-primary-50 text-primary-600 px-1.5 py-0.5 rounded-full">You paid</span>
+                    <span className="text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 px-1.5 py-0.5 rounded-full">You paid</span>
                   )}
                   {isAddedByMe && !isPaidByMe && (
-                    <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">Added by you</span>
+                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">Added by you</span>
                   )}
                 </div>
               </div>
               <button
                 onClick={() => deleteExpense.mutate(exp.id)}
-                className="w-8 h-8 flex items-center justify-center text-gray-300 active:text-red-400 flex-shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-gray-300 dark:text-gray-600 active:text-red-400 flex-shrink-0"
               >
                 🗑
               </button>
@@ -147,6 +161,7 @@ function ShareBillButton({ group }) {
   const cardRef = useRef(null);
   const [sharing, setSharing] = useState(false);
   const balances = group.balances || [];
+  const gc = groupCurrencyOf(group);
   const totalSpend = (group.groupExpenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
 
   async function handleShare() {
@@ -177,7 +192,7 @@ function ShareBillButton({ group }) {
             <span style={{ fontSize: 32 }}>{group.icon || '👥'}</span>
             <div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 20, color: '#111' }}>{group.name}</p>
-              <p style={{ margin: '2px 0 0', fontSize: 13, color: '#9ca3af' }}>Total spend: {fmt(totalSpend)}</p>
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: '#9ca3af' }}>Total spend: {fmt(totalSpend, gc)}</p>
             </div>
           </div>
           <div style={{ borderTop: '1px solid #f3f4f6' }}>
@@ -187,7 +202,7 @@ function ShareBillButton({ group }) {
                 <div key={b.memberId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f3f4f6' }}>
                   <span style={{ fontWeight: 600, fontSize: 15, color: '#1f2937' }}>{b.name}</span>
                   <span style={{ fontSize: 15, fontWeight: 700, color: n > 0 ? '#16a34a' : n < 0 ? '#dc2626' : '#9ca3af' }}>
-                    {n > 0 ? `Gets back ${fmt(n)}` : n < 0 ? `Owes ${fmt(Math.abs(n))}` : 'Settled ✓'}
+                    {n > 0 ? `Gets back ${fmt(n, gc)}` : n < 0 ? `Owes ${fmt(Math.abs(n), gc)}` : 'Settled ✓'}
                   </span>
                 </div>
               );
@@ -201,7 +216,7 @@ function ShareBillButton({ group }) {
         type="button"
         onClick={handleShare}
         disabled={sharing || balances.length === 0}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-50 text-indigo-700 font-semibold text-sm border border-indigo-100 active:bg-indigo-100 disabled:opacity-40"
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold text-sm border border-indigo-100 dark:border-indigo-700 active:bg-indigo-100 dark:active:bg-indigo-900/40 disabled:opacity-40"
       >
         {sharing ? '⏳ Generating image…' : '📸 Share bill as image'}
       </button>
@@ -211,18 +226,52 @@ function ShareBillButton({ group }) {
 
 // ─── Balances Tab ─────────────────────────────────────────────────────────────
 
+function groupCurrencyOf(group) {
+  const expenses = group.groupExpenses || [];
+  if (!expenses.length) return 'INR';
+  const counts = {};
+  for (const e of expenses) { const c = e.currency || 'INR'; counts[c] = (counts[c] || 0) + 1; }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'INR';
+}
+
+// Weighted-average frozen rate for the dominant group currency.
+// Each expense contributes its rateAtTime weighted by its amount.
+// Returns null for INR groups or mixed-currency groups.
+function groupFrozenRate(group, rateMap) {
+  const gc = groupCurrencyOf(group);
+  if (gc === 'INR') return null;
+  const expenses = (group.groupExpenses || []).filter((e) => (e.currency || 'INR') === gc);
+  if (!expenses.length) return rateMap[gc] || null;
+  const totalAmt = expenses.reduce((s, e) => s + Number(e.amount), 0);
+  if (!totalAmt) return rateMap[gc] || null;
+  const totalInr = expenses.reduce((s, e) => {
+    const rate = e.rateAtTime != null ? Number(e.rateAtTime) : (rateMap[gc] || 0);
+    return s + Number(e.amount) * rate;
+  }, 0);
+  return totalInr / totalAmt;
+}
+
 function BalancesTab({ group, currentUser }) {
   const balances = group.balances || [];
+  const gc = groupCurrencyOf(group);
+  const rateMap = useRateMap();
+  const gcRate = groupFrozenRate(group, rateMap);
   const totalSpend = (group.groupExpenses || []).reduce(
     (s, e) => s + Number(e.amount || 0),
     0
   );
+  const hasMixedCurrency = new Set((group.groupExpenses || []).map(e => e.currency || 'INR')).size > 1;
 
   return (
     <div className="px-4 py-3 space-y-3">
-      <div className="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between">
+      {hasMixedCurrency && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-2.5">
+          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">⚠️ Mixed currencies — balances are summed as-is without conversion</p>
+        </div>
+      )}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center justify-between">
         <p className="text-sm text-gray-500">Total group spend</p>
-        <p className="text-base font-bold text-gray-900">{fmt(totalSpend)}</p>
+        <p className="text-base font-bold text-gray-900 dark:text-white">{fmt(totalSpend, gc)}</p>
       </div>
 
       {balances.length === 0 ? (
@@ -241,7 +290,7 @@ function BalancesTab({ group, currentUser }) {
           return (
             <div
               key={b.memberId}
-              className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-3"
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${bg} ${textColor}`}
@@ -250,9 +299,9 @@ function BalancesTab({ group, currentUser }) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{b.name}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{b.name}</p>
                   {isMe && (
-                    <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                    <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
                       You
                     </span>
                   )}
@@ -260,9 +309,15 @@ function BalancesTab({ group, currentUser }) {
               </div>
               <div className="text-right">
                 {n > 0 ? (
-                  <span className="text-sm font-semibold text-green-600">Gets back {fmt(n)}</span>
+                  <>
+                    <p className="text-sm font-semibold text-green-600">Gets back {fmt(n, gc)}</p>
+                    {gcRate && <p className="text-[10px] text-gray-400">≈ {fmt(n * gcRate, 'INR')}</p>}
+                  </>
                 ) : n < 0 ? (
-                  <span className="text-sm font-semibold text-red-500">Owes {fmt(Math.abs(n))}</span>
+                  <>
+                    <p className="text-sm font-semibold text-red-500">Owes {fmt(Math.abs(n), gc)}</p>
+                    {gcRate && <p className="text-[10px] text-gray-400">≈ {fmt(Math.abs(n) * gcRate, 'INR')}</p>}
+                  </>
                 ) : (
                   <span className="text-sm text-gray-400">Settled up ✓</span>
                 )}
@@ -282,6 +337,9 @@ function SettleUpTab({ group }) {
   const [confirmTx, setConfirmTx] = useState(null);
   const recordSettlement = useRecordSettlement(group.id);
   const plan = group.settlePlan || [];
+  const gc = groupCurrencyOf(group);
+  const rateMap = useRateMap();
+  const gcRate = groupFrozenRate(group, rateMap);
 
   function handleConfirm() {
     if (!confirmTx) return;
@@ -311,14 +369,15 @@ function SettleUpTab({ group }) {
     <>
       <div className="px-4 py-3 space-y-3">
         {plan.map((tx, i) => (
-          <div key={i} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-3">
+          <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gray-900">{tx.fromName}</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{tx.fromName}</span>
                 <span className="text-gray-400 text-sm">→</span>
-                <span className="text-sm font-semibold text-gray-900">{tx.toName}</span>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">{tx.toName}</span>
               </div>
-              <p className="text-base font-bold text-primary-600 mt-0.5">{fmt(tx.amount)}</p>
+              <p className="text-base font-bold text-primary-600 mt-0.5">{fmt(tx.amount, gc)}</p>
+              {gcRate && <p className="text-[10px] text-gray-400 mt-0.5">≈ {fmt(tx.amount * gcRate, 'INR')}</p>}
             </div>
             <button
               onClick={() => setConfirmTx(tx)}
@@ -335,23 +394,23 @@ function SettleUpTab({ group }) {
         <div className="fixed inset-0 z-50 flex items-end" onClick={() => setConfirmTx(null)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative w-full bg-white rounded-t-3xl p-6 z-10"
+            className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <p className="text-base font-semibold text-gray-900 text-center mb-2">
+            <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-5" />
+            <p className="text-base font-semibold text-gray-900 dark:text-white text-center mb-2">
               Record settlement?
             </p>
-            <p className="text-sm text-gray-500 text-center mb-6">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
               Record that{' '}
-              <span className="font-semibold text-gray-800">{confirmTx.fromName}</span> paid{' '}
-              <span className="font-semibold text-gray-800">{confirmTx.toName}</span>{' '}
-              <span className="font-semibold text-primary-600">{fmt(confirmTx.amount)}</span>?
+              <span className="font-semibold text-gray-800 dark:text-gray-200">{confirmTx.fromName}</span> paid{' '}
+              <span className="font-semibold text-gray-800 dark:text-gray-200">{confirmTx.toName}</span>{' '}
+              <span className="font-semibold text-primary-600">{fmt(confirmTx.amount, gc)}</span>?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmTx(null)}
-                className="flex-1 py-3 rounded-2xl bg-gray-100 text-gray-700 font-semibold text-sm"
+                className="flex-1 py-3 rounded-2xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm"
               >
                 Cancel
               </button>
@@ -382,6 +441,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState('INR');
   const [expenseDate, setExpenseDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [paidByMemberId, setPaidByMemberId] = useState(() => {
     const me = members.find((m) => m.userId === currentUser?.uid);
@@ -390,6 +450,8 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
   const [splitMode, setSplitMode] = useState('equal'); // 'equal' | 'amount' | 'percent'
   const [customSplits, setCustomSplits] = useState({});
   const [note, setNote] = useState('');
+
+  const sym = currencySymbol(currency);
 
   const numAmount = parseFloat(amount) || 0;
   const equalShare = members.length > 0 ? numAmount / members.length : 0;
@@ -414,6 +476,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
       {
         title: title.trim(),
         amount: numAmount,
+        currency,
         expenseDate,
         paidByMemberId,
         splitType: splitMode === 'equal' ? 'EQUAL' : 'EXACT',
@@ -430,13 +493,13 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative w-full bg-white rounded-t-3xl z-10 max-h-[92vh] overflow-y-auto"
+        className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl z-10 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white pt-4 px-5 pb-3 border-b border-gray-100">
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+        <div className="sticky top-0 bg-white dark:bg-gray-800 pt-4 px-5 pb-3 border-b border-gray-100 dark:border-gray-700">
+          <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
-            <p className="text-base font-semibold text-gray-900">Add Expense</p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">Add Expense</p>
             <button onClick={onClose} className="text-gray-400 text-lg px-1">
               ✕
             </button>
@@ -446,7 +509,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
         <div className="px-5 py-4 flex flex-col gap-4">
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
               Title
             </label>
             <input
@@ -454,46 +517,57 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Dinner at Taj"
-              className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
             />
           </div>
 
-          {/* Amount */}
+          {/* Amount + Currency */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
               Amount
             </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">
-                ₹
-              </span>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0"
-                min="0"
-                className="w-full bg-gray-50 rounded-2xl pl-8 pr-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
-              />
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">
+                  {sym}
+                </span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl pl-8 pr-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                />
+              </div>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="bg-gray-50 dark:bg-gray-700 rounded-2xl px-3 py-3 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 font-medium"
+              >
+                {['INR','THB','USD','EUR','GBP','AED','SGD','JPY','MYR','CAD','AUD'].map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
           </div>
 
           {/* Date */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
               Date
             </label>
             <input
               type="date"
               value={expenseDate}
               onChange={(e) => setExpenseDate(e.target.value)}
-              className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
             />
           </div>
 
           {/* Paid by */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-2">
               Paid by
             </label>
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -504,7 +578,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
                   className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
                     paidByMemberId === m.id
                       ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                   }`}
                 >
                   <span className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
@@ -518,16 +592,16 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Split */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-2">
               Split
             </label>
-            <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-3">
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 mb-3">
               {[['equal', 'Equal'], ['amount', 'By ₹'], ['percent', 'By %']].map(([mode, label]) => (
                 <button
                   key={mode}
                   onClick={() => { setSplitMode(mode); setCustomSplits({}); }}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    splitMode === mode ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500'
+                    splitMode === mode ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500'
                   }`}
                 >
                   {label}
@@ -536,8 +610,8 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
             </div>
 
             {splitMode === 'equal' && numAmount > 0 && (
-              <p className="text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
-                {fmt(equalShare)} per person ({members.length} members)
+              <p className="text-sm text-gray-500 bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
+                {fmt(equalShare, currency)} per person ({members.length} members)
               </p>
             )}
 
@@ -545,22 +619,22 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
               <div className="space-y-2">
                 {members.map((m) => (
                   <div key={m.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 w-20 truncate">{m.name.split(' ')[0]}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 w-20 truncate">{m.name.split(' ')[0]}</span>
                     <div className="relative flex-1">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
-                        {splitMode === 'percent' ? '%' : '₹'}
+                        {splitMode === 'percent' ? '%' : sym}
                       </span>
                       <input
                         type="number"
                         value={customSplits[m.id] || ''}
                         onChange={(e) => setCustomSplits((prev) => ({ ...prev, [m.id]: e.target.value }))}
                         placeholder="0"
-                        className="w-full bg-gray-50 rounded-xl pl-7 pr-3 py-2 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-primary-200"
+                        className="w-full bg-gray-50 dark:bg-gray-700 rounded-xl pl-7 pr-3 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200"
                       />
                     </div>
                     {splitMode === 'percent' && customSplits[m.id] && numAmount > 0 && (
-                      <span className="text-xs text-gray-400 w-14 text-right shrink-0">
-                        {fmt((parseFloat(customSplits[m.id]) / 100) * numAmount)}
+                      <span className="text-xs text-gray-400 w-16 text-right shrink-0">
+                        {fmt((parseFloat(customSplits[m.id]) / 100) * numAmount, currency)}
                       </span>
                     )}
                   </div>
@@ -572,7 +646,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
                 }`}>
                   {splitMode === 'percent'
                     ? `Total: ${totalCustom.toFixed(1)}% ${percentOk ? '✓' : '(must equal 100%)'}`
-                    : `Total: ${fmt(totalCustom)} ${amountOk ? '✓' : `(must equal ${fmt(numAmount)})`}`}
+                    : `Total: ${fmt(totalCustom, currency)} ${amountOk ? '✓' : `(must equal ${fmt(numAmount, currency)})`}`}
                 </div>
               </div>
             )}
@@ -580,7 +654,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Note */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
               Note (optional)
             </label>
             <input
@@ -588,7 +662,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add a note…"
-              className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-gray-800 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
             />
           </div>
 
@@ -624,7 +698,7 @@ export default function GroupDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <TopBar title="Group" showBack />
         <div className="flex items-center justify-center flex-1">
           <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -636,7 +710,7 @@ export default function GroupDetailPage() {
 
   if (!group) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
+      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
         <TopBar title="Group" showBack />
         <div className="flex flex-col items-center justify-center flex-1 gap-3">
           <span className="text-4xl">😕</span>
@@ -652,26 +726,26 @@ export default function GroupDetailPage() {
       <TopBar title={group.name} showBack />
 
       {/* Group header */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-primary-50 flex items-center justify-center text-xl flex-shrink-0">
           {group.icon || TYPE_ICON[group.type] || '👥'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">{group.name}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
           <p className="text-xs text-gray-400">{group.members?.length || 0} members</p>
         </div>
         <MemberAvatarsRow members={group.members || []} max={5} />
       </div>
 
       {/* Sticky tabs */}
-      <div className="sticky top-[56px] z-10 bg-white border-b border-gray-100">
+      <div className="sticky top-[56px] z-10 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
         <div className="flex">
           {TABS.map((tab, i) => (
             <button
               key={tab}
               onClick={() => setActiveTab(i)}
               className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
-                activeTab === i ? 'text-primary-600' : 'text-gray-400'
+                activeTab === i ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500'
               }`}
             >
               {tab}

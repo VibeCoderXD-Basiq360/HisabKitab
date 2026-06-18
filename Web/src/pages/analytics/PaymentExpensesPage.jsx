@@ -32,12 +32,12 @@ export default function PaymentExpensesPage() {
   const iconBg = paymentType?.color ? `${paymentType.color}25` : '#f3f4f6';
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={paymentType?.name || 'Payment Method'} showBack />
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
         {/* Summary header */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0"
             style={{ backgroundColor: iconBg }}
@@ -45,9 +45,9 @@ export default function PaymentExpensesPage() {
             {paymentType?.icon || '💳'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400">{periodLabel || 'All expenses'}</p>
-            <p className="text-2xl font-bold text-gray-900">{fmt(total)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500">{periodLabel || 'All expenses'}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
               {expenses.length} transaction{expenses.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -55,7 +55,7 @@ export default function PaymentExpensesPage() {
 
         {/* Expense list */}
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Transactions</p>
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide px-1">Transactions</p>
 
           {isLoading ? (
             <p className="text-center text-sm text-gray-400 py-10">Loading…</p>
@@ -65,7 +65,7 @@ export default function PaymentExpensesPage() {
               <p className="text-sm text-gray-400">No expenses for this period</p>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl overflow-hidden divide-y divide-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
               {expenses.map((expense) => (
                 <ExpenseCard
                   key={expense.id}

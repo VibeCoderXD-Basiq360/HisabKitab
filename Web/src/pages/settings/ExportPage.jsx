@@ -50,11 +50,11 @@ export default function ExportPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Export CSV" showBack />
       <div className="flex-1 pb-24 p-4 space-y-6">
-        <div className="bg-white rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-medium text-gray-700">Select period</p>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Select period</p>
           <div className="flex flex-wrap gap-2">
             {PERIODS.map((p, i) => (
               <button
@@ -63,7 +63,7 @@ export default function ExportPage() {
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   periodIdx === i
                     ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-600'
                 }`}
               >
                 {p.label}
@@ -72,9 +72,9 @@ export default function ExportPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 space-y-2">
-          <p className="text-sm font-medium text-gray-700">Columns included</p>
-          <p className="text-xs text-gray-400 leading-relaxed">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-2">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Columns included</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed">
             Date · Title · Category · Payment Type · Amount · Note · Paid For · Group
           </p>
         </div>

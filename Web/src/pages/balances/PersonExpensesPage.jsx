@@ -10,7 +10,7 @@ function StatusBadge({ status }) {
     return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Settled</span>;
   if (status === 'PAYMENT_REQUESTED')
     return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Claimed paid</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Pending</span>;
 }
 
 export default function PersonExpensesPage() {
@@ -35,20 +35,20 @@ export default function PersonExpensesPage() {
   }, 0);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={personName} showBack />
 
       {/* Summary strip */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3 flex gap-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex gap-4">
         {totalOutstanding > 0 && (
           <div>
-            <p className="text-xs text-gray-400">Outstanding</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Outstanding</p>
             <p className="text-base font-bold text-amber-600">₹{totalOutstanding.toFixed(2)}</p>
           </div>
         )}
         {totalSettled > 0 && (
           <div>
-            <p className="text-xs text-gray-400">Settled</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Settled</p>
             <p className="text-base font-bold text-green-600">₹{totalSettled.toFixed(2)}</p>
           </div>
         )}
@@ -76,19 +76,19 @@ export default function PersonExpensesPage() {
             : '';
 
           return (
-            <div key={expense.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div key={expense.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
               <div className="px-4 py-3 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {expense.title || 'Expense'}
                   </p>
-                  <p className="text-xs text-gray-400">{date}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{date}</p>
                   {expense.category && (
-                    <p className="text-xs text-gray-400 mt-0.5">{expense.category.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{expense.category.name}</p>
                   )}
                 </div>
                 <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                  <span className="text-sm font-bold text-gray-900">₹{amount.toFixed(2)}</span>
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">₹{amount.toFixed(2)}</span>
                   <StatusBadge status={status} />
                 </div>
               </div>
@@ -116,7 +116,7 @@ export default function PersonExpensesPage() {
 
               {split && status === 'PENDING' && (
                 <div className="px-4 pb-3">
-                  <p className="text-xs text-gray-400 text-center">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
                     Waiting for {personName} to mark as paid
                   </p>
                 </div>

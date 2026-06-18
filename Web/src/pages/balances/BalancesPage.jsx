@@ -14,7 +14,7 @@ const fmtDate = (d) => (d ? format(new Date(d), 'd MMM') : '');
 /* ─── Status badge ─── */
 function StatusBadge({ status }) {
   if (status === 'PENDING')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Pending</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Pending</span>;
   if (status === 'PAYMENT_REQUESTED')
     return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Claimed paid</span>;
   return null;
@@ -27,14 +27,14 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
   const amount = Number(split.amount);
 
   return (
-    <div className={`px-4 py-3 border-t border-gray-50 flex flex-col gap-2 ${isInBulk ? 'opacity-60' : ''}`}>
+    <div className={`px-4 py-3 border-t border-gray-50 dark:border-gray-700 flex flex-col gap-2 ${isInBulk ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm text-gray-800 truncate">{title}</p>
+          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{title}</p>
           <p className="text-xs text-gray-400">{fmtDate(split.expense?.expenseDate)}</p>
         </div>
         <div className="text-right shrink-0 flex flex-col items-end gap-1">
-          <span className="text-sm font-semibold text-gray-900">{fmt(amount)}</span>
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(amount)}</span>
           <StatusBadge status={split.status} />
         </div>
       </div>
@@ -66,10 +66,10 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
       )}
 
       {mode === 'owed' && confirmWaive && (
-        <div className="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
+        <div className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl px-3 py-2">
           <p className="text-xs text-orange-700 flex-1">Forgive {fmt(amount)}? It stays in your expenses.</p>
           <button
-            className="text-xs font-semibold text-orange-600 px-2 py-1 rounded-lg border border-orange-200 disabled:opacity-50"
+            className="text-xs font-semibold text-orange-600 px-2 py-1 rounded-lg border border-orange-200 dark:border-orange-700 disabled:opacity-50"
             onClick={() => { onWaive(split.id); setConfirmWaive(false); }}
             disabled={isBusy}
           >
@@ -126,36 +126,36 @@ function BulkPaySheet({ group, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full bg-white rounded-t-3xl px-5 pt-5 pb-10 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
+      <div className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl px-5 pt-5 pb-10 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-base font-bold text-red-600 shrink-0">
             {group.payerName?.[0]?.toUpperCase() || '?'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900">Pay {group.payerName} together</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">Pay {group.payerName} together</p>
             <p className="text-xs text-gray-400">Select expenses to bundle</p>
           </div>
         </div>
 
         {/* Split checkboxes */}
-        <div className="flex flex-col divide-y divide-gray-50 border border-gray-100 rounded-2xl overflow-hidden">
+        <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-700 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden">
           {pendingSplits.map((split) => {
             const checked = selected.has(split.id);
             return (
               <button
                 key={split.id}
-                className={`flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? 'bg-primary-50' : 'bg-white'}`}
+                className={`flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? 'bg-primary-50 dark:bg-primary-900/30' : 'bg-white dark:bg-gray-800'}`}
                 onClick={() => toggle(split.id)}
               >
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary-500 border-primary-500' : 'border-gray-300'}`}>
                   {checked && <span className="text-white text-xs leading-none">✓</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 truncate">{split.expense?.title || 'Expense'}</p>
+                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{split.expense?.title || 'Expense'}</p>
                   <p className="text-xs text-gray-400">{fmtDate(split.expense?.expenseDate)}</p>
                 </div>
-                <span className="text-sm font-semibold text-gray-700 shrink-0">{fmt(split.amount)}</span>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">{fmt(split.amount)}</span>
               </button>
             );
           })}
@@ -168,14 +168,14 @@ function BulkPaySheet({ group, onClose }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Add a note (optional)"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:border-primary-400"
+            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-primary-400"
           />
         </div>
 
         {/* Total */}
         <div className="flex items-center justify-between px-1">
           <p className="text-sm text-gray-500">{selectedSplits.length} expense{selectedSplits.length !== 1 ? 's' : ''} selected</p>
-          <p className="text-lg font-bold text-gray-900">{fmt(total)}</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
         </div>
 
         {/* Submit */}
@@ -198,14 +198,14 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
   const count = bp.splits.length;
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-primary-100">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-primary-100 dark:border-primary-700">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-3 pb-2">
         <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-sm font-bold text-primary-600 shrink-0">
           {bp.fromUser.name?.[0]?.toUpperCase() || '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900">{bp.fromUser.name} wants to pay you</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">{bp.fromUser.name} wants to pay you</p>
           <p className="text-xs text-gray-400">{count} expense{count !== 1 ? 's' : ''} · {fmt(total)}</p>
         </div>
         <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-medium">💸 Bulk</span>
@@ -225,14 +225,14 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-50 divide-y divide-gray-50">
+        <div className="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700">
           {bp.splits.map((s) => (
             <div key={s.splitId} className="flex items-center justify-between px-4 py-2.5">
               <div>
-                <p className="text-xs text-gray-700">{s.split.expense?.title || 'Expense'}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-200">{s.split.expense?.title || 'Expense'}</p>
                 <p className="text-xs text-gray-400">{fmtDate(s.split.expense?.expenseDate)}</p>
               </div>
-              <span className="text-xs font-semibold text-gray-600">{fmt(s.split.amount)}</span>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{fmt(s.split.amount)}</span>
             </div>
           ))}
         </div>
@@ -258,7 +258,7 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
   const count = bp.splits.length;
 
   return (
-    <div className="mx-4 mb-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+    <div className="mx-4 mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold text-amber-800">⏳ Bulk payment pending</p>
@@ -287,25 +287,35 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
 /* ─── PersonCard for "Owed to me" ─── */
 function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, isBusy }) {
   const [expanded, setExpanded] = useState(true);
+  const navigate = useNavigate();
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-      <button className="w-full flex items-center px-4 py-3 gap-3 text-left" onClick={() => setExpanded((v) => !v)}>
-        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-base font-bold text-primary-600 shrink-0">
-          {group.personName?.[0]?.toUpperCase() || '?'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900">{group.personName}</p>
-          <p className="text-xs text-gray-400">
-            {group.splits.length} {group.splits.length === 1 ? 'expense' : 'expenses'}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-base font-bold text-green-600">{fmt(group.total)}</p>
-          <p className="text-xs text-gray-400">owes you</p>
-        </div>
-        <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
-      </button>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex items-center px-4 py-3 gap-3">
+        <button className="flex items-center gap-3 flex-1 min-w-0 text-left" onClick={() => setExpanded((v) => !v)}>
+          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-base font-bold text-primary-600 shrink-0">
+            {group.personName?.[0]?.toUpperCase() || '?'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{group.personName}</p>
+            <p className="text-xs text-gray-400">
+              {group.splits.length} {group.splits.length === 1 ? 'expense' : 'expenses'}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-base font-bold text-green-600">{fmt(group.total)}</p>
+            <p className="text-xs text-gray-400">owes you</p>
+          </div>
+          <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
+        </button>
+        <button
+          onClick={() => navigate(`/balances/history/${group.personId}`)}
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-600"
+          title="Balance history"
+        >
+          📈
+        </button>
+      </div>
 
       {expanded &&
         group.splits.map((split) => (
@@ -330,13 +340,13 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
 
   return (
     <>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
         <button className="w-full flex items-center px-4 py-3 gap-3 text-left" onClick={() => setExpanded((v) => !v)}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-base font-bold text-red-500 shrink-0">
             {group.payerName?.[0]?.toUpperCase() || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900">{group.payerName}</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{group.payerName}</p>
             <p className="text-xs text-gray-400">
               {group.splits.length} {group.splits.length === 1 ? 'expense' : 'expenses'}
             </p>
@@ -368,7 +378,7 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
 
         {/* Pay together + UPI buttons */}
         {expanded && pendingSplitsCount >= 1 && !hasPendingBulk && (
-          <div className="px-4 py-3 border-t border-gray-50 flex gap-2">
+          <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-700 flex gap-2">
             <button
               onClick={() => setBulkOpen(true)}
               className="flex-1 py-2.5 rounded-xl border-2 border-primary-400 text-primary-600 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
@@ -399,14 +409,14 @@ function PaidForPersonCard({ person }) {
 
   return (
     <button
-      className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left"
+      className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left"
       onClick={() => navigate(`/balances/person/${person.personId}`)}
     >
       <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-base font-bold text-amber-600 shrink-0">
         {person.personName?.[0]?.toUpperCase() || '?'}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900">{person.personName}</p>
+        <p className="text-sm font-semibold text-gray-900 dark:text-white">{person.personName}</p>
         <p className="text-xs text-gray-400">{person.expenseCount} {person.expenseCount === 1 ? 'expense' : 'expenses'}</p>
       </div>
       <div className="text-right">
@@ -434,7 +444,7 @@ function GroupBalanceCard({ group, mode }) {
 
   return (
     <button
-      className="w-full bg-white rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left border border-indigo-100 active:bg-indigo-50 transition-colors"
+      className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left border border-indigo-100 dark:border-indigo-700 active:bg-indigo-50 transition-colors"
       onClick={() => navigate(`/groups/${group.id}`)}
     >
       <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xl shrink-0">
@@ -442,7 +452,7 @@ function GroupBalanceCard({ group, mode }) {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-sm font-semibold text-gray-900 truncate">{group.name}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 shrink-0">
             👥 Group
           </span>
@@ -490,13 +500,13 @@ export default function BalancesPage() {
   const incomingBulkCount = receivedBulkPayments.length;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title="Balances" />
 
-      <div className="flex bg-white border-b border-gray-100 sticky top-0 z-10">
+      <div className="flex bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <button
           className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'owed' ? 'text-primary-600 border-primary-500' : 'text-gray-400 border-transparent'
+            tab === 'owed' ? 'text-primary-600 border-primary-500' : 'text-gray-400 dark:text-gray-500 border-transparent'
           }`}
           onClick={() => setTab('owed')}
         >
@@ -509,7 +519,7 @@ export default function BalancesPage() {
         </button>
         <button
           className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'iowe' ? 'text-red-500 border-red-400' : 'text-gray-400 border-transparent'
+            tab === 'iowe' ? 'text-red-500 border-red-400' : 'text-gray-400 dark:text-gray-500 border-transparent'
           }`}
           onClick={() => setTab('iowe')}
         >
@@ -522,7 +532,7 @@ export default function BalancesPage() {
         </button>
         <button
           className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'paidfor' ? 'text-amber-600 border-amber-500' : 'text-gray-400 border-transparent'
+            tab === 'paidfor' ? 'text-amber-600 border-amber-500' : 'text-gray-400 dark:text-gray-500 border-transparent'
           }`}
           onClick={() => setTab('paidfor')}
         >

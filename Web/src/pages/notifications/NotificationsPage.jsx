@@ -58,7 +58,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
         title="Notifications"
         showBack
@@ -88,18 +88,18 @@ export default function NotificationsPage() {
 
         {Object.entries(grouped).map(([date, items]) => (
           <div key={date}>
-            <p className="px-4 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            <p className="px-4 pt-4 pb-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
               {date}
             </p>
-            <div className="bg-white divide-y divide-gray-50">
+            <div className="bg-white dark:bg-gray-800 divide-y divide-gray-50 dark:divide-gray-700">
               {items.map((n) => {
                 const meta = TYPE_META[n.type] || DEFAULT_META;
                 return (
                   <div
                     key={n.id}
                     onClick={() => handleTap(n)}
-                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 transition-colors ${
-                      !n.isRead ? 'bg-blue-50/40' : 'bg-white'
+                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700 transition-colors ${
+                      !n.isRead ? 'bg-blue-50/40 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-800'
                     }`}
                   >
                     {/* Icon */}
@@ -109,11 +109,11 @@ export default function NotificationsPage() {
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm leading-snug ${!n.isRead ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                      <p className={`text-sm leading-snug ${!n.isRead ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
                         {n.title}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-snug">{n.body}</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{n.body}</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                         {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                       </p>
                     </div>
@@ -125,7 +125,7 @@ export default function NotificationsPage() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteNotif.mutate(n.id); }}
-                        className="text-gray-300 active:text-red-400 text-lg leading-none"
+                        className="text-gray-300 dark:text-gray-600 active:text-red-400 text-lg leading-none"
                       >
                         ×
                       </button>

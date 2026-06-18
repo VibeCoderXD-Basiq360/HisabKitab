@@ -6,7 +6,7 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 
 export function useFCM(isLoggedIn) {
   useEffect(() => {
-    if (!isLoggedIn || !VAPID_KEY || !('Notification' in window)) return;
+    if (!isLoggedIn || !VAPID_KEY || !('Notification' in window) || import.meta.env.DEV) return;
 
     const setup = async () => {
       try {
