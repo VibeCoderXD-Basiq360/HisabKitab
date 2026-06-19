@@ -22,6 +22,7 @@ const exchangeRateRoutes = require('./modules/exchangeRate/exchangeRate.routes')
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
+require('./jobs/creditCardReminder');
 
 const app = express();
 

@@ -10,6 +10,7 @@ import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import ExpenseCard from '../../components/ExpenseCard';
 import MonthSummary from '../../components/MonthSummary';
+import CreditCardDueBanner from '../../components/CreditCardDueBanner';
 import Button from '../../components/ui/Button';
 
 const now = new Date();
@@ -184,6 +185,8 @@ export default function HomePage() {
         <div className="flex-1 overflow-auto pb-24 pt-4 flex flex-col gap-3">
 
           <MonthSummary total={monthTotal} count={monthCount} />
+
+          <CreditCardDueBanner />
 
           {/* Budget bar */}
           {totalBudget > 0 && (
