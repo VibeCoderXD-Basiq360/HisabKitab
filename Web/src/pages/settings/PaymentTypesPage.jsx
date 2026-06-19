@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   usePaymentTypes,
   useCreatePaymentType,
   useUpdatePaymentType,
   useDeletePaymentType,
 } from '../../hooks/usePaymentTypes';
+import { useCardDelegations, useCreateDelegation } from '../../hooks/useCardDelegation';
 import TopBar from '../../components/TopBar';
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -221,13 +223,68 @@ function dueDateInfo(paymentDueDay, billingCycleDay) {
   return { days, dueDate, cycleText };
 }
 
+function DelegateSheet({ paymentType, onClose }) {
+  const [email, setEmail] = useState('');
+  const createDelegation = useCreateDelegation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    try {
+      await createDelegation.mutateAsync({ paymentTypeId: paymentType.id, ownerEmail: email.trim() });
+      onClose();
+    } catch (err) {
+      alert(err?.response?.data?.error || 'Failed to send request');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
+        <div>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">Link {paymentType.name} to card owner</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Expenses on this card will be logged by you but the owner will be notified. You can mark specific ones as "to repay."
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Card owner's email (must have HisabKitab account)</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="dad@email.com"
+              className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={!email.trim() || createDelegation.isPending}
+            className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
+          >
+            {createDelegation.isPending ? 'Sending request…' : 'Send delegation request'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function PaymentTypesPage() {
+  const navigate = useNavigate();
   const { data: types = [], isLoading } = usePaymentTypes();
+  const { data: delegations } = useCardDelegations();
   const create = useCreatePaymentType();
   const update = useUpdatePaymentType();
   const remove = useDeletePaymentType();
 
   const [sheet, setSheet] = useState(null); // null | 'new' | paymentType object
+  const [delegateSheet, setDelegateSheet] = useState(null); // null | paymentType object
+
+  const allDelegations = [...(delegations?.outgoing || []), ...(delegations?.incoming || [])];
+  const getDelegation = (ptId) => allDelegations.find((d) => d.paymentTypeId === ptId);
 
   const openNew = () => setSheet('new');
   const openEdit = (t) => setSheet(t);
@@ -265,6 +322,7 @@ export default function PaymentTypesPage() {
             const urgency = info
               ? info.days === 0 ? 'red' : info.days <= 3 ? 'orange' : info.days <= 7 ? 'yellow' : 'green'
               : null;
+            const delegation = t.cardType === 'CREDIT_CARD' ? getDelegation(t.id) : null;
             return (
               <div key={t.id} className="flex items-start px-4 py-3 gap-3">
                 <div
@@ -303,6 +361,23 @@ export default function PaymentTypesPage() {
                       )}
                     </div>
                   )}
+                  {delegation && (
+                    <p className={`text-xs font-medium mt-0.5 ${
+                      delegation.status === 'ACTIVE' ? 'text-green-600' :
+                      delegation.status === 'PENDING' ? 'text-amber-600' : 'text-gray-400'
+                    }`}>
+                      {delegation.status === 'ACTIVE' ? `🔗 Linked to ${delegation.owner?.name || 'owner'}` :
+                       delegation.status === 'PENDING' ? '⏳ Awaiting owner approval' : ''}
+                    </p>
+                  )}
+                  {t.cardType === 'CREDIT_CARD' && !delegation && (
+                    <button
+                      onClick={() => setDelegateSheet(t)}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 text-left"
+                    >
+                      + Link to card owner
+                    </button>
+                  )}
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button
@@ -337,6 +412,13 @@ export default function PaymentTypesPage() {
           onSave={handleSave}
           onClose={closeSheet}
           isPending={isPending}
+        />
+      )}
+
+      {delegateSheet && (
+        <DelegateSheet
+          paymentType={delegateSheet}
+          onClose={() => setDelegateSheet(null)}
         />
       )}
     </div>

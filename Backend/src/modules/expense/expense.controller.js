@@ -118,6 +118,26 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, p
   }
 }
 
+async function linkDelegation(expenseId, paymentTypeId, userId, title, amount) {
+  const delegation = await prisma.cardDelegation.findFirst({
+    where: { paymentTypeId, requestedById: userId, status: 'ACTIVE' },
+    include: { owner: { select: { id: true, name: true, fcmToken: true } } },
+  });
+  if (!delegation) return;
+
+  await prisma.expense.update({
+    where: { id: expenseId },
+    data: { delegationId: delegation.id, isDelegatedCard: true },
+  });
+
+  const me = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  await notify(delegation.ownerId, delegation.owner.fcmToken, {
+    title: `New charge on your card`,
+    body: `${me?.name || 'Card user'} spent ₹${Number(amount).toLocaleString('en-IN')} on "${title || 'an expense'}"`,
+    data: { type: 'CARD_EXPENSE_LOGGED', delegationId: delegation.id, expenseId },
+  });
+}
+
 const list = async (req, res) => {
   await processDueRecurring(req.user.userId);
 
@@ -204,6 +224,8 @@ const create = async (req, res) => {
   });
 
   await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null);
+
+  await linkDelegation(expense.id, paymentTypeId, req.user.userId, title, amount);
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.status(201).json(full);

@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import { useBalances, usePaidForSummary, useRequestPayment, useAcceptPayment, useRejectPayment, useWaiveSplit, useMarkReceived } from '../../hooks/useSplits';
 import { useBulkPayments, useCreateBulkPayment, useRespondBulkPayment, useCancelBulkPayment } from '../../hooks/useBulkPayments';
 import { useGroups } from '../../hooks/useGroups';
+import { useCardDelegationBalance } from '../../hooks/useCardDelegation';
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => (d ? format(new Date(d), 'd MMM') : '');
@@ -472,11 +473,15 @@ function GroupBalanceCard({ group, mode }) {
 
 /* ─── Main page ─── */
 export default function BalancesPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState('owed');
   const { data, isLoading } = useBalances();
   const { data: paidFor = [], isLoading: paidForLoading } = usePaidForSummary();
   const { data: bulkData } = useBulkPayments();
   const { data: groups = [] } = useGroups();
+  const { data: cardBalance } = useCardDelegationBalance();
+  const cardIOwe    = cardBalance?.iOwe    || [];
+  const cardOwedMe  = cardBalance?.owedToMe || [];
 
   const groupsOwedToMe = groups.filter((g) => g.myNet > 0.01);
   const groupsIOwe = groups.filter((g) => g.myNet < -0.01);
@@ -602,6 +607,35 @@ export default function BalancesPage() {
                     ))}
                   </>
                 )}
+                {cardOwedMe.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                      Card debts owed to you
+                    </p>
+                    {cardOwedMe.map((c) => (
+                      <button
+                        key={c.delegationId}
+                        onClick={() => navigate('/settings/card-delegations')}
+                        className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex items-center gap-3 text-left"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xl shrink-0">
+                          {c.card.icon || '💳'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
+                          <p className="text-xs text-gray-400">{c.card.name}</p>
+                          {c.pendingApproval > 0 && (
+                            <p className="text-xs text-amber-600">{fmt(c.pendingApproval)} awaiting your approval</p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-green-600">{fmt(c.outstanding)}</p>
+                          <p className="text-xs text-gray-400">owed to you</p>
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
               </>
             )}
           </>
@@ -609,7 +643,7 @@ export default function BalancesPage() {
 
         {/* ── I owe ── */}
         {!isLoading && tab === 'iowe' && (
-          data?.iOwe?.length === 0 && groupsIOwe.length === 0 ? (
+          data?.iOwe?.length === 0 && groupsIOwe.length === 0 && cardIOwe.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-16 gap-3">
               <span className="text-5xl">✅</span>
               <p className="text-sm text-gray-400">You don't owe anyone right now</p>
@@ -636,6 +670,35 @@ export default function BalancesPage() {
                   )}
                   {groupsIOwe.map((g) => (
                     <GroupBalanceCard key={g.id} group={g} mode="iowe" />
+                  ))}
+                </>
+              )}
+              {cardIOwe.length > 0 && (
+                <>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                    Card debts
+                  </p>
+                  {cardIOwe.map((c) => (
+                    <button
+                      key={c.delegationId}
+                      onClick={() => navigate('/settings/card-delegations')}
+                      className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex items-center gap-3 text-left"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-xl shrink-0">
+                        {c.card.icon || '🏦'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
+                        <p className="text-xs text-gray-400">{c.card.name}</p>
+                        {c.pendingApproval > 0 && (
+                          <p className="text-xs text-amber-600">{fmt(c.pendingApproval)} pending confirmation</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold text-red-500">{fmt(c.outstanding)}</p>
+                        <p className="text-xs text-gray-400">to repay</p>
+                      </div>
+                    </button>
                   ))}
                 </>
               )}

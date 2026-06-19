@@ -39,6 +39,7 @@ import LoansPage from './pages/loans/LoansPage';
 import CreateLoanPage from './pages/loans/CreateLoanPage';
 import LoanDetailPage from './pages/loans/LoanDetailPage';
 import ExchangeRatesPage from './pages/settings/ExchangeRatesPage';
+import CardDelegationsPage from './pages/settings/CardDelegationsPage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -128,6 +129,7 @@ export default function App() {
           <Route path="/loans/new" element={<Protected><CreateLoanPage /></Protected>} />
           <Route path="/loans/:id" element={<Protected><LoanDetailPage /></Protected>} />
           <Route path="/settings/exchange-rates" element={<Protected><ExchangeRatesPage /></Protected>} />
+          <Route path="/settings/card-delegations" element={<Protected><CardDelegationsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

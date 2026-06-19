@@ -11,6 +11,7 @@ import api from '../../lib/api';
 const items = [
   { to: '/settings/categories',    label: 'Categories',         icon: '🏷️', desc: 'Manage expense categories' },
   { to: '/settings/payment-types', label: 'Payment Types',      icon: '💳', desc: 'Cash, UPI, Card…' },
+  { to: '/settings/card-delegations', label: 'Shared Cards',   icon: '🔗', desc: 'Use someone else\'s card and track what you owe' },
   { to: '/settings/people',        label: 'People',             icon: '👥', desc: 'Tag people in expenses' },
   { to: '/settings/recurring',     label: 'Recurring Expenses', icon: '🔁', desc: 'Auto-create expenses on a schedule' },
   { to: '/settings/budgets',       label: 'Budget Limits',      icon: '💰', desc: 'Set monthly spending limits per category' },

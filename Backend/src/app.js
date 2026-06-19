@@ -19,6 +19,7 @@ const activityRoutes = require('./modules/activity/activity.routes');
 const savingsGoalRoutes = require('./modules/savingsGoal/savingsGoal.routes');
 const loanRoutes = require('./modules/loan/loan.routes');
 const exchangeRateRoutes = require('./modules/exchangeRate/exchangeRate.routes');
+const cardDelegationRoutes = require('./modules/cardDelegation/cardDelegation.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
@@ -52,6 +53,7 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/savings-goal', savingsGoalRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/exchange-rates', exchangeRateRoutes);
+app.use('/api/card-delegations', cardDelegationRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

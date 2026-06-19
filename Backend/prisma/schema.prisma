@@ -43,6 +43,18 @@ enum PaymentRequestStatus {
   REJECTED
 }
 
+enum DelegationStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+}
+
+enum RepaymentStatus {
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
 model User {
   id            String        @id @default(cuid())
   firebaseUid   String        @unique
@@ -68,6 +80,9 @@ model User {
   savingsGoal          SavingsGoal?
   loans                Loan[]
   exchangeRates        ExchangeRate[]
+  delegationsRequested CardDelegation[] @relation("DelegationRequester")
+  delegationsOwned     CardDelegation[] @relation("DelegationOwner")
+  repaymentsMade       CardRepayment[]  @relation("RepaymentPayer")
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -123,12 +138,49 @@ model PaymentType {
 
   expenses          Expense[]
   recurringExpenses RecurringExpense[]
+  delegation        CardDelegation?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@unique([userId, name])
   @@index([userId])
+}
+
+model CardDelegation {
+  id            String           @id @default(cuid())
+  paymentTypeId String           @unique
+  paymentType   PaymentType      @relation(fields: [paymentTypeId], references: [id], onDelete: Cascade)
+  requestedById String
+  requestedBy   User             @relation("DelegationRequester", fields: [requestedById], references: [id])
+  ownerId       String
+  owner         User             @relation("DelegationOwner", fields: [ownerId], references: [id])
+  status        DelegationStatus @default(PENDING)
+  createdAt     DateTime         @default(now())
+  approvedAt    DateTime?
+
+  expenses   Expense[]
+  repayments CardRepayment[]
+
+  @@index([requestedById])
+  @@index([ownerId])
+}
+
+model CardRepayment {
+  id           String          @id @default(cuid())
+  delegationId String
+  delegation   CardDelegation  @relation(fields: [delegationId], references: [id], onDelete: Cascade)
+  payerId      String
+  payer        User            @relation("RepaymentPayer", fields: [payerId], references: [id])
+  amount       Decimal         @db.Decimal(10, 2)
+  note         String?
+  expenseIds   String[]
+  status       RepaymentStatus @default(PENDING_APPROVAL)
+  createdAt    DateTime        @default(now())
+  approvedAt   DateTime?
+
+  @@index([delegationId])
+  @@index([payerId])
 }
 
 model Person {
@@ -182,6 +234,12 @@ model Expense {
   receiptUrl      String?
   tags            String[]  @default([])
   isReimbursement Boolean   @default(false)
+
+  delegationId    String?
+  delegation      CardDelegation? @relation(fields: [delegationId], references: [id], onDelete: SetNull)
+  isDelegatedCard Boolean         @default(false)
+  willRepay       Boolean         @default(false)
+  isRepaid        Boolean         @default(false)
 
   people        ExpensePerson[]
   splits        ExpenseSplit[]

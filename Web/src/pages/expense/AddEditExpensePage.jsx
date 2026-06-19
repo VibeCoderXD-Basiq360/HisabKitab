@@ -6,6 +6,7 @@ import { useExpense, useCreateExpense, useUpdateExpense, useDeleteExpense } from
 import { useCategories } from '../../hooks/useCategories';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
 import { usePeople } from '../../hooks/usePeople';
+import { useCardDelegations } from '../../hooks/useCardDelegation';
 import { useComments, useAddComment, useDeleteComment, useExpenseTags } from '../../hooks/useComments';
 import TopBar from '../../components/TopBar';
 import Button from '../../components/ui/Button';
@@ -80,6 +81,7 @@ const EMPTY = {
   recurringEndDate: '',
   tags: [],
   isReimbursement: false,
+  willRepay: false,
 };
 
 export default function AddEditExpensePage() {
@@ -91,6 +93,9 @@ export default function AddEditExpensePage() {
   const { data: categories = [] } = useCategories();
   const { data: paymentTypes = [] } = usePaymentTypes();
   const { data: people = [] } = usePeople();
+  const { data: delegationsData } = useCardDelegations();
+  const activeDelegations = delegationsData?.outgoing?.filter((d) => d.status === 'ACTIVE') || [];
+  const activeDelegation = activeDelegations.find((d) => d.paymentTypeId === form.paymentTypeId);
 
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense();
@@ -211,6 +216,7 @@ export default function AddEditExpensePage() {
       recurringEndDate: form.recurringEndDate || null,
       tags: form.tags,
       isReimbursement: form.isReimbursement,
+      willRepay: activeDelegation ? form.willRepay : false,
     };
     let expenseId = id;
     if (isEdit) {
@@ -669,6 +675,45 @@ export default function AddEditExpensePage() {
                 Post
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Delegated card banner + willRepay toggle */}
+        {activeDelegation && !isEdit && (
+          <div className="flex flex-col gap-2">
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3 flex items-start gap-3">
+              <span className="text-xl shrink-0">🏦</span>
+              <div>
+                <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
+                  {activeDelegation.owner?.name || 'Card owner'}'s card
+                </p>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                  This expense won't count in your totals — it's on their card
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, willRepay: !f.willRepay }))}
+              className={`flex items-center justify-between min-h-[48px] px-4 rounded-xl border transition-colors ${
+                form.willRepay
+                  ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700'
+                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">💸</span>
+                <div className="text-left">
+                  <p className={`text-sm font-medium ${form.willRepay ? 'text-orange-700 dark:text-orange-400' : 'text-gray-800 dark:text-gray-200'}`}>
+                    I'll repay this
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Adds to your balance — you'll pay {activeDelegation.owner?.name || 'the owner'} back</p>
+                </div>
+              </div>
+              <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.willRepay ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.willRepay ? 'translate-x-4' : 'translate-x-0'}`} />
+              </div>
+            </button>
           </div>
         )}
 
