@@ -14,11 +14,19 @@ enum BulkPaymentStatus {
   CANCELLED
 }
 
+enum CardType {
+  CREDIT_CARD
+  DEBIT_CARD
+}
+
 enum RecurrenceFrequency {
   DAILY
   WEEKLY
   MONTHLY
   YEARLY
+  WEEKDAYS
+  WEEKENDS
+  CUSTOM_DAYS
 }
 
 enum SplitStatus {
@@ -106,6 +114,12 @@ model PaymentType {
   icon      String?
   color     String?
   isDefault Boolean   @default(false)
+
+  cardType           CardType?
+  billingCycleDay    Int?
+  paymentDueDay      Int?
+  reminderDaysBefore Int?
+  reminderEnabled    Boolean   @default(false)
 
   expenses          Expense[]
   recurringExpenses RecurringExpense[]
@@ -238,6 +252,7 @@ model RecurringExpense {
   paymentTypeId String
   paymentType   PaymentType         @relation(fields: [paymentTypeId], references: [id])
   frequency     RecurrenceFrequency
+  customDays    Int[]               @default([])
   nextDueDate   DateTime
   endDate       DateTime?
   isActive      Boolean             @default(true)

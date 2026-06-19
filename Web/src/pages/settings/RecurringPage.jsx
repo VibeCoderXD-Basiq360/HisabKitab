@@ -4,8 +4,9 @@ import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useRecurring, useToggleRecurring, useDeleteRecurring, useEditSchedule } from '../../hooks/useRecurring';
 
-const FREQ_LABEL = { DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly', YEARLY: 'Yearly' };
-const FREQ_ICON  = { DAILY: '📅', WEEKLY: '🗓️', MONTHLY: '📆', YEARLY: '🎯' };
+const FREQ_LABEL = { DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly', YEARLY: 'Yearly', WEEKDAYS: 'Weekdays', WEEKENDS: 'Weekends', CUSTOM_DAYS: 'Custom days' };
+const FREQ_ICON  = { DAILY: '📅', WEEKLY: '🗓️', MONTHLY: '📆', YEARLY: '🎯', WEEKDAYS: '🗓️', WEEKENDS: '🏖️', CUSTOM_DAYS: '📌' };
+const DAY_NAMES  = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
 
 function toLocalDatetimeInput(isoString) {
   const d = new Date(isoString);
@@ -127,6 +128,9 @@ export default function RecurringPage() {
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {item.paymentType?.name} · {FREQ_ICON[item.frequency]} {FREQ_LABEL[item.frequency]}
+                  {item.frequency === 'CUSTOM_DAYS' && item.customDays?.length > 0 && (
+                    <span className="ml-1">({item.customDays.map((d) => DAY_NAMES[d]).join(', ')})</span>
+                  )}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   Next: {format(new Date(item.nextDueDate), 'd MMM yyyy, h:mm a')}
@@ -145,7 +149,11 @@ export default function RecurringPage() {
                 <p className="text-sm font-bold text-gray-900 dark:text-white">
                   ₹{Number(item.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                 </p>
-                <p className="text-xs text-gray-400">{FREQ_LABEL[item.frequency].toLowerCase()}</p>
+                <p className="text-xs text-gray-400">
+                  {item.frequency === 'CUSTOM_DAYS' && item.customDays?.length > 0
+                    ? item.customDays.map((d) => DAY_NAMES[d]).join('/')
+                    : FREQ_LABEL[item.frequency].toLowerCase()}
+                </p>
               </div>
             </div>
 

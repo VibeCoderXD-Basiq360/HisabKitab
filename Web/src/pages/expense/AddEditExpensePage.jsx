@@ -15,23 +15,49 @@ import { format as dfFormat } from 'date-fns';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
-function defaultRecurringStart(expenseDateStr, frequency) {
+function nextValidDay(base, allowedDays) {
+  let d = addDays(base, 1);
+  for (let i = 0; i < 7; i++) {
+    if (allowedDays.includes(d.getDay())) return d;
+    d = addDays(d, 1);
+  }
+  return addDays(base, 1);
+}
+
+function defaultRecurringStart(expenseDateStr, frequency, customDays = []) {
   const base = new Date((expenseDateStr || todayISO()) + 'T09:00');
   let next;
   switch (frequency) {
-    case 'DAILY':   next = addDays(base, 1); break;
-    case 'WEEKLY':  next = addWeeks(base, 1); break;
-    case 'YEARLY':  next = addYears(base, 1); break;
-    default:        next = addMonths(base, 1);
+    case 'DAILY':       next = addDays(base, 1); break;
+    case 'WEEKLY':      next = addWeeks(base, 1); break;
+    case 'YEARLY':      next = addYears(base, 1); break;
+    case 'WEEKDAYS':    next = nextValidDay(base, [1, 2, 3, 4, 5]); break;
+    case 'WEEKENDS':    next = nextValidDay(base, [0, 6]); break;
+    case 'CUSTOM_DAYS': next = customDays.length ? nextValidDay(base, customDays) : addDays(base, 1); break;
+    default:            next = addMonths(base, 1);
   }
   return format(next, "yyyy-MM-dd'T'HH:mm");
 }
 
-const FREQ_OPTIONS = [
+const FREQ_OPTIONS_ROW1 = [
   { value: 'DAILY',   label: 'Daily' },
   { value: 'WEEKLY',  label: 'Weekly' },
   { value: 'MONTHLY', label: 'Monthly' },
   { value: 'YEARLY',  label: 'Yearly' },
+];
+const FREQ_OPTIONS_ROW2 = [
+  { value: 'WEEKDAYS',    label: 'Weekdays' },
+  { value: 'WEEKENDS',    label: 'Weekends' },
+  { value: 'CUSTOM_DAYS', label: 'Custom' },
+];
+const DAY_OPTIONS = [
+  { value: 1, label: 'Mon' },
+  { value: 2, label: 'Tue' },
+  { value: 3, label: 'Wed' },
+  { value: 4, label: 'Thu' },
+  { value: 5, label: 'Fri' },
+  { value: 6, label: 'Sat' },
+  { value: 0, label: 'Sun' },
 ];
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'SGD', 'THB', 'JPY', 'MYR', 'CAD', 'AUD'];
@@ -49,6 +75,7 @@ const EMPTY = {
   forMode: 'self',
   isRecurring: false,
   frequency: 'MONTHLY',
+  customDays: [],
   recurringStartAt: '',
   recurringEndDate: '',
   tags: [],
@@ -179,6 +206,7 @@ export default function AddEditExpensePage() {
       paidForPersonId: form.forMode === 'other' ? form.paidForPersonId || null : null,
       isRecurring: !isEdit && form.isRecurring,
       frequency: form.frequency,
+      customDays: form.customDays,
       recurringStartAt: form.recurringStartAt || null,
       recurringEndDate: form.recurringEndDate || null,
       tags: form.tags,
@@ -467,22 +495,86 @@ export default function AddEditExpensePage() {
 
             {form.isRecurring && (
               <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  {FREQ_OPTIONS.map((opt) => (
-                    <button
-                      type="button"
-                      key={opt.value}
-                      onClick={() => setForm((f) => ({ ...f, frequency: opt.value }))}
-                      className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
-                        form.frequency === opt.value
-                          ? 'bg-primary-500 text-white border-primary-500'
-                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex gap-2">
+                    {FREQ_OPTIONS_ROW1.map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => setForm((f) => ({
+                          ...f,
+                          frequency: opt.value,
+                          recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays),
+                        }))}
+                        className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                          form.frequency === opt.value
+                            ? 'bg-primary-500 text-white border-primary-500'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    {FREQ_OPTIONS_ROW2.map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => setForm((f) => ({
+                          ...f,
+                          frequency: opt.value,
+                          recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays),
+                        }))}
+                        className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
+                          form.frequency === opt.value
+                            ? 'bg-primary-500 text-white border-primary-500'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {form.frequency === 'CUSTOM_DAYS' && (
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Repeat on</p>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {DAY_OPTIONS.map((d) => {
+                        const active = form.customDays.includes(d.value);
+                        return (
+                          <button
+                            type="button"
+                            key={d.value}
+                            onClick={() => setForm((f) => {
+                              const next = active
+                                ? f.customDays.filter((x) => x !== d.value)
+                                : [...f.customDays, d.value];
+                              return {
+                                ...f,
+                                customDays: next,
+                                recurringStartAt: defaultRecurringStart(f.expenseDate, 'CUSTOM_DAYS', next),
+                              };
+                            })}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                              active
+                                ? 'bg-primary-500 text-white border-primary-500'
+                                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
+                            }`}
+                          >
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {form.customDays.length === 0 && (
+                      <p className="text-xs text-red-400">Select at least one day</p>
+                    )}
+                  </div>
+                )}
+
 
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 flex flex-col gap-3">
                   <div className="flex flex-col gap-1">

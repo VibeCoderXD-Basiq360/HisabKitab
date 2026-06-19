@@ -2,14 +2,26 @@ const { addDays, addWeeks, addMonths, addYears } = require('date-fns');
 const prisma = require('../../lib/prisma');
 const { notify } = require('../../lib/notify');
 
-function nextDate(from, frequency) {
+function nextDateInDays(from, allowedDays) {
+  let d = addDays(new Date(from), 1);
+  for (let i = 0; i < 7; i++) {
+    if (allowedDays.includes(d.getDay())) return d;
+    d = addDays(d, 1);
+  }
+  return addDays(new Date(from), 1);
+}
+
+function nextDate(from, frequency, customDays = []) {
   const base = new Date(from);
   switch (frequency) {
-    case 'DAILY':   return addDays(base, 1);
-    case 'WEEKLY':  return addWeeks(base, 1);
-    case 'MONTHLY': return addMonths(base, 1);
-    case 'YEARLY':  return addYears(base, 1);
-    default:        return addMonths(base, 1);
+    case 'DAILY':       return addDays(base, 1);
+    case 'WEEKLY':      return addWeeks(base, 1);
+    case 'MONTHLY':     return addMonths(base, 1);
+    case 'YEARLY':      return addYears(base, 1);
+    case 'WEEKDAYS':    return nextDateInDays(base, [1, 2, 3, 4, 5]);
+    case 'WEEKENDS':    return nextDateInDays(base, [0, 6]);
+    case 'CUSTOM_DAYS': return nextDateInDays(base, customDays.length ? customDays : [1]);
+    default:            return addMonths(base, 1);
   }
 }
 
@@ -37,7 +49,7 @@ async function processDueRecurring(userId) {
         expenseDate: new Date(cursor),
         recurringExpenseId: rec.id,
       });
-      cursor = nextDate(cursor, rec.frequency);
+      cursor = nextDate(cursor, rec.frequency, rec.customDays);
     }
 
     if (toCreate.length > 0) {
@@ -71,11 +83,12 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, startDate, nextRunAt, endDate } = req.body;
+  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, startDate, nextRunAt, endDate, customDays = [] } = req.body;
+  const days = Array.isArray(customDays) ? customDays.map(Number) : [];
 
   const firstDate = nextRunAt
     ? new Date(nextRunAt)
-    : nextDate(new Date(startDate || new Date()), frequency);
+    : nextDate(new Date(startDate || new Date()), frequency, days);
 
   const item = await prisma.recurringExpense.create({
     data: {
@@ -87,6 +100,7 @@ const create = async (req, res) => {
       categoryId: categoryId || null,
       paymentTypeId,
       frequency,
+      customDays: days,
       nextDueDate: firstDate,
       endDate: endDate ? new Date(endDate) : null,
     },
@@ -102,7 +116,7 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, isActive, nextDueDate, endDate } = req.body;
+  const { amount, currency, title, note, categoryId, paymentTypeId, frequency, isActive, nextDueDate, endDate, customDays } = req.body;
 
   const item = await prisma.recurringExpense.update({
     where: { id: req.params.id },
@@ -114,6 +128,7 @@ const update = async (req, res) => {
       ...(categoryId !== undefined && { categoryId: categoryId || null }),
       ...(paymentTypeId !== undefined && { paymentTypeId }),
       ...(frequency !== undefined && { frequency }),
+      ...(customDays !== undefined && { customDays: Array.isArray(customDays) ? customDays.map(Number) : [] }),
       ...(isActive !== undefined && { isActive }),
       ...(nextDueDate !== undefined && { nextDueDate: new Date(nextDueDate) }),
       ...(endDate !== undefined && { endDate: endDate ? new Date(endDate) : null }),
