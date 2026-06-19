@@ -1,34 +1,36 @@
 import { useState } from 'react';
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import api from '../../lib/api';
 
 const now = new Date();
 
-const PERIODS = [
-  {
-    label: 'This month',
-    params: { fromDate: startOfMonth(now).toISOString(), toDate: endOfMonth(now).toISOString() },
-  },
-  {
-    label: 'Last month',
-    params: {
-      fromDate: startOfMonth(subMonths(now, 1)).toISOString(),
-      toDate: endOfMonth(subMonths(now, 1)).toISOString(),
-    },
-  },
-  {
-    label: '3 months',
-    params: { fromDate: startOfMonth(subMonths(now, 2)).toISOString(), toDate: endOfMonth(now).toISOString() },
-  },
-  { label: 'All time', params: {} },
-];
-
 export default function ExportPage() {
+  const { t } = useTranslation();
   const [periodIdx, setPeriodIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const PERIODS = [
+    {
+      label: t('analytics.this_month'),
+      params: { fromDate: startOfMonth(now).toISOString(), toDate: endOfMonth(now).toISOString() },
+    },
+    {
+      label: t('analytics.last_month'),
+      params: {
+        fromDate: startOfMonth(subMonths(now, 1)).toISOString(),
+        toDate: endOfMonth(subMonths(now, 1)).toISOString(),
+      },
+    },
+    {
+      label: t('analytics.months_3'),
+      params: { fromDate: startOfMonth(subMonths(now, 2)).toISOString(), toDate: endOfMonth(now).toISOString() },
+    },
+    { label: t('analytics.all_time'), params: {} },
+  ];
 
   async function handleDownload() {
     setLoading(true);
@@ -51,7 +53,7 @@ export default function ExportPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Export CSV" showBack />
+      <TopBar title={t('settings.export')} showBack />
       <div className="flex-1 pb-24 p-4 space-y-6">
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Select period</p>
@@ -86,7 +88,7 @@ export default function ExportPage() {
           disabled={loading}
           className="w-full py-3 bg-primary-500 text-white rounded-2xl font-medium text-sm active:opacity-80 disabled:opacity-50"
         >
-          {loading ? 'Preparing…' : 'Download CSV'}
+          {loading ? t('common.loading') : t('settings.export')}
         </button>
       </div>
       <BottomNav />

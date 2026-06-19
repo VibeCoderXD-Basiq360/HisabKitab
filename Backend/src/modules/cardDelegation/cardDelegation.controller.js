@@ -2,7 +2,8 @@ const prisma = require('../../lib/prisma');
 const { notify } = require('../../lib/notify');
 
 const delegationInclude = {
-  paymentType: { select: { id: true, name: true, icon: true, color: true } },
+  paymentType:      { select: { id: true, name: true, icon: true, color: true, cardLastFour: true, cardHolderName: true, cardExpiry: true, billingCycleDay: true } },
+  ownerPaymentType: { select: { id: true, name: true, icon: true, color: true, cardLastFour: true, cardHolderName: true, cardExpiry: true } },
   requestedBy: { select: { id: true, name: true, email: true, photoUrl: true } },
   owner:       { select: { id: true, name: true, email: true, photoUrl: true } },
 };
@@ -353,4 +354,91 @@ const toggleWillRepay = async (req, res) => {
   res.json(updated);
 };
 
-module.exports = { list, create, approve, reject, revoke, getExpenses, getBalance, createRepayment, approveRepayment, rejectRepayment, toggleWillRepay };
+// ─── Owner: link their own card to the delegation ────────────────────────────
+
+const linkOwnerCard = async (req, res) => {
+  const { ownerPaymentTypeId } = req.body;
+  const userId = req.user.userId;
+
+  const delegation = await prisma.cardDelegation.findFirst({
+    where: { id: req.params.id, ownerId: userId, status: 'ACTIVE' },
+  });
+  if (!delegation) return res.status(404).json({ error: 'Active delegation not found' });
+
+  const pt = await prisma.paymentType.findFirst({
+    where: { id: ownerPaymentTypeId, userId, cardType: 'CREDIT_CARD' },
+  });
+  if (!pt) return res.status(404).json({ error: 'Credit card not found in your payment types' });
+
+  const updated = await prisma.cardDelegation.update({
+    where: { id: req.params.id },
+    data: { ownerPaymentTypeId },
+    include: delegationInclude,
+  });
+  res.json(updated);
+};
+
+// ─── Combined bill for current billing cycle ─────────────────────────────────
+
+const getCombinedBill = async (req, res) => {
+  const userId = req.user.userId;
+
+  const delegation = await prisma.cardDelegation.findFirst({
+    where: {
+      id: req.params.id,
+      status: 'ACTIVE',
+      OR: [{ requestedById: userId }, { ownerId: userId }],
+    },
+    include: {
+      paymentType: { select: { billingCycleDay: true, cardLastFour: true, cardHolderName: true, cardExpiry: true, name: true } },
+      requestedBy: { select: { id: true, name: true } },
+      owner:       { select: { id: true, name: true } },
+    },
+  });
+  if (!delegation) return res.status(404).json({ error: 'Active delegation not found' });
+
+  const billingDay = delegation.paymentType?.billingCycleDay || 1;
+  const today = new Date();
+  const cycleStart = today.getDate() >= billingDay
+    ? new Date(today.getFullYear(), today.getMonth(), billingDay)
+    : new Date(today.getFullYear(), today.getMonth() - 1, billingDay);
+  const cycleEnd = new Date(cycleStart.getFullYear(), cycleStart.getMonth() + 1, billingDay);
+  cycleEnd.setDate(cycleEnd.getDate() - 1);
+
+  const [requesterExpenses, ownerExpenses] = await Promise.all([
+    prisma.expense.findMany({
+      where: { delegationId: delegation.id, expenseDate: { gte: cycleStart, lte: cycleEnd } },
+      include: { category: { select: { name: true, icon: true, color: true } } },
+      orderBy: { expenseDate: 'desc' },
+    }),
+    delegation.ownerPaymentTypeId
+      ? prisma.expense.findMany({
+          where: {
+            paymentTypeId: delegation.ownerPaymentTypeId,
+            userId: delegation.ownerId,
+            expenseDate: { gte: cycleStart, lte: cycleEnd },
+          },
+          include: { category: { select: { name: true, icon: true, color: true } } },
+          orderBy: { expenseDate: 'desc' },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const requesterTotal  = requesterExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const ownerTotal      = ownerExpenses.reduce((s, e) => s + Number(e.amount), 0);
+  const willRepayTotal  = requesterExpenses.filter((e) => e.willRepay && !e.isRepaid).reduce((s, e) => s + Number(e.amount), 0);
+
+  res.json({
+    cycleStart,
+    cycleEnd,
+    card: delegation.paymentType,
+    requester: delegation.requestedBy,
+    owner: delegation.owner,
+    hasOwnerCard: !!delegation.ownerPaymentTypeId,
+    requesterExpenses,
+    ownerExpenses,
+    summary: { requesterTotal, ownerTotal, combinedTotal: requesterTotal + ownerTotal, willRepayTotal },
+  });
+};
+
+module.exports = { list, create, approve, reject, revoke, getExpenses, getBalance, createRepayment, approveRepayment, rejectRepayment, toggleWillRepay, linkOwnerCard, getCombinedBill };

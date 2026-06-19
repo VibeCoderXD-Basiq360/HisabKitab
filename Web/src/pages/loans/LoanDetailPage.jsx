@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useLoan, useDeleteLoan, useMarkEMIPaid, useMarkEMIUnpaid } from '../../hooks/useLoans';
@@ -10,6 +11,7 @@ const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigi
 const fmtD = (d) => format(new Date(d), 'MMM yyyy');
 
 export default function LoanDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: loan, isLoading } = useLoan(id);
@@ -81,8 +83,8 @@ export default function LoanDetailPage() {
 
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-xs text-gray-400 dark:text-gray-500">
-              <span>{paidCount} of {totalMonths} EMIs paid</span>
-              <span>{isComplete ? '✓ Complete' : `${totalMonths - paidCount} remaining`}</span>
+              <span>{t('loans.emis_paid', { paid: paidCount, total: totalMonths })}</span>
+              <span>{isComplete ? t('loans.complete') : t('loans.left', { n: totalMonths - paidCount })}</span>
             </div>
             <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
               <div
@@ -94,7 +96,7 @@ export default function LoanDetailPage() {
 
           <div className="grid grid-cols-3 gap-3 pt-1 border-t border-gray-50 dark:border-gray-700">
             <div>
-              <p className="text-xs text-gray-400 dark:text-gray-500">Principal</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('loans.principal')}</p>
               <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(loan.principal)}</p>
             </div>
             <div>
@@ -189,13 +191,13 @@ export default function LoanDetailPage() {
                 disabled={deleteLoan.isPending}
                 className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50"
               >
-                {deleteLoan.isPending ? '…' : 'Delete'}
+                {deleteLoan.isPending ? '…' : t('common.delete')}
               </button>
               <button
                 onClick={() => setConfirmDelete(false)}
                 className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded-xl"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
             </div>
           </div>

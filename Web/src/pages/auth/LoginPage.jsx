@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../../lib/firebase';
 import api from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';
@@ -8,6 +9,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const [email, setEmail] = useState('');
@@ -36,7 +38,7 @@ export default function LoginPage() {
       })
       .catch(() => {
         if (active) {
-          setError('Google sign-in failed. Try again.');
+          setError(t('auth.err_google'));
           setLoading(false);
         }
       });
@@ -51,7 +53,7 @@ export default function LoginPage() {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
       await handleFirebaseLogin(user);
     } catch {
-      setError('Invalid email or password');
+      setError(t('auth.err_invalid'));
     } finally {
       setLoading(false);
     }
@@ -64,7 +66,7 @@ export default function LoginPage() {
       await signInWithRedirect(auth, new GoogleAuthProvider());
       // Page navigates away — code below won't run until user returns
     } catch {
-      setError('Google sign-in failed. Try again.');
+      setError(t('auth.err_google'));
       setLoading(false);
     }
   };
@@ -73,11 +75,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-sm">
         <h1 className="text-3xl font-bold text-center text-primary-600 mb-1">HisabKitab</h1>
-        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mb-8">Track your expenses</p>
+        <p className="text-center text-gray-400 dark:text-gray-500 text-sm mb-8">{t('auth.tagline_login')}</p>
 
         <form onSubmit={loginWithEmail} className="flex flex-col gap-4">
           <Input
-            label="Email"
+            label={t('auth.email')}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -85,7 +87,7 @@ export default function LoginPage() {
             required
           />
           <Input
-            label="Password"
+            label={t('auth.password')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -94,30 +96,30 @@ export default function LoginPage() {
           />
           {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('auth.signing_in') : t('auth.signin')}
           </Button>
         </form>
 
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-          <span className="text-xs text-gray-400 dark:text-gray-500">or</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{t('common.or')}</span>
           <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
         <Button variant="outline" onClick={loginWithGoogle} disabled={loading} className="w-full">
-          Continue with Google
+          {t('auth.google')}
         </Button>
 
         <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-4">
           <Link to="/forgot-password" className="text-primary-600 font-medium">
-            Forgot password?
+            {t('auth.forgot_password')}
           </Link>
         </p>
 
         <p className="text-center text-sm text-gray-400 dark:text-gray-500 mt-3">
-          No account?{' '}
+          {t('auth.no_account')}{' '}
           <Link to="/signup" className="text-primary-600 font-medium">
-            Sign up
+            {t('auth.signup')}
           </Link>
         </p>
       </div>

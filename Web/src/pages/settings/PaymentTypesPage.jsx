@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import VerifyIdentitySheet from '../../components/VerifyIdentitySheet';
 import {
   usePaymentTypes,
   useCreatePaymentType,
@@ -19,9 +21,13 @@ const EMPTY_FORM = {
   paymentDueDay: '',
   reminderDaysBefore: 3,
   reminderEnabled: false,
+  cardLastFour: '',
+  cardHolderName: '',
+  cardExpiry: '',
 };
 
 function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(initial || EMPTY_FORM);
   const field = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const isCC = form.cardType === 'CREDIT_CARD';
@@ -36,6 +42,9 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
       paymentDueDay: isCC && form.paymentDueDay ? Number(form.paymentDueDay) : null,
       reminderDaysBefore: isCC ? Number(form.reminderDaysBefore) : null,
       reminderEnabled: isCC ? form.reminderEnabled : false,
+      cardLastFour:   isCC && form.cardLastFour   ? form.cardLastFour.trim()   : null,
+      cardHolderName: isCC && form.cardHolderName ? form.cardHolderName.trim() : null,
+      cardExpiry:     isCC && form.cardExpiry     ? form.cardExpiry.trim()     : null,
     });
   };
 
@@ -47,7 +56,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
       >
         <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
         <h2 className="text-base font-bold text-gray-900 dark:text-white">
-          {initial ? 'Edit payment type' : 'New payment type'}
+          {initial ? `${t('common.edit')} ${t('expense.payment_type').toLowerCase()}` : `New ${t('expense.payment_type').toLowerCase()}`}
         </h2>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -94,7 +103,56 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
             <>
               <div className="h-px bg-gray-100 dark:bg-gray-700" />
               <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 -mb-1">
-                Credit Card Details
+                Card Identity
+              </p>
+
+              {/* Cardholder name */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Cardholder name</label>
+                <input
+                  type="text"
+                  value={form.cardHolderName}
+                  onChange={field('cardHolderName')}
+                  placeholder="Name printed on card"
+                  className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                />
+              </div>
+
+              {/* Last 4 digits + expiry */}
+              <div className="flex gap-3">
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Last 4 digits</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.cardLastFour}
+                    onChange={(e) => setForm((f) => ({ ...f, cardLastFour: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
+                    placeholder="1234"
+                    maxLength={4}
+                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400 tracking-widest"
+                  />
+                </div>
+                <div className="flex-1 flex flex-col gap-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Expiry (MM/YY)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={form.cardExpiry}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      if (v.length >= 3) v = v.slice(0, 2) + '/' + v.slice(2);
+                      setForm((f) => ({ ...f, cardExpiry: v }));
+                    }}
+                    placeholder="08/27"
+                    maxLength={5}
+                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                  />
+                </div>
+              </div>
+
+              <div className="h-px bg-gray-100 dark:bg-gray-700" />
+              <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 -mb-1">
+                Billing &amp; Reminders
               </p>
 
               {/* Billing cycle & due day */}
@@ -108,7 +166,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
                     onChange={field('billingCycleDay')}
                     className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
                   >
-                    <option value="">Pick day</option>
+                    <option value="">{t('expense.select')}</option>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>
                         {d}{d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'} of month
@@ -126,7 +184,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
                     onChange={field('paymentDueDay')}
                     className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
                   >
-                    <option value="">Pick day</option>
+                    <option value="">{t('expense.select')}</option>
                     {DAY_OPTIONS.map((d) => (
                       <option key={d} value={d}>
                         {d}{d === 1 ? 'st' : d === 2 ? 'nd' : d === 3 ? 'rd' : 'th'} of month
@@ -191,7 +249,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
             disabled={!form.name.trim() || isPending}
             className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50 mt-1"
           >
-            {isPending ? 'Saving…' : initial ? 'Save changes' : 'Add payment type'}
+            {isPending ? t('common.saving') : initial ? t('common.save') : `${t('common.add')} ${t('expense.payment_type').toLowerCase()}`}
           </button>
         </form>
       </div>
@@ -224,16 +282,21 @@ function dueDateInfo(paymentDueDay, billingCycleDay) {
 }
 
 function DelegateSheet({ paymentType, onClose }) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
+  const [showVerify, setShowVerify] = useState(false);
+  const [actionToken, setActionToken] = useState(null);
   const createDelegation = useCreateDelegation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim()) return;
+    if (!actionToken) { setShowVerify(true); return; }
     try {
-      await createDelegation.mutateAsync({ paymentTypeId: paymentType.id, ownerEmail: email.trim() });
+      await createDelegation.mutateAsync({ paymentTypeId: paymentType.id, ownerEmail: email.trim(), _actionToken: actionToken });
       onClose();
     } catch (err) {
+      setActionToken(null);
       alert(err?.response?.data?.error || 'Failed to send request');
     }
   };
@@ -254,26 +317,50 @@ function DelegateSheet({ paymentType, onClose }) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setActionToken(null); }}
               placeholder="dad@email.com"
               className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
             />
           </div>
+          {actionToken && (
+            <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+              ✓ Identity verified — ready to send
+            </p>
+          )}
           <button
             type="submit"
             disabled={!email.trim() || createDelegation.isPending}
             className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
           >
-            {createDelegation.isPending ? 'Sending request…' : 'Send delegation request'}
+            {createDelegation.isPending ? 'Sending request…' : actionToken ? 'Send delegation request' : 'Verify identity & send'}
           </button>
         </form>
       </div>
+      {showVerify && (
+        <VerifyIdentitySheet
+          title="Verify to link card"
+          description="You must verify your identity before linking this card to another person's account"
+          onVerified={async (token) => {
+            setShowVerify(false);
+            setActionToken(token);
+            try {
+              await createDelegation.mutateAsync({ paymentTypeId: paymentType.id, ownerEmail: email.trim(), _actionToken: token });
+              onClose();
+            } catch (err) {
+              setActionToken(null);
+              alert(err?.response?.data?.error || 'Failed to send request');
+            }
+          }}
+          onClose={() => setShowVerify(false)}
+        />
+      )}
     </div>
   );
 }
 
 export default function PaymentTypesPage() {
   const navigate = useNavigate();
+  const { t: translate } = useTranslation();
   const { data: types = [], isLoading } = usePaymentTypes();
   const { data: delegations } = useCardDelegations();
   const create = useCreatePaymentType();
@@ -287,7 +374,7 @@ export default function PaymentTypesPage() {
   const getDelegation = (ptId) => allDelegations.find((d) => d.paymentTypeId === ptId);
 
   const openNew = () => setSheet('new');
-  const openEdit = (t) => setSheet(t);
+  const openEdit = (type) => setSheet(type);
   const closeSheet = () => setSheet(null);
 
   const handleSave = async (data) => {
@@ -303,17 +390,17 @@ export default function PaymentTypesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Payment Types" showBack />
+      <TopBar title={translate('settings.payment_types')} showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
         <button
           onClick={openNew}
           className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 text-sm font-medium text-primary-600 dark:text-primary-400 bg-white dark:bg-gray-800"
         >
-          + Add payment type
+          + {translate('common.add')} {translate('expense.payment_type').toLowerCase()}
         </button>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
-          {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">Loading…</p>}
+          {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">{translate('common.loading')}</p>}
           {!isLoading && types.length === 0 && (
             <p className="px-4 py-6 text-sm text-gray-400 text-center">No payment types yet</p>
           )}
@@ -345,6 +432,13 @@ export default function PaymentTypesPage() {
                       </span>
                     )}
                   </div>
+                  {(t.cardLastFour || t.cardHolderName) && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                      {t.cardLastFour ? `•••• ${t.cardLastFour}` : ''}
+                      {t.cardHolderName ? `  ${t.cardHolderName}` : ''}
+                      {t.cardExpiry ? `  ${t.cardExpiry}` : ''}
+                    </p>
+                  )}
                   {info && (
                     <div className="mt-0.5 flex flex-col gap-0.5">
                       <p className={`text-xs font-medium ${
@@ -384,13 +478,13 @@ export default function PaymentTypesPage() {
                     onClick={() => openEdit(t)}
                     className="text-xs text-primary-600 dark:text-primary-400 px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
                   >
-                    Edit
+                    {translate('common.edit')}
                   </button>
                   <button
                     onClick={() => remove.mutate(t.id)}
                     className="text-xs text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
-                    Delete
+                    {translate('common.delete')}
                   </button>
                 </div>
               </div>
@@ -408,6 +502,9 @@ export default function PaymentTypesPage() {
             paymentDueDay: sheet.paymentDueDay || '',
             reminderDaysBefore: sheet.reminderDaysBefore ?? 3,
             reminderEnabled: sheet.reminderEnabled || false,
+            cardLastFour:   sheet.cardLastFour   || '',
+            cardHolderName: sheet.cardHolderName || '',
+            cardExpiry:     sheet.cardExpiry     || '',
           }}
           onSave={handleSave}
           onClose={closeSheet}

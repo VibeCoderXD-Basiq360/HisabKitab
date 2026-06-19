@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import html2canvas from 'html2canvas';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -252,6 +253,7 @@ function groupFrozenRate(group, rateMap) {
 }
 
 function BalancesTab({ group, currentUser }) {
+  const { t } = useTranslation();
   const balances = group.balances || [];
   const gc = groupCurrencyOf(group);
   const rateMap = useRateMap();
@@ -319,7 +321,7 @@ function BalancesTab({ group, currentUser }) {
                     {gcRate && <p className="text-[10px] text-gray-400">≈ {fmt(Math.abs(n) * gcRate, 'INR')}</p>}
                   </>
                 ) : (
-                  <span className="text-sm text-gray-400">Settled up ✓</span>
+                  <span className="text-sm text-gray-400">{t('balance.settled')}</span>
                 )}
               </div>
             </div>
@@ -334,6 +336,7 @@ function BalancesTab({ group, currentUser }) {
 // ─── Settle Up Tab ────────────────────────────────────────────────────────────
 
 function SettleUpTab({ group }) {
+  const { t } = useTranslation();
   const [confirmTx, setConfirmTx] = useState(null);
   const recordSettlement = useRecordSettlement(group.id);
   const plan = group.settlePlan || [];
@@ -412,7 +415,7 @@ function SettleUpTab({ group }) {
                 onClick={() => setConfirmTx(null)}
                 className="flex-1 py-3 rounded-2xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirm}
@@ -436,6 +439,7 @@ function SettleUpTab({ group }) {
 // ─── Add Expense Sheet ────────────────────────────────────────────────────────
 
 function AddExpenseSheet({ group, currentUser, onClose }) {
+  const { t } = useTranslation();
   const addExpense = useAddGroupExpense(group.id);
   const members = group.members || [];
 
@@ -499,7 +503,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
         <div className="sticky top-0 bg-white dark:bg-gray-800 pt-4 px-5 pb-3 border-b border-gray-100 dark:border-gray-700">
           <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-4" />
           <div className="flex items-center justify-between">
-            <p className="text-base font-semibold text-gray-900 dark:text-white">Add Expense</p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">{t('home.add_expense')}</p>
             <button onClick={onClose} className="text-gray-400 text-lg px-1">
               ✕
             </button>
@@ -674,7 +678,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
             {addExpense.isPending ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              'Add Expense'
+              t('common.add')
             )}
           </button>
         </div>
@@ -688,6 +692,7 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 const TABS = ['Expenses', 'Balances', 'Settle Up'];
 
 export default function GroupDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
@@ -732,7 +737,11 @@ export default function GroupDetailPage() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
-          <p className="text-xs text-gray-400">{group.members?.length || 0} members</p>
+          <p className="text-xs text-gray-400">
+            {(group.members?.length || 0) === 1
+              ? t('groups.member_one', { n: 1 })
+              : t('groups.member_other', { n: group.members?.length || 0 })}
+          </p>
         </div>
         <MemberAvatarsRow members={group.members || []} max={5} />
       </div>

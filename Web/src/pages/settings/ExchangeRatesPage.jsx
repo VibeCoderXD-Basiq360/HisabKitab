@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useExchangeRates, useUpdateRate, useRefreshRates } from '../../hooks/useExchangeRates';
@@ -33,6 +34,7 @@ function timeAgo(date) {
 }
 
 export default function ExchangeRatesPage() {
+  const { t } = useTranslation();
   const { data: rates = [], isLoading } = useExchangeRates();
   const updateRate  = useUpdateRate();
   const refreshRates = useRefreshRates();
@@ -70,7 +72,7 @@ export default function ExchangeRatesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Exchange Rates" showBack />
+      <TopBar title={t('settings.exchange_rates')} showBack />
 
       <div className="flex-1 overflow-auto pb-24 p-4 flex flex-col gap-3">
 
@@ -114,7 +116,7 @@ export default function ExchangeRatesPage() {
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-300 text-sm">Loading…</div>
+            <div className="flex items-center justify-center py-12 text-gray-300 text-sm">{t('common.loading')}</div>
           ) : (
             rates.map((r) => {
               const isEditing = editing[r.fromCurrency] !== undefined;
@@ -146,7 +148,7 @@ export default function ExchangeRatesPage() {
                           disabled={updateRate.isPending}
                           className="text-xs font-semibold text-primary-600 dark:text-primary-400 px-2 py-1 rounded-lg bg-primary-50 dark:bg-primary-900/30 active:bg-primary-100"
                         >
-                          Save
+                          {t('common.save')}
                         </button>
                         <button
                           onClick={() => setEditing((e) => { const n = { ...e }; delete n[r.fromCurrency]; return n; })}

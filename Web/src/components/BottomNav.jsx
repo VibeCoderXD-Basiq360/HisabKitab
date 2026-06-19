@@ -1,14 +1,17 @@
 import { NavLink } from 'react-router-dom';
-
-const tabs = [
-  { to: '/home',      label: 'Home',      icon: '🏠' },
-  { to: '/groups',    label: 'Groups',    icon: '👥' },
-  { to: '/balances',  label: 'Balances',  icon: '⚖️' },
-  { to: '/analytics', label: 'Analytics', icon: '📊' },
-  { to: '/settings',  label: 'Settings',  icon: '⚙️' },
-];
+import { useTranslation } from 'react-i18next';
 
 export default function BottomNav() {
+  const { t } = useTranslation();
+
+  const tabs = [
+    { to: '/home',      label: t('nav.home'),      icon: '🏠' },
+    { to: '/groups',    label: t('nav.groups'),    icon: '👥' },
+    { to: '/balances',  label: t('nav.balances'),  icon: '⚖️' },
+    { to: '/analytics', label: t('nav.analytics'), icon: '📊' },
+    { to: '/settings',  label: t('nav.settings'),  icon: '⚙️' },
+  ];
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex z-20"

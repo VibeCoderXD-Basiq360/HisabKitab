@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '../../hooks/useCategories';
 import TopBar from '../../components/TopBar';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 
 export default function CategoriesPage() {
+  const { t } = useTranslation();
   const { data: categories = [], isLoading } = useCategories();
   const create = useCreateCategory();
   const update = useUpdateCategory();
@@ -36,13 +38,13 @@ export default function CategoriesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Categories" showBack />
+      <TopBar title={t('categories.title')} showBack />
       <div className="flex-1 p-4 flex flex-col gap-4">
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <Input
-              label={editId ? 'Edit name' : 'New category'}
-              placeholder="e.g. Food, Transport"
+              label={editId ? t('categories.edit_name') : t('categories.new_category')}
+              placeholder={t('categories.placeholder')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
@@ -50,18 +52,18 @@ export default function CategoriesPage() {
           </div>
           {editId && (
             <Button variant="ghost" onClick={cancel} className="shrink-0">
-              Cancel
+              {t('common.cancel')}
             </Button>
           )}
           <Button onClick={handleSave} disabled={!name.trim()} className="shrink-0">
-            {editId ? 'Save' : 'Add'}
+            {editId ? t('common.save') : t('common.add')}
           </Button>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
-          {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">Loading…</p>}
+          {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('common.loading')}</p>}
           {!isLoading && categories.length === 0 && (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">No categories yet</p>
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('categories.no_categories')}</p>
           )}
           {categories.map((c) => (
             <div key={c.id} className="flex items-center px-4 min-h-[56px] gap-3">
@@ -73,10 +75,10 @@ export default function CategoriesPage() {
               </div>
               <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{c.name}</span>
               <button onClick={() => startEdit(c)} className="text-sm text-primary-600 px-2 py-1">
-                Edit
+                {t('common.edit')}
               </button>
               <button onClick={() => remove.mutate(c.id)} className="text-sm text-red-500 px-2 py-1">
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           ))}

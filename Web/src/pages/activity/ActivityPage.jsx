@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import api from '../../lib/api';
@@ -36,6 +37,7 @@ const TYPE_COLORS = {
 };
 
 export default function ActivityPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const { data: items = [], isLoading } = useQuery({
@@ -56,9 +58,16 @@ export default function ActivityPage() {
     grouped.push({ type: 'item', ...item });
   }
 
+  // Map group labels to translation keys
+  const groupLabel = (label) => {
+    if (label === 'Today') return t('notifications.today');
+    if (label === 'Yesterday') return t('notifications.yesterday');
+    return label;
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Activity" showBack />
+      <TopBar title={t('settings.activity')} showBack />
       <div className="flex-1 pb-24">
         {isLoading && (
           <div className="flex flex-col gap-3 p-4">
@@ -90,7 +99,7 @@ export default function ActivityPage() {
               if (row.type === 'header') {
                 return (
                   <p key={`h-${idx}`} className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider pt-5 pb-1">
-                    {row.label}
+                    {groupLabel(row.label)}
                   </p>
                 );
               }

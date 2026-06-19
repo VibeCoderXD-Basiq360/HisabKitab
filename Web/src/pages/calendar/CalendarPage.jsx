@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isToday, addMonths, subMonths, isSameDay } from 'date-fns';
 import { useExpenses } from '../../hooks/useExpenses';
@@ -9,6 +10,7 @@ import ExpenseCard from '../../components/ExpenseCard';
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
 export default function CalendarPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
   const [selected, setSelected] = useState(null);
@@ -53,7 +55,7 @@ export default function CalendarPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Calendar" showBack />
+      <TopBar title={t('settings.calendar')} showBack />
 
       {/* Month navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-4 py-3">

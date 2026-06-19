@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useGroups } from '../../hooks/useGroups';
 
 const TYPE_ICON = { TRIP: '✈️', HOME: '🏠', WORK: '💼', COUPLE: '💑', OTHER: '👥' };
-const TYPE_LABEL = { TRIP: 'Trip', HOME: 'Home', WORK: 'Work', COUPLE: 'Couple', OTHER: 'Other' };
 
 const fmt = (n) =>
   `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -43,20 +43,25 @@ function MemberAvatars({ members }) {
 }
 
 function NetBalanceBadge({ net }) {
+  const { t } = useTranslation();
   if (net === undefined || net === null) return null;
   const n = Number(net);
   if (n > 0)
     return (
-      <span className="text-sm font-semibold text-green-600">You're owed {fmt(n)}</span>
+      <span className="text-sm font-semibold text-green-600">{t('groups.owed', { amount: fmt(n) })}</span>
     );
   if (n < 0)
     return (
-      <span className="text-sm font-semibold text-red-500">You owe {fmt(Math.abs(n))}</span>
+      <span className="text-sm font-semibold text-red-500">{t('groups.owe', { amount: fmt(Math.abs(n)) })}</span>
     );
-  return <span className="text-sm text-gray-400">All settled ✓</span>;
+  return <span className="text-sm text-gray-400">{t('groups.settled')}</span>;
 }
 
 function GroupCard({ group, onClick }) {
+  const { t } = useTranslation();
+  const typeKey = group.type?.toLowerCase();
+  const typeLabel = typeKey && t(`groups.${typeKey}`, { defaultValue: '' }) || t('groups.other');
+
   return (
     <button
       onClick={onClick}
@@ -70,7 +75,7 @@ function GroupCard({ group, onClick }) {
           <div>
             <p className="font-semibold text-gray-900 dark:text-white text-base leading-tight">{group.name}</p>
             <span className="inline-block mt-0.5 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-xs text-gray-500 dark:text-gray-400 font-medium">
-              {TYPE_ICON[group.type]} {TYPE_LABEL[group.type] || 'Other'}
+              {TYPE_ICON[group.type]} {typeLabel}
             </span>
           </div>
         </div>
@@ -81,7 +86,9 @@ function GroupCard({ group, onClick }) {
         <div className="flex items-center gap-2">
           <MemberAvatars members={group.members || []} />
           <span className="text-xs text-gray-400 dark:text-gray-500">
-            {group.members?.length || 0} member{group.members?.length !== 1 ? 's' : ''}
+            {group.members?.length !== 1
+              ? t('groups.member_other', { n: group.members?.length || 0 })
+              : t('groups.member_one', { n: 1 })}
           </span>
         </div>
         <NetBalanceBadge net={group.myNet} />
@@ -92,19 +99,20 @@ function GroupCard({ group, onClick }) {
 
 export default function GroupsPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const { data: groups = [], isLoading } = useGroups();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
-        title="Groups"
+        title={t('groups.title')}
         action={
           <button
             onClick={() => navigate('/groups/new')}
             className="text-sm font-semibold text-primary-600 px-3 py-1.5 rounded-xl active:bg-primary-50"
           >
-            + New
+            {t('groups.new')}
           </button>
         }
       />
@@ -117,15 +125,15 @@ export default function GroupsPage() {
         ) : groups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3 px-8">
             <span className="text-5xl">👥</span>
-            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">No groups yet</p>
+            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">{t('groups.no_groups')}</p>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-              Start a trip or home group to split expenses
+              {t('groups.no_groups_desc')}
             </p>
             <button
               onClick={() => navigate('/groups/new')}
               className="mt-2 px-6 py-2.5 bg-primary-600 text-white rounded-2xl text-sm font-semibold active:bg-primary-700"
             >
-              Create a group
+              {t('groups.create')}
             </button>
           </div>
         ) : (

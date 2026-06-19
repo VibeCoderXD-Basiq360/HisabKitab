@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
@@ -6,14 +7,16 @@ import Button from '../../components/ui/Button';
 import { usePaidForPerson, useRequestPayment, useAcceptPayment, useRejectPayment } from '../../hooks/useSplits';
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   if (status === 'CONFIRMED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Settled</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">{t('balance.settled')}</span>;
   if (status === 'PAYMENT_REQUESTED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Claimed paid</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Pending</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t('balance.claimed_paid')}</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{t('balance.pending')}</span>;
 }
 
 export default function PersonExpensesPage() {
+  const { t } = useTranslation();
   const { personId } = useParams();
   const { data: expenses = [], isLoading } = usePaidForPerson(personId);
 
@@ -42,13 +45,13 @@ export default function PersonExpensesPage() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex gap-4">
         {totalOutstanding > 0 && (
           <div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Outstanding</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.outstanding')}</p>
             <p className="text-base font-bold text-amber-600">₹{totalOutstanding.toFixed(2)}</p>
           </div>
         )}
         {totalSettled > 0 && (
           <div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Settled</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.settled')}</p>
             <p className="text-base font-bold text-green-600">₹{totalSettled.toFixed(2)}</p>
           </div>
         )}
@@ -58,7 +61,7 @@ export default function PersonExpensesPage() {
       </div>
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-3">
-        {isLoading && <p className="text-center text-sm text-gray-400 mt-12">Loading…</p>}
+        {isLoading && <p className="text-center text-sm text-gray-400 mt-12">{t('common.loading')}</p>}
 
         {!isLoading && expenses.length === 0 && (
           <div className="flex flex-col items-center justify-center mt-16 gap-2">
@@ -101,7 +104,7 @@ export default function PersonExpensesPage() {
                     onClick={() => accept.mutate(split.id)}
                     disabled={isBusy}
                   >
-                    Accept ✓
+                    {t('balance.accept')}
                   </Button>
                   <Button
                     variant="danger"
@@ -109,7 +112,7 @@ export default function PersonExpensesPage() {
                     onClick={() => reject.mutate(split.id)}
                     disabled={isBusy}
                   >
-                    Reject ✗
+                    {t('balance.reject')}
                   </Button>
                 </div>
               )}
@@ -117,14 +120,14 @@ export default function PersonExpensesPage() {
               {split && status === 'PENDING' && (
                 <div className="px-4 pb-3">
                   <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-                    Waiting for {personName} to mark as paid
+                    {t('balance.waiting')}
                   </p>
                 </div>
               )}
 
               {status === 'CONFIRMED' && (
                 <div className="px-4 pb-3">
-                  <p className="text-xs text-green-600 text-center">✓ Settled</p>
+                  <p className="text-xs text-green-600 text-center">{t('balance.settled')}</p>
                 </div>
               )}
             </div>

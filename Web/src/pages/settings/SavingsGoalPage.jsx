@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import Button from '../../components/ui/Button';
@@ -7,6 +8,7 @@ import { useSavingsGoal, useUpsertSavingsGoal, useDeleteSavingsGoal } from '../.
 
 export default function SavingsGoalPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: goal, isLoading } = useSavingsGoal();
   const upsert = useUpsertSavingsGoal();
   const remove = useDeleteSavingsGoal();
@@ -38,11 +40,11 @@ export default function SavingsGoalPage() {
     remove.mutate(undefined, { onSuccess: () => navigate('/settings') });
   }
 
-  if (isLoading) return <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900"><TopBar title="Savings Goal" showBack /></div>;
+  if (isLoading) return <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900"><TopBar title={t('settings.savings_goal')} showBack /></div>;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Savings Goal" showBack />
+      <TopBar title={t('settings.savings_goal')} showBack />
       <div className="flex-1 pb-24 p-4 flex flex-col gap-4">
 
         {/* Explainer */}
@@ -75,7 +77,7 @@ export default function SavingsGoalPage() {
           {/* Monthly savings target */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Monthly savings target
+              {t('home.savings_goal')} target
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
@@ -111,7 +113,7 @@ export default function SavingsGoalPage() {
           onClick={handleSave}
           disabled={!savings || Number(savings) <= 0 || upsert.isPending}
         >
-          {upsert.isPending ? 'Saving…' : hasGoal ? 'Update Goal' : 'Set Goal'}
+          {upsert.isPending ? t('common.saving') : hasGoal ? 'Update Goal' : 'Set Goal'}
         </Button>
 
         {hasGoal && (

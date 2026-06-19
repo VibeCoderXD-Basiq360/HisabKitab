@@ -1,17 +1,18 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import TopBar from '../../components/TopBar';
 
-const FIELDS = [
-  { key: 'date', label: 'Date', required: true },
-  { key: 'amount', label: 'Amount', required: true },
+const FIELD_KEYS = [
+  { key: 'date', tKey: 'expense.date', required: true },
+  { key: 'amount', tKey: 'expense.amount', required: true },
   { key: 'title', label: 'Title / Description' },
-  { key: 'category', label: 'Category' },
+  { key: 'category', tKey: 'expense.category' },
   { key: 'paymentType', label: 'Payment Type' },
-  { key: 'note', label: 'Note' },
+  { key: 'note', tKey: 'expense.note' },
 ];
 
 const HINTS = {
@@ -24,8 +25,10 @@ const HINTS = {
 };
 
 export default function ImportPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const FIELDS = FIELD_KEYS.map((f) => ({ ...f, label: f.tKey ? t(f.tKey) : f.label }));
   const [step, setStep] = useState('upload');
   const [headers, setHeaders] = useState([]);
   const [rows, setRows] = useState([]);
@@ -85,7 +88,7 @@ export default function ImportPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Import from CSV" showBack />
+      <TopBar title={t('settings.import')} showBack />
       <div className="flex-1 p-4 space-y-4 pb-10">
 
         {step === 'upload' && (
@@ -145,7 +148,7 @@ export default function ImportPage() {
                   <table className="text-xs text-gray-700 dark:text-gray-300 w-full min-w-max">
                     <thead>
                       <tr className="text-gray-400 dark:text-gray-500 border-b dark:border-gray-700">
-                        {['Date', 'Amount', 'Title', 'Category'].map((h) => (
+                        {[t('expense.date'), t('expense.amount'), 'Title', t('expense.category')].map((h) => (
                           <th key={h} className="pb-1.5 pr-4 text-left font-medium">{h}</th>
                         ))}
                       </tr>

@@ -20,6 +20,8 @@ const savingsGoalRoutes = require('./modules/savingsGoal/savingsGoal.routes');
 const loanRoutes = require('./modules/loan/loan.routes');
 const exchangeRateRoutes = require('./modules/exchangeRate/exchangeRate.routes');
 const cardDelegationRoutes = require('./modules/cardDelegation/cardDelegation.routes');
+const webauthnRoutes       = require('./modules/auth/webauthn.routes');
+const pinResetRoutes       = require('./modules/auth/pinReset.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
@@ -54,6 +56,8 @@ app.use('/api/savings-goal', savingsGoalRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/exchange-rates', exchangeRateRoutes);
 app.use('/api/card-delegations', cardDelegationRoutes);
+app.use('/api/auth/webauthn',    webauthnRoutes);
+app.use('/api/auth/pin-reset',  pinResetRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

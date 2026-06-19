@@ -64,6 +64,13 @@ function KeyboardShortcuts() {
 
 function BackgroundLock() {
   const { enabled, setLocked } = useLockStore();
+
+  // Lock on every fresh open (startup, PWA cold launch, tab restore)
+  useEffect(() => {
+    if (enabled) setLocked(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lock whenever app goes to background
   useEffect(() => {
     function handleVisibility() {
       if (document.hidden && enabled) setLocked(true);
@@ -71,6 +78,7 @@ function BackgroundLock() {
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [enabled, setLocked]);
+
   return null;
 }
 

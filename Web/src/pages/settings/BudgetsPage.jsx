@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useBudgets } from '../../hooks/useBudgets';
@@ -16,6 +17,7 @@ function progressBg(pct) {
 }
 
 export default function BudgetsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: items = [], isLoading } = useBudgets();
 
@@ -24,24 +26,24 @@ export default function BudgetsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Budget Limits" showBack />
+      <TopBar title={t('budgets.title')} showBack />
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
-        {isLoading && <p className="text-center text-sm text-gray-400 mt-12">Loading…</p>}
+        {isLoading && <p className="text-center text-sm text-gray-400 mt-12">{t('common.loading')}</p>}
 
         {!isLoading && items.length === 0 && (
           <div className="flex flex-col items-center justify-center mt-16 gap-3">
             <span className="text-5xl">💰</span>
-            <p className="text-sm text-gray-500 font-medium">No categories yet</p>
+            <p className="text-sm text-gray-500 font-medium">{t('budgets.no_categories')}</p>
             <p className="text-xs text-gray-400 text-center">
-              Add categories first to set monthly limits.
+              {t('budgets.no_categories_desc')}
             </p>
           </div>
         )}
 
         {withBudget.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">Active limits</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">{t('budgets.active')}</p>
             <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
               {withBudget.map((item) => (
                 <button
@@ -75,10 +77,10 @@ export default function BudgetsPage() {
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
                         {item.percentage >= 100
-                          ? `Over budget by ₹${(item.spent - item.budget.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+                          ? t('budgets.over_budget', { amount: (item.spent - item.budget.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 }) })
                           : item.percentage >= 80
-                          ? `${item.percentage}% used — nearing limit`
-                          : `${item.percentage}% used this month`}
+                          ? t('budgets.nearing', { pct: item.percentage })
+                          : t('budgets.used', { pct: item.percentage })}
                       </p>
                     </div>
 
@@ -92,7 +94,7 @@ export default function BudgetsPage() {
 
         {withoutBudget.length > 0 && (
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">No limit set</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">{t('budgets.no_limit')}</p>
             <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
               {withoutBudget.map((item) => (
                 <button
@@ -110,7 +112,7 @@ export default function BudgetsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">{item.category.name}</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        ₹{item.spent.toLocaleString('en-IN', { maximumFractionDigits: 0 })} spent this month · tap to set limit
+                        {t('budgets.spent_tap', { spent: item.spent.toLocaleString('en-IN', { maximumFractionDigits: 0 }) })}
                       </p>
                     </div>
                     <span className="text-gray-300 text-lg">›</span>

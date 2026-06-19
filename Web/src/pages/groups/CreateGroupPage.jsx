@@ -1,16 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useCreateGroup, useSearchUsers } from '../../hooks/useGroups';
 
+const TYPE_KEYS = {
+  TRIP: 'groups.trip',
+  HOME: 'groups.home',
+  COUPLE: 'groups.couple',
+  WORK: 'groups.work',
+  OTHER: 'groups.other',
+};
+
 const TYPE_OPTIONS = [
-  { value: 'TRIP', label: 'Trip', icon: '✈️' },
-  { value: 'HOME', label: 'Home', icon: '🏠' },
-  { value: 'COUPLE', label: 'Couple', icon: '💑' },
-  { value: 'WORK', label: 'Work', icon: '💼' },
-  { value: 'OTHER', label: 'Other', icon: '👥' },
+  { value: 'TRIP', icon: '✈️' },
+  { value: 'HOME', icon: '🏠' },
+  { value: 'COUPLE', icon: '💑' },
+  { value: 'WORK', icon: '💼' },
+  { value: 'OTHER', icon: '👥' },
 ];
 
 const ICON_OPTIONS = ['✈️', '🏠', '💑', '💼', '🎉', '👥'];
@@ -61,6 +70,7 @@ function UserSearchDropdown({ q, onSelect, alreadyAdded }) {
 }
 
 export default function CreateGroupPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const createGroup = useCreateGroup();
@@ -185,24 +195,24 @@ export default function CreateGroupPage() {
             <div>
               <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Group type</p>
               <div className="flex flex-wrap gap-2">
-                {TYPE_OPTIONS.map((t) => (
+                {TYPE_OPTIONS.map((opt) => (
                   <button
-                    key={t.value}
+                    key={opt.value}
                     onClick={() => {
-                      setType(t.value);
+                      setType(opt.value);
                       if (!ICON_OPTIONS.includes(icon) || icon === '👥') {
                         const iconMap = { TRIP: '✈️', HOME: '🏠', COUPLE: '💑', WORK: '💼', OTHER: '👥' };
-                        setIcon(iconMap[t.value]);
+                        setIcon(iconMap[opt.value]);
                       }
                     }}
                     className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      type === t.value
+                      type === opt.value
                         ? 'bg-primary-600 text-white shadow-sm'
                         : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow-sm active:bg-gray-50 dark:active:bg-gray-600'
                     }`}
                   >
-                    <span>{t.icon}</span>
-                    <span>{t.label}</span>
+                    <span>{opt.icon}</span>
+                    <span>{t(TYPE_KEYS[opt.value])}</span>
                   </button>
                 ))}
               </div>
@@ -288,7 +298,7 @@ export default function CreateGroupPage() {
                   disabled={!guestName.trim()}
                   className="px-5 py-3 bg-primary-600 text-white rounded-2xl text-sm font-semibold disabled:opacity-40 active:bg-primary-700"
                 >
-                  Add
+                  {t('common.add')}
                 </button>
               </div>
             </div>
@@ -334,10 +344,10 @@ export default function CreateGroupPage() {
               {createGroup.isPending ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Creating…
+                  {t('common.loading')}
                 </>
               ) : (
-                'Create Group'
+                t('groups.create')
               )}
             </button>
           </div>

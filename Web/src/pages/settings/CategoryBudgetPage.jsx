@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -16,6 +17,7 @@ function barBg(pct) {
 }
 
 function BudgetSheet({ item, onClose }) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState(item.budget ? String(item.budget.amount) : '');
   const upsert = useUpsertBudget();
   const del = useDeleteBudget();
@@ -61,7 +63,7 @@ function BudgetSheet({ item, onClose }) {
           disabled={upsert.isPending || !amount || parseFloat(amount) <= 0}
           className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
         >
-          {upsert.isPending ? 'Saving…' : 'Save Limit'}
+          {upsert.isPending ? t('common.saving') : t('common.save')}
         </button>
 
         {item.budget && (
@@ -79,6 +81,7 @@ function BudgetSheet({ item, onClose }) {
 }
 
 export default function CategoryBudgetPage() {
+  const { t } = useTranslation();
   const { categoryId } = useParams();
   const [editOpen, setEditOpen] = useState(false);
 
@@ -88,8 +91,8 @@ export default function CategoryBudgetPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <TopBar title="Budget" showBack />
-        <p className="text-center text-sm text-gray-400 mt-16">Loading…</p>
+        <TopBar title={t('budgets.title')} showBack />
+        <p className="text-center text-sm text-gray-400 mt-16">{t('common.loading')}</p>
         <BottomNav />
       </div>
     );
@@ -127,7 +130,7 @@ export default function CategoryBudgetPage() {
                 onClick={() => setEditOpen(true)}
                 className="text-xs text-primary-500 font-semibold px-3 py-1.5 rounded-full bg-primary-50"
               >
-                Edit
+                {t('common.edit')}
               </button>
             </div>
 
@@ -154,14 +157,14 @@ export default function CategoryBudgetPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              <p className="text-xs text-gray-400 dark:text-gray-500">{percentage}% used</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('budgets.used', { pct: percentage })}</p>
               {remaining >= 0 ? (
                 <p className="text-sm font-semibold text-green-600">
                   ₹{remaining.toLocaleString('en-IN', { maximumFractionDigits: 0 })} left
                 </p>
               ) : (
                 <p className="text-sm font-semibold text-red-500">
-                  ₹{Math.abs(remaining).toLocaleString('en-IN', { maximumFractionDigits: 0 })} over budget
+                  {t('budgets.over_budget', { amount: `₹${Math.abs(remaining).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` })}
                 </p>
               )}
             </div>
@@ -177,7 +180,7 @@ export default function CategoryBudgetPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{cat.name}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">No monthly limit set</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t('budgets.no_limit')}</p>
               </div>
             </div>
 

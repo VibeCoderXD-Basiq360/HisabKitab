@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -32,6 +33,7 @@ function CustomTooltip({ active, payload }) {
 }
 
 export default function BalanceHistoryPage() {
+  const { t } = useTranslation();
   const { personId } = useParams();
 
   const { data, isLoading } = useQuery({
@@ -87,12 +89,12 @@ export default function BalanceHistoryPage() {
                 {currentBalance > 0 ? (
                   <>
                     <p className="text-2xl font-bold text-red-500">{fmt(currentBalance)}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{person?.name} owes you</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{person?.name} {t('balance.owes_you')}</p>
                   </>
                 ) : currentBalance < 0 ? (
                   <>
                     <p className="text-2xl font-bold text-green-600">{fmt(Math.abs(currentBalance))}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">you owe {person?.name}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.you_owe')} {person?.name}</p>
                   </>
                 ) : (
                   <>
@@ -140,7 +142,7 @@ export default function BalanceHistoryPage() {
                 </LineChart>
               </ResponsiveContainer>
               <p className="text-[10px] text-gray-300 dark:text-gray-600 text-center mt-1">
-                Positive = {person?.name} owes you · Negative = you owe {person?.name}
+                Positive = {person?.name} {t('balance.owes_you')} · Negative = {t('balance.you_owe')} {person?.name}
               </p>
             </div>
 

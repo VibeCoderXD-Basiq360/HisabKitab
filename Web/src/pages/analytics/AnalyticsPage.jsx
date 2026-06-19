@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { startOfMonth, endOfMonth, subMonths, format, eachDayOfInterval, parseISO } from 'date-fns';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -12,23 +13,25 @@ import { useBudgets } from '../../hooks/useBudgets';
 
 const now = new Date();
 
+const PERIOD_KEYS = ['this_month', 'last_month', 'months_3', 'all_time'];
+
 const PERIODS = [
   {
-    label: 'This month',
+    labelKey: 'this_month',
     params: { fromDate: startOfMonth(now).toISOString(), toDate: endOfMonth(now).toISOString() },
     showDaily: true,
   },
   {
-    label: 'Last month',
+    labelKey: 'last_month',
     params: { fromDate: startOfMonth(subMonths(now, 1)).toISOString(), toDate: endOfMonth(subMonths(now, 1)).toISOString() },
     showDaily: true,
   },
   {
-    label: '3 months',
+    labelKey: 'months_3',
     params: { fromDate: startOfMonth(subMonths(now, 2)).toISOString(), toDate: endOfMonth(now).toISOString() },
     showDaily: false,
   },
-  { label: 'All time', params: {}, showDaily: false },
+  { labelKey: 'all_time', params: {}, showDaily: false },
 ];
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -105,6 +108,7 @@ function StatMini({ icon, label, value, sub }) {
 }
 
 function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, budget }) {
+  const { t } = useTranslation();
   const pct = grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0;
   const barColor = color || '#6366f1';
   const Tag = onClick ? 'button' : 'div';
@@ -117,7 +121,9 @@ function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, bu
       <div className="flex items-center gap-2">
         <span className="text-base shrink-0">{icon || '💳'}</span>
         <span className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1 truncate">{name}</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">{count} txn{count !== 1 ? 's' : ''}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+          {count !== 1 ? t('analytics.txn_other', { n: count }) : t('analytics.txn_one', { n: count })}
+        </span>
         <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 shrink-0 w-8 text-right">{pct}%</span>
         <span className="text-sm font-bold text-gray-900 dark:text-white shrink-0">{fmt(total)}</span>
         {onClick && <span className="text-gray-300 dark:text-gray-600 text-base shrink-0">›</span>}
@@ -137,8 +143,8 @@ function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, bu
             </span>
             <span className={`text-xs font-semibold ${budgetOver ? 'text-red-500' : 'text-gray-400'}`}>
               {budgetOver
-                ? `+${fmt(budget.spent - budget.limit)} over`
-                : `${fmt(budget.limit - budget.spent)} left`}
+                ? t('analytics.over_budget', { amount: fmt(budget.spent - budget.limit) })
+                : t('analytics.budget_left', { amount: fmt(budget.limit - budget.spent) })}
             </span>
           </div>
           <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -160,12 +166,13 @@ export default function AnalyticsPage() {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const isCustom = periodIdx === CUSTOM_IDX;
   const customReady = isCustom && customFrom && customTo;
   const period = isCustom
-    ? { label: 'Custom', params: customReady ? { fromDate: new Date(customFrom).toISOString(), toDate: new Date(customTo + 'T23:59:59').toISOString() } : {}, showDaily: false }
-    : PERIODS[periodIdx];
+    ? { labelKey: 'custom', label: t('analytics.custom'), params: customReady ? { fromDate: new Date(customFrom).toISOString(), toDate: new Date(customTo + 'T23:59:59').toISOString() } : {}, showDaily: false }
+    : { ...PERIODS[periodIdx], label: t(`analytics.${PERIODS[periodIdx].labelKey}`) };
 
   const { data, isLoading } = useAnalytics(period.params, { enabled: !isCustom || customReady });
   const { data: trendData } = useTrend();
@@ -234,20 +241,20 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Analytics" />
+      <TopBar title={t('analytics.title')} />
 
       {/* Period selector */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-2 pb-2 sticky top-0 z-10">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {PERIODS.map((p, i) => (
             <button
-              key={p.label}
+              key={p.labelKey}
               onClick={() => setPeriodIdx(i)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0 ${
                 periodIdx === i ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
               }`}
             >
-              {p.label}
+              {t(`analytics.${p.labelKey}`)}
             </button>
           ))}
           <button
@@ -256,7 +263,7 @@ export default function AnalyticsPage() {
               isCustom ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
             }`}
           >
-            Custom
+            {t('analytics.custom')}
           </button>
         </div>
         {isCustom && (
@@ -283,16 +290,16 @@ export default function AnalyticsPage() {
         {/* 6-Month Trend */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">6-Month Trend</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('analytics.trend')}</p>
             {trendData && (
               <p className="text-xs text-gray-400">
-                Total: {fmt(trendData.reduce((s, m) => s + m.total, 0))}
+                {t('analytics.total', { amount: fmt(trendData.reduce((s, m) => s + m.total, 0)) })}
               </p>
             )}
           </div>
           {!trendData ? (
             <div className="h-40 flex items-center justify-center">
-              <p className="text-xs text-gray-400 dark:text-gray-500">Loading…</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{t('common.loading')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
@@ -311,7 +318,7 @@ export default function AnalyticsPage() {
         </div>
 
         {isLoading ? (
-          <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">Loading…</p>
+          <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">{t('common.loading')}</p>
         ) : (
           <>
             {/* Hero summary */}
@@ -324,9 +331,9 @@ export default function AnalyticsPage() {
               </div>
               <p className="text-4xl font-bold tracking-tight mt-1">{fmt(total)}</p>
               <div className="flex items-center gap-4 mt-3 opacity-80">
-                <p className="text-xs">{txnCount} transactions</p>
+                <p className="text-xs">{t('analytics.transactions', { n: txnCount })}</p>
                 <p className="text-xs">·</p>
-                <p className="text-xs">avg {fmt(avgPerTxn)} / txn</p>
+                <p className="text-xs">{t('analytics.avg_txn', { amount: fmt(avgPerTxn) })}</p>
               </div>
             </div>
 
@@ -334,28 +341,28 @@ export default function AnalyticsPage() {
             <div className="flex gap-3">
               <StatMini
                 icon={topCategory?.icon || '🗂️'}
-                label="Top category"
+                label={t('analytics.top_category')}
                 value={topCategory?.name || '—'}
                 sub={topCategory ? fmt(topCategory.total) : null}
               />
               <StatMini
                 icon="🔝"
-                label="Biggest expense"
+                label={t('analytics.biggest')}
                 value={topExpense ? fmt(topExpense.amount) : '—'}
                 sub={topExpense?.title || topExpense?.category?.name || null}
               />
               <StatMini
                 icon="📅"
-                label="Avg per day"
+                label={t('analytics.avg_day')}
                 value={avgPerDay > 0 ? fmtK(avgPerDay) : '—'}
-                sub={period.label !== 'All time' ? period.label : null}
+                sub={period.labelKey !== 'all_time' ? period.label : null}
               />
             </div>
 
             {/* Daily spend chart */}
             {period.showDaily && dailyData.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">Daily Spend</p>
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{t('analytics.daily_spend')}</p>
                 <ResponsiveContainer width="100%" height={90}>
                   <BarChart data={dailyData} barCategoryGap="20%" margin={{ top: 2, right: 2, left: 0, bottom: 0 }}>
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#d1d5db' }} interval={4} />
@@ -370,8 +377,8 @@ export default function AnalyticsPage() {
             {data?.byCategory?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">🗂️ By Category</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Tap to see expenses</p>
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">🗂️ {t('analytics.by_category')}</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.tap_see')}</p>
                 </div>
                 <div className="flex flex-col gap-4">
                   {data.byCategory.map((item, i) => (
@@ -395,8 +402,8 @@ export default function AnalyticsPage() {
             {data?.byPaymentType?.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">💳 By Payment Method</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Tap to see expenses</p>
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">💳 {t('analytics.by_payment')}</h2>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.tap_see')}</p>
                 </div>
                 <div className="flex flex-col gap-4">
                   {data.byPaymentType.map((item, i) => (
@@ -418,7 +425,7 @@ export default function AnalyticsPage() {
             {!data?.byCategory?.length && !data?.byPaymentType?.length && (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <span className="text-5xl">📊</span>
-                <p className="text-sm text-gray-400">No expenses in this period</p>
+                <p className="text-sm text-gray-400">{t('analytics.no_expenses')}</p>
               </div>
             )}
           </>

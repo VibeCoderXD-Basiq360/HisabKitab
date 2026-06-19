@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import Button from '../../components/ui/Button';
@@ -14,15 +15,17 @@ const fmtDate = (d) => (d ? format(new Date(d), 'd MMM') : '');
 
 /* ─── Status badge ─── */
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   if (status === 'PENDING')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">Pending</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{t('balance.pending')}</span>;
   if (status === 'PAYMENT_REQUESTED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Claimed paid</span>;
+    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t('balance.claimed_paid')}</span>;
   return null;
 }
 
 /* ─── Single split row ─── */
 function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkReceived, isBusy, isInBulk }) {
+  const { t } = useTranslation();
   const [confirmWaive, setConfirmWaive] = useState(false);
   const title = split.expense?.title || 'Expense';
   const amount = Number(split.amount);
@@ -43,17 +46,17 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
       {mode === 'owed' && split.status === 'PAYMENT_REQUESTED' && (
         <div className="flex gap-2">
           <Button variant="primary" className="flex-1 !min-h-[36px] text-xs" onClick={() => onAccept(split.id)} disabled={isBusy}>
-            Accept ✓
+            {t('balance.accept')}
           </Button>
           <Button variant="danger" className="flex-1 !min-h-[36px] text-xs" onClick={() => onReject(split.id)} disabled={isBusy}>
-            Reject ✗
+            {t('balance.reject')}
           </Button>
         </div>
       )}
 
       {mode === 'owed' && split.status === 'PENDING' && (
         <Button variant="outline" className="w-full !min-h-[36px] text-xs !border-green-400 !text-green-600" onClick={() => onMarkReceived(split.id)} disabled={isBusy}>
-          Mark as received ✓
+          {t('balance.mark_received')}
         </Button>
       )}
 
@@ -62,37 +65,37 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
           className="text-xs text-gray-300 text-right w-full hover:text-gray-400 transition-colors"
           onClick={() => setConfirmWaive(true)}
         >
-          Wave off
+          {t('balance.wave_off')}
         </button>
       )}
 
       {mode === 'owed' && confirmWaive && (
         <div className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl px-3 py-2">
-          <p className="text-xs text-orange-700 flex-1">Forgive {fmt(amount)}? It stays in your expenses.</p>
+          <p className="text-xs text-orange-700 flex-1">{t('balance.forgive_confirm', { amount: fmt(amount) })}</p>
           <button
             className="text-xs font-semibold text-orange-600 px-2 py-1 rounded-lg border border-orange-200 dark:border-orange-700 disabled:opacity-50"
             onClick={() => { onWaive(split.id); setConfirmWaive(false); }}
             disabled={isBusy}
           >
-            Yes, forgive
+            {t('balance.yes_forgive')}
           </button>
           <button
             className="text-xs text-gray-400 px-2 py-1"
             onClick={() => setConfirmWaive(false)}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
         </div>
       )}
 
       {mode === 'iowe' && split.status === 'PENDING' && !isInBulk && (
         <Button variant="outline" className="w-full !min-h-[36px] text-xs" onClick={() => onPay(split.id)} disabled={isBusy}>
-          Mark as paid
+          {t('balance.mark_paid')}
         </Button>
       )}
 
       {mode === 'iowe' && split.status === 'PAYMENT_REQUESTED' && (
-        <p className="text-xs text-amber-600 text-center py-1">⏳ Waiting for confirmation…</p>
+        <p className="text-xs text-amber-600 text-center py-1">⏳ {t('balance.waiting')}</p>
       )}
     </div>
   );
@@ -100,6 +103,7 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
 
 /* ─── Bulk payment sheet (select splits + note + send) ─── */
 function BulkPaySheet({ group, onClose }) {
+  const { t } = useTranslation();
   const pendingSplits = group.splits.filter((s) => s.status === 'PENDING');
   const [selected, setSelected] = useState(new Set(pendingSplits.map((s) => s.id)));
   const [note, setNote] = useState('');
@@ -134,8 +138,8 @@ function BulkPaySheet({ group, onClose }) {
             {group.payerName?.[0]?.toUpperCase() || '?'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">Pay {group.payerName} together</p>
-            <p className="text-xs text-gray-400">Select expenses to bundle</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('balance.pay_together', { name: group.payerName })}</p>
+            <p className="text-xs text-gray-400">{t('balance.select_bundle')}</p>
           </div>
         </div>
 
@@ -168,14 +172,18 @@ function BulkPaySheet({ group, onClose }) {
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Add a note (optional)"
+            placeholder={t('balance.add_note')}
             className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-primary-400"
           />
         </div>
 
         {/* Total */}
         <div className="flex items-center justify-between px-1">
-          <p className="text-sm text-gray-500">{selectedSplits.length} expense{selectedSplits.length !== 1 ? 's' : ''} selected</p>
+          <p className="text-sm text-gray-500">
+            {selectedSplits.length === 1
+              ? t('balance.selected_one', { n: selectedSplits.length })
+              : t('balance.selected_other', { n: selectedSplits.length })}
+          </p>
           <p className="text-lg font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
         </div>
 
@@ -185,7 +193,7 @@ function BulkPaySheet({ group, onClose }) {
           disabled={create.isPending || selectedSplits.length === 0}
           className="w-full py-3.5 rounded-2xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
-          {create.isPending ? 'Sending…' : `Send Payment Request · ${fmt(total)}`}
+          {create.isPending ? t('balance.sending') : t('balance.send_payment', { amount: fmt(total) })}
         </button>
       </div>
     </div>
@@ -194,6 +202,7 @@ function BulkPaySheet({ group, onClose }) {
 
 /* ─── Incoming bulk payment card (for Owed to me tab) ─── */
 function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const total = Number(bp.totalAmount);
   const count = bp.splits.length;
@@ -206,10 +215,14 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
           {bp.fromUser.name?.[0]?.toUpperCase() || '?'}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{bp.fromUser.name} wants to pay you</p>
-          <p className="text-xs text-gray-400">{count} expense{count !== 1 ? 's' : ''} · {fmt(total)}</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('balance.wants_to_pay', { name: bp.fromUser.name })}</p>
+          <p className="text-xs text-gray-400">
+            {count === 1
+              ? t('balance.exp_one', { n: count, amount: fmt(total) })
+              : t('balance.exp_other', { n: count, amount: fmt(total) })}
+          </p>
         </div>
-        <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-medium">💸 Bulk</span>
+        <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-medium">💸 {t('balance.bulk')}</span>
       </div>
 
       {/* Note */}
@@ -222,7 +235,7 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
         className="w-full text-xs text-gray-400 px-4 pb-2 text-left flex items-center gap-1"
         onClick={() => setExpanded((v) => !v)}
       >
-        {expanded ? '▲ Hide' : '▼ Show'} expenses
+        {expanded ? t('balance.hide_expenses') : t('balance.show_expenses')}
       </button>
 
       {expanded && (
@@ -242,10 +255,10 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
       {/* Actions */}
       <div className="flex gap-2 px-4 pb-4 pt-2">
         <Button variant="primary" className="flex-1 !min-h-[40px] text-sm" onClick={() => onAccept(bp.id)} disabled={isBusy}>
-          Accept ✓
+          {t('balance.accept')}
         </Button>
         <Button variant="danger" className="flex-1 !min-h-[40px] text-sm" onClick={() => onReject(bp.id)} disabled={isBusy}>
-          Reject ✗
+          {t('balance.reject')}
         </Button>
       </div>
     </div>
@@ -254,6 +267,7 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
 
 /* ─── Sent bulk payment (shown inside iOwe group) ─── */
 function SentBulkBanner({ bp, onCancel, isBusy }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const total = Number(bp.totalAmount);
   const count = bp.splits.length;
@@ -262,15 +276,19 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
     <div className="mx-4 mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold text-amber-800">⏳ Bulk payment pending</p>
-          <p className="text-xs text-amber-600">{count} expense{count !== 1 ? 's' : ''} · {fmt(total)}</p>
+          <p className="text-xs font-semibold text-amber-800">⏳ {t('balance.bulk_pending')}</p>
+          <p className="text-xs text-amber-600">
+            {count === 1
+              ? t('balance.exp_one', { n: count, amount: fmt(total) })
+              : t('balance.exp_other', { n: count, amount: fmt(total) })}
+          </p>
         </div>
         <button
           onClick={() => onCancel(bp.id)}
           disabled={isBusy}
           className="text-xs text-red-500 font-medium px-2.5 py-1.5 rounded-lg border border-red-100 disabled:opacity-50"
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </div>
       <button className="text-xs text-amber-500 mt-1" onClick={() => setExpanded((v) => !v)}>
@@ -287,6 +305,7 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
 
 /* ─── PersonCard for "Owed to me" ─── */
 function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, isBusy }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const navigate = useNavigate();
 
@@ -305,14 +324,14 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, is
           </div>
           <div className="text-right">
             <p className="text-base font-bold text-green-600">{fmt(group.total)}</p>
-            <p className="text-xs text-gray-400">owes you</p>
+            <p className="text-xs text-gray-400">{t('balance.owes_you')}</p>
           </div>
           <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
         </button>
         <button
           onClick={() => navigate(`/balances/history/${group.personId}`)}
           className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-600"
-          title="Balance history"
+          title={t('balance.history')}
         >
           📈
         </button>
@@ -328,6 +347,7 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, is
 
 /* ─── PersonCard for "I owe" ─── */
 function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBulk, isBusy }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -354,7 +374,7 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
           </div>
           <div className="text-right">
             <p className="text-base font-bold text-red-500">{fmt(group.total)}</p>
-            <p className="text-xs text-gray-400">you owe</p>
+            <p className="text-xs text-gray-400">{t('balance.you_owe')}</p>
           </div>
           <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
         </button>
@@ -384,14 +404,14 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
               onClick={() => setBulkOpen(true)}
               className="flex-1 py-2.5 rounded-xl border-2 border-primary-400 text-primary-600 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
-              💸 Pay together
+              💸 {t('balance.pay_together_btn')}
             </button>
             {group.payerEmail && (
               <a
                 href={`upi://pay?pa=${encodeURIComponent(group.payerEmail)}&pn=${encodeURIComponent(group.payerName || '')}&am=${group.total}&cu=INR`}
                 className="px-4 py-2.5 rounded-xl border-2 border-green-400 text-green-600 text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
               >
-                Pay via UPI
+                {t('balance.pay_upi')}
               </a>
             )}
           </div>
@@ -405,6 +425,7 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
 
 /* ─── Paid for others card ─── */
 function PaidForPersonCard({ person }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const hasOutstanding = person.totalOutstanding > 0;
 
@@ -424,11 +445,11 @@ function PaidForPersonCard({ person }) {
         {hasOutstanding ? (
           <>
             <p className="text-base font-bold text-amber-600">{fmt(person.totalOutstanding)}</p>
-            <p className="text-xs text-gray-400">outstanding</p>
+            <p className="text-xs text-gray-400">{t('balance.outstanding')}</p>
           </>
         ) : (
           <>
-            <p className="text-base font-bold text-green-600">✓ Settled</p>
+            <p className="text-base font-bold text-green-600">{t('balance.settled')}</p>
             <p className="text-xs text-gray-400">{fmt(person.totalSettled)}</p>
           </>
         )}
@@ -440,6 +461,7 @@ function PaidForPersonCard({ person }) {
 
 /* ─── Group balance card ─── */
 function GroupBalanceCard({ group, mode }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const amount = Math.abs(group.myNet);
 
@@ -455,16 +477,16 @@ function GroupBalanceCard({ group, mode }) {
         <div className="flex items-center gap-1.5 flex-wrap">
           <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 shrink-0">
-            👥 Group
+            👥 {t('balance.group_badge')}
           </span>
         </div>
-        <p className="text-xs text-gray-400">{group.memberCount} members · tap to settle up</p>
+        <p className="text-xs text-gray-400">{t('balance.members_tap', { n: group.memberCount })}</p>
       </div>
       <div className="text-right shrink-0">
         <p className={`text-base font-bold ${mode === 'owed' ? 'text-green-600' : 'text-red-500'}`}>
           {fmt(amount)}
         </p>
-        <p className="text-xs text-gray-400">{mode === 'owed' ? 'owed to you' : 'you owe'}</p>
+        <p className="text-xs text-gray-400">{mode === 'owed' ? t('balance.owes_you') : t('balance.you_owe')}</p>
       </div>
       <span className="text-gray-300 text-xs ml-1">›</span>
     </button>
@@ -473,6 +495,7 @@ function GroupBalanceCard({ group, mode }) {
 
 /* ─── Main page ─── */
 export default function BalancesPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [tab, setTab] = useState('owed');
   const { data, isLoading } = useBalances();
@@ -506,7 +529,7 @@ export default function BalancesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title="Balances" />
+      <TopBar title={t('balance.title')} />
 
       <div className="flex bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <button
@@ -515,7 +538,7 @@ export default function BalancesPage() {
           }`}
           onClick={() => setTab('owed')}
         >
-          Owed to me
+          {t('balance.owed_to_me')}
           {(owedCount + incomingBulkCount) > 0 && (
             <span className="bg-primary-100 text-primary-600 text-xs rounded-full px-1.5 py-0.5 leading-none">
               {owedCount + incomingBulkCount}
@@ -528,7 +551,7 @@ export default function BalancesPage() {
           }`}
           onClick={() => setTab('iowe')}
         >
-          I owe
+          {t('balance.i_owe')}
           {iOweCount > 0 && (
             <span className="bg-red-100 text-red-500 text-xs rounded-full px-1.5 py-0.5 leading-none">
               {iOweCount}
@@ -541,7 +564,7 @@ export default function BalancesPage() {
           }`}
           onClick={() => setTab('paidfor')}
         >
-          Paid for
+          {t('balance.paid_for')}
           {paidForCount > 0 && (
             <span className="bg-amber-100 text-amber-600 text-xs rounded-full px-1.5 py-0.5 leading-none">
               {paidForCount}
@@ -552,7 +575,7 @@ export default function BalancesPage() {
 
       <div className="flex-1 p-4 pb-28 flex flex-col gap-3">
         {(isLoading || paidForLoading) && (
-          <p className="text-center text-sm text-gray-400 mt-12">Loading…</p>
+          <p className="text-center text-sm text-gray-400 mt-12">{t('common.loading')}</p>
         )}
 
         {/* ── Owed to me ── */}
@@ -562,7 +585,7 @@ export default function BalancesPage() {
             {receivedBulkPayments.length > 0 && (
               <div className="flex flex-col gap-2">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
-                  Bulk payment requests ({receivedBulkPayments.length})
+                  {t('balance.bulk_requests', { n: receivedBulkPayments.length })}
                 </p>
                 {receivedBulkPayments.map((bp) => (
                   <IncomingBulkCard
@@ -580,7 +603,7 @@ export default function BalancesPage() {
             {data?.owedToMe?.length === 0 && receivedBulkPayments.length === 0 && groupsOwedToMe.length === 0 ? (
               <div className="flex flex-col items-center justify-center mt-16 gap-3">
                 <span className="text-5xl">🎉</span>
-                <p className="text-sm text-gray-400">No one owes you right now</p>
+                <p className="text-sm text-gray-400">{t('balance.no_owed')}</p>
               </div>
             ) : (
               <>
@@ -599,7 +622,7 @@ export default function BalancesPage() {
                   <>
                     {data?.owedToMe?.length > 0 && (
                       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
-                        From groups
+                        {t('balance.from_groups')}
                       </p>
                     )}
                     {groupsOwedToMe.map((g) => (
@@ -610,7 +633,7 @@ export default function BalancesPage() {
                 {cardOwedMe.length > 0 && (
                   <>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
-                      Card debts owed to you
+                      {t('balance.card_debts_from')}
                     </p>
                     {cardOwedMe.map((c) => (
                       <button
@@ -625,12 +648,12 @@ export default function BalancesPage() {
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
                           <p className="text-xs text-gray-400">{c.card.name}</p>
                           {c.pendingApproval > 0 && (
-                            <p className="text-xs text-amber-600">{fmt(c.pendingApproval)} awaiting your approval</p>
+                            <p className="text-xs text-amber-600">{t('balance.approval_needed', { amount: fmt(c.pendingApproval) })}</p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-bold text-green-600">{fmt(c.outstanding)}</p>
-                          <p className="text-xs text-gray-400">owed to you</p>
+                          <p className="text-xs text-gray-400">{t('balance.owes_you')}</p>
                         </div>
                       </button>
                     ))}
@@ -646,7 +669,7 @@ export default function BalancesPage() {
           data?.iOwe?.length === 0 && groupsIOwe.length === 0 && cardIOwe.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-16 gap-3">
               <span className="text-5xl">✅</span>
-              <p className="text-sm text-gray-400">You don't owe anyone right now</p>
+              <p className="text-sm text-gray-400">{t('balance.no_owe')}</p>
             </div>
           ) : (
             <>
@@ -665,7 +688,7 @@ export default function BalancesPage() {
                 <>
                   {data?.iOwe?.length > 0 && (
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
-                      From groups
+                      {t('balance.from_groups')}
                     </p>
                   )}
                   {groupsIOwe.map((g) => (
@@ -676,7 +699,7 @@ export default function BalancesPage() {
               {cardIOwe.length > 0 && (
                 <>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
-                    Card debts
+                    {t('balance.card_debts_to')}
                   </p>
                   {cardIOwe.map((c) => (
                     <button
@@ -691,12 +714,12 @@ export default function BalancesPage() {
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
                         <p className="text-xs text-gray-400">{c.card.name}</p>
                         {c.pendingApproval > 0 && (
-                          <p className="text-xs text-amber-600">{fmt(c.pendingApproval)} pending confirmation</p>
+                          <p className="text-xs text-amber-600">{t('balance.pending_confirmation', { amount: fmt(c.pendingApproval) })}</p>
                         )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-red-500">{fmt(c.outstanding)}</p>
-                        <p className="text-xs text-gray-400">to repay</p>
+                        <p className="text-xs text-gray-400">{t('balance.to_repay')}</p>
                       </div>
                     </button>
                   ))}
@@ -711,8 +734,8 @@ export default function BalancesPage() {
           paidFor.length === 0 ? (
             <div className="flex flex-col items-center justify-center mt-16 gap-3">
               <span className="text-5xl">🧾</span>
-              <p className="text-sm text-gray-400">No expenses paid for others yet</p>
-              <p className="text-xs text-gray-400">When you add an expense "for someone else" it appears here</p>
+              <p className="text-sm text-gray-400">{t('balance.no_paid')}</p>
+              <p className="text-xs text-gray-400">{t('balance.paid_hint')}</p>
             </div>
           ) : (
             paidFor.map((person) => (

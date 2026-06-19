@@ -83,11 +83,26 @@ model User {
   delegationsRequested CardDelegation[] @relation("DelegationRequester")
   delegationsOwned     CardDelegation[] @relation("DelegationOwner")
   repaymentsMade       CardRepayment[]  @relation("RepaymentPayer")
+  webauthnCredentials  WebAuthnCredential[]
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   @@index([firebaseUid])
+}
+
+model WebAuthnCredential {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String   @unique
+  publicKey    String
+  counter      BigInt   @default(0)
+  transports   String[] @default([])
+  deviceName   String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }
 
 model SavingsGoal {
@@ -136,9 +151,14 @@ model PaymentType {
   reminderDaysBefore Int?
   reminderEnabled    Boolean   @default(false)
 
+  cardLastFour    String?
+  cardHolderName  String?
+  cardExpiry      String?
+
   expenses          Expense[]
   recurringExpenses RecurringExpense[]
-  delegation        CardDelegation?
+  delegation        CardDelegation?          @relation("RequesterCard")
+  ownerDelegations  CardDelegation[]         @relation("OwnerCard")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -150,7 +170,7 @@ model PaymentType {
 model CardDelegation {
   id            String           @id @default(cuid())
   paymentTypeId String           @unique
-  paymentType   PaymentType      @relation(fields: [paymentTypeId], references: [id], onDelete: Cascade)
+  paymentType   PaymentType      @relation("RequesterCard", fields: [paymentTypeId], references: [id], onDelete: Cascade)
   requestedById String
   requestedBy   User             @relation("DelegationRequester", fields: [requestedById], references: [id])
   ownerId       String
@@ -158,6 +178,9 @@ model CardDelegation {
   status        DelegationStatus @default(PENDING)
   createdAt     DateTime         @default(now())
   approvedAt    DateTime?
+
+  ownerPaymentTypeId String?
+  ownerPaymentType   PaymentType? @relation("OwnerCard", fields: [ownerPaymentTypeId], references: [id], onDelete: SetNull)
 
   expenses   Expense[]
   repayments CardRepayment[]

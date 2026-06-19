@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { auth } from '../../lib/firebase';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../lib/api';
@@ -11,6 +12,7 @@ import Button from '../../components/ui/Button';
 import ImageCropModal from '../../components/ImageCropModal';
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
   const qc = useQueryClient();
@@ -66,7 +68,7 @@ export default function ProfilePage() {
       )}
 
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <TopBar title="Profile" />
+        <TopBar title={t('profile.title')} />
         <div className="flex-1 flex flex-col items-center p-6 gap-6 pb-24">
 
           {/* Avatar */}
@@ -86,13 +88,13 @@ export default function ProfilePage() {
 
           {profile && (
             <div className="text-center">
-              <p className="text-xl font-semibold text-gray-900 dark:text-white">{profile.name || 'No name set'}</p>
+              <p className="text-xl font-semibold text-gray-900 dark:text-white">{profile.name || t('profile.no_name')}</p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{profile.email}</p>
             </div>
           )}
 
           <Button variant="outline" onClick={handleLogout} className="w-full max-w-xs">
-            Sign out
+            {t('profile.sign_out')}
           </Button>
         </div>
         <BottomNav />

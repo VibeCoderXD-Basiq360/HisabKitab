@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow, isToday, isYesterday, format } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -24,13 +25,13 @@ const TYPE_META = {
 };
 const DEFAULT_META = { icon: '🔔', bg: 'bg-gray-100' };
 
-function groupByDate(notifications) {
+function groupByDate(notifications, t) {
   const groups = {};
   for (const n of notifications) {
     const d = new Date(n.createdAt);
     let label;
-    if (isToday(d)) label = 'Today';
-    else if (isYesterday(d)) label = 'Yesterday';
+    if (isToday(d)) label = t('notifications.today');
+    else if (isYesterday(d)) label = t('notifications.yesterday');
     else label = format(d, 'd MMM yyyy');
     (groups[label] = groups[label] || []).push(n);
   }
@@ -38,6 +39,7 @@ function groupByDate(notifications) {
 }
 
 export default function NotificationsPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data, isLoading } = useNotifications();
   const markRead = useMarkRead();
@@ -46,7 +48,7 @@ export default function NotificationsPage() {
 
   const notifications = data?.data || [];
   const unreadCount = data?.unreadCount || 0;
-  const grouped = groupByDate(notifications);
+  const grouped = groupByDate(notifications, t);
 
   const handleTap = (n) => {
     if (!n.isRead) markRead.mutate(n.id);
@@ -60,7 +62,7 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
-        title="Notifications"
+        title={t('notifications.title')}
         showBack
         action={
           unreadCount > 0 ? (
@@ -68,7 +70,7 @@ export default function NotificationsPage() {
               onClick={() => markAllRead.mutate()}
               className="text-sm font-medium text-primary-600 px-2"
             >
-              Mark all read
+              {t('notifications.mark_all')}
             </button>
           ) : null
         }
@@ -76,13 +78,13 @@ export default function NotificationsPage() {
 
       <div className="flex-1 overflow-y-auto pb-20">
         {isLoading && (
-          <div className="flex justify-center pt-16 text-gray-400">Loading…</div>
+          <div className="flex justify-center pt-16 text-gray-400">{t('common.loading')}</div>
         )}
 
         {!isLoading && notifications.length === 0 && (
           <div className="flex flex-col items-center justify-center pt-20 text-gray-400 gap-3">
             <span className="text-5xl">🔔</span>
-            <p className="text-sm">No notifications yet</p>
+            <p className="text-sm">{t('notifications.no_notifications')}</p>
           </div>
         )}
 

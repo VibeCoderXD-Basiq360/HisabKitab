@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { startOfMonth, endOfMonth, subMonths, addMonths, format, isSameMonth } from 'date-fns';
 import { useExpenses, useDeleteExpense, useCreateExpense } from '../../hooks/useExpenses';
 import { useBalances } from '../../hooks/useSplits';
@@ -21,6 +22,7 @@ const CURRENT_MONTH_FILTERS = {
 };
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const inputRef = useRef();
@@ -41,8 +43,8 @@ export default function HomePage() {
 
   // Debounce search
   useEffect(() => {
-    const t = setTimeout(() => setQuery(searchInput.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setQuery(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   const isSearching = query.length > 0;
@@ -141,13 +143,13 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
-        title="HisabKitab"
+        title={t('home.title')}
         showBell
         action={
           <button
             onClick={() => navigate('/expense/new')}
             className="w-10 h-10 flex items-center justify-center text-2xl text-primary-600 font-light"
-            aria-label="Add expense"
+            aria-label={t('home.add_expense')}
           >
             +
           </button>
@@ -164,7 +166,7 @@ export default function HomePage() {
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Overview
+          {t('home.overview')}
         </button>
         <button
           onClick={() => setTab('expenses')}
@@ -174,7 +176,7 @@ export default function HomePage() {
               : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
-          Expenses {monthCount > 0 && tab !== 'expenses' && (
+          {t('home.expenses')} {monthCount > 0 && tab !== 'expenses' && (
             <span className="ml-1 text-xs opacity-70">({monthCount})</span>
           )}
         </button>
@@ -195,16 +197,19 @@ export default function HomePage() {
               className="mx-4 bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left active:bg-gray-50 dark:active:bg-gray-700"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Monthly Budget</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{t('home.monthly_budget')}</span>
                 <span className={`text-xs font-bold ${budgetPct >= 100 ? 'text-red-500' : budgetPct >= 80 ? 'text-yellow-500' : 'text-green-600'}`}>
-                  {budgetPct}% used
+                  {budgetPct}{t('home.pct_used')}
                 </span>
               </div>
               <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div className={`h-full rounded-full transition-all ${budgetColor}`} style={{ width: `${Math.min(budgetPct, 100)}%` }} />
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                ₹{totalSpent.toLocaleString('en-IN')} spent of ₹{totalBudget.toLocaleString('en-IN')} · tap to manage
+                {t('home.budget_spent', {
+                  spent: totalSpent.toLocaleString('en-IN'),
+                  total: totalBudget.toLocaleString('en-IN'),
+                })}
               </p>
             </button>
           )}
@@ -216,9 +221,9 @@ export default function HomePage() {
               className="mx-4 bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5 shadow-sm text-left active:bg-gray-50 dark:active:bg-gray-700"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">🎯 Savings Goal</span>
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">🎯 {t('home.savings_goal')}</span>
                 <span className={`text-xs font-bold ${sgIntact ? 'text-emerald-600' : 'text-red-500'}`}>
-                  {sgIntact ? '✓ On track' : '⚠ At risk'}
+                  {sgIntact ? `✓ ${t('home.on_track')}` : `⚠ ${t('home.at_risk')}`}
                 </span>
               </div>
               {sgMaxSpend !== null && (
@@ -254,8 +259,14 @@ export default function HomePage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xl">💸</span>
                     <div>
-                      <p className="text-sm font-semibold text-red-700 dark:text-red-400">You owe ₹{totalIOwe.toLocaleString('en-IN')}</p>
-                      <p className="text-xs text-red-400">to {balances.iOwe.length} {balances.iOwe.length === 1 ? 'person' : 'people'} · Tap to settle</p>
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-400">
+                        {t('home.owe_you', { amount: totalIOwe.toLocaleString('en-IN') })}
+                      </p>
+                      <p className="text-xs text-red-400">
+                        {balances.iOwe.length === 1
+                          ? t('home.owe_person', { n: balances.iOwe.length })
+                          : t('home.owe_people', { n: balances.iOwe.length })}
+                      </p>
                     </div>
                   </div>
                   <span className="text-red-300 text-lg">›</span>
@@ -269,8 +280,14 @@ export default function HomePage() {
                   <div className="flex items-center gap-3">
                     <span className="text-xl">🤝</span>
                     <div>
-                      <p className="text-sm font-semibold text-green-700 dark:text-green-400">₹{totalOwedToMe.toLocaleString('en-IN')} owed to you</p>
-                      <p className="text-xs text-green-500">from {balances.owedToMe.length} {balances.owedToMe.length === 1 ? 'person' : 'people'} · Tap to review</p>
+                      <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                        {t('home.owed_you', { amount: totalOwedToMe.toLocaleString('en-IN') })}
+                      </p>
+                      <p className="text-xs text-green-500">
+                        {balances.owedToMe.length === 1
+                          ? t('home.owed_person', { n: balances.owedToMe.length })
+                          : t('home.owed_people', { n: balances.owedToMe.length })}
+                      </p>
                     </div>
                   </div>
                   <span className="text-green-300 text-lg">›</span>
@@ -296,7 +313,7 @@ export default function HomePage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search expenses…"
+                placeholder={t('home.search_placeholder')}
                 className="w-full bg-gray-100 dark:bg-gray-700 rounded-xl pl-9 pr-9 py-2.5 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:bg-gray-50 dark:focus:bg-gray-600 focus:ring-2 focus:ring-primary-100 transition-all"
               />
               {searchInput && (
@@ -326,19 +343,21 @@ export default function HomePage() {
           <div className="flex-1 overflow-y-auto pb-24">
 
             {isLoading ? (
-              <div className="flex items-center justify-center py-20 text-gray-300 dark:text-gray-600 text-sm">Loading…</div>
+              <div className="flex items-center justify-center py-20 text-gray-300 dark:text-gray-600 text-sm">{t('common.loading')}</div>
 
             ) : isSearching && expenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <span className="text-4xl">🔍</span>
-                <p className="text-sm text-gray-400">Nothing found for "{query}"</p>
+                <p className="text-sm text-gray-400">{t('home.nothing_found', { query })}</p>
               </div>
 
             ) : isSearching ? (
               <>
                 <div className="px-4 pt-4 pb-1">
                   <p className="text-xs text-gray-400 dark:text-gray-500">
-                    {expenses.length} result{expenses.length !== 1 ? 's' : ''} for "{query}"
+                    {expenses.length === 1
+                      ? t('home.results_one', { n: expenses.length, query })
+                      : t('home.results_other', { n: expenses.length, query })}
                   </p>
                 </div>
                 <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
@@ -357,8 +376,10 @@ export default function HomePage() {
             ) : expenses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4 px-6">
                 <span className="text-4xl">🗓️</span>
-                <p className="text-gray-400 dark:text-gray-500 text-sm text-center">No expenses in {format(viewMonth, 'MMMM yyyy')}</p>
-                {isCurrentMonth && <Button onClick={() => navigate('/expense/new')}>Add your first expense</Button>}
+                <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
+                  {t('home.no_expenses_month', { month: format(viewMonth, 'MMMM yyyy') })}
+                </p>
+                {isCurrentMonth && <Button onClick={() => navigate('/expense/new')}>{t('home.add_first')}</Button>}
               </div>
 
             ) : (
@@ -370,7 +391,9 @@ export default function HomePage() {
                     ₹{viewMonthTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </p>
                   <p className="text-xs opacity-60 mt-1">
-                    avg ₹{viewMonthCount > 0 ? Math.round(viewMonthTotal / viewMonthCount).toLocaleString('en-IN') : 0} / expense
+                    {t('home.avg_per_expense', {
+                      n: viewMonthCount > 0 ? Math.round(viewMonthTotal / viewMonthCount).toLocaleString('en-IN') : 0,
+                    })}
                   </p>
                 </div>
 

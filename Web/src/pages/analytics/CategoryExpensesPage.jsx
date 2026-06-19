@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -8,6 +9,7 @@ import { useCategories } from '../../hooks/useCategories';
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
 export default function CategoryExpensesPage() {
+  const { t } = useTranslation();
   const { categoryId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -48,7 +50,7 @@ export default function CategoryExpensesPage() {
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400 dark:text-gray-500">{periodLabel || 'All expenses'}</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{expenses.length} transaction{expenses.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('analytics.transactions', { n: expenses.length })}</p>
           </div>
         </div>
 
@@ -57,11 +59,11 @@ export default function CategoryExpensesPage() {
           <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide px-1">Transactions</p>
 
           {isLoading ? (
-            <p className="text-center text-sm text-gray-400 py-10">Loading…</p>
+            <p className="text-center text-sm text-gray-400 py-10">{t('common.loading')}</p>
           ) : expenses.length === 0 ? (
             <div className="bg-white rounded-2xl py-12 flex flex-col items-center gap-2">
               <span className="text-4xl">🗂️</span>
-              <p className="text-sm text-gray-400">No expenses for this period</p>
+              <p className="text-sm text-gray-400">{t('analytics.no_expenses')}</p>
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">

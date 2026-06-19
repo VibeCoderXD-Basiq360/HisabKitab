@@ -9,23 +9,28 @@ const list = async (req, res) => {
   res.json(types);
 };
 
+function cardFields(body) {
+  const { cardType, billingCycleDay, paymentDueDay, reminderDaysBefore, reminderEnabled, cardLastFour, cardHolderName, cardExpiry } = body;
+  const isCard = cardType === 'CREDIT_CARD' || cardType === 'DEBIT_CARD';
+  return {
+    cardType: cardType || null,
+    billingCycleDay:    billingCycleDay ? Number(billingCycleDay) : null,
+    paymentDueDay:      paymentDueDay   ? Number(paymentDueDay)   : null,
+    reminderDaysBefore: reminderDaysBefore ? Number(reminderDaysBefore) : null,
+    reminderEnabled:    !!reminderEnabled,
+    cardLastFour:    isCard && cardLastFour   ? String(cardLastFour).replace(/\D/g, '').slice(-4) : null,
+    cardHolderName:  isCard && cardHolderName ? cardHolderName.trim() : null,
+    cardExpiry:      isCard && cardExpiry     ? cardExpiry.trim()     : null,
+  };
+}
+
 const create = async (req, res) => {
-  const { name, cardType, billingCycleDay, paymentDueDay, reminderDaysBefore, reminderEnabled } = req.body;
+  const { name } = req.body;
   const auto = getIconForPaymentType(name);
   const icon = req.body.icon || auto.icon;
   const color = req.body.color || auto.color;
   const type = await prisma.paymentType.create({
-    data: {
-      userId: req.user.userId,
-      name,
-      icon,
-      color,
-      cardType: cardType || null,
-      billingCycleDay: billingCycleDay ? Number(billingCycleDay) : null,
-      paymentDueDay: paymentDueDay ? Number(paymentDueDay) : null,
-      reminderDaysBefore: reminderDaysBefore ? Number(reminderDaysBefore) : null,
-      reminderEnabled: !!reminderEnabled,
-    },
+    data: { userId: req.user.userId, name, icon, color, ...cardFields(req.body) },
   });
   res.status(201).json(type);
 };
@@ -36,22 +41,13 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Payment type not found' });
 
-  const { name, cardType, billingCycleDay, paymentDueDay, reminderDaysBefore, reminderEnabled } = req.body;
+  const { name } = req.body;
   const auto = getIconForPaymentType(name);
   const icon = req.body.icon || auto.icon;
   const color = req.body.color || auto.color;
   const type = await prisma.paymentType.update({
     where: { id: req.params.id },
-    data: {
-      name,
-      icon,
-      color,
-      cardType: cardType || null,
-      billingCycleDay: billingCycleDay ? Number(billingCycleDay) : null,
-      paymentDueDay: paymentDueDay ? Number(paymentDueDay) : null,
-      reminderDaysBefore: reminderDaysBefore ? Number(reminderDaysBefore) : null,
-      reminderEnabled: !!reminderEnabled,
-    },
+    data: { name, icon, color, ...cardFields(req.body) },
   });
   res.json(type);
 };

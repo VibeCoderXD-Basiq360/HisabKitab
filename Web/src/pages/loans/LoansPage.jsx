@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
@@ -8,12 +9,13 @@ const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigi
 
 export default function LoansPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: loans = [], isLoading } = useLoans();
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
-        title="EMI Tracker"
+        title={t('loans.title')}
         showBack
         action={
           <button
@@ -37,15 +39,15 @@ export default function LoansPage() {
         {!isLoading && loans.length === 0 && (
           <div className="flex flex-col items-center justify-center pt-24 text-center px-8">
             <p className="text-4xl mb-3">🏦</p>
-            <p className="text-base font-medium text-gray-700 dark:text-gray-300">No loans tracked</p>
+            <p className="text-base font-medium text-gray-700 dark:text-gray-300">{t('loans.no_loans')}</p>
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-5">
-              Add a loan to track EMIs and see your repayment progress.
+              {t('loans.no_loans_desc')}
             </p>
             <button
               onClick={() => navigate('/loans/new')}
               className="px-6 py-3 bg-primary-500 text-white rounded-2xl text-sm font-semibold active:bg-primary-600"
             >
-              + Add Loan
+              {t('loans.add')}
             </button>
           </div>
         )}
@@ -73,12 +75,12 @@ export default function LoansPage() {
                 <div className="text-right shrink-0">
                   {isComplete ? (
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                      ✓ Complete
+                      {t('loans.complete')}
                     </span>
                   ) : (
                     <>
                       <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(loan.principal)}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">principal</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">{t('loans.principal')}</p>
                     </>
                   )}
                 </div>
@@ -86,9 +88,9 @@ export default function LoansPage() {
 
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{paid} of {total} EMIs paid</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{t('loans.emis_paid', { paid, total })}</span>
                   <span className={`text-xs font-medium ${isComplete ? 'text-green-600' : 'text-primary-600 dark:text-primary-400'}`}>
-                    {isComplete ? 'Done' : `${remaining} left`}
+                    {isComplete ? t('loans.done') : t('loans.left', { n: remaining })}
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
