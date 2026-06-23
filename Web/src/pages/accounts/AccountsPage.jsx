@@ -72,7 +72,10 @@ function AccountForm({ initial, onSave, onClose, saving }) {
         {/* Opening Balance */}
         <div>
           <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">
-            Opening Balance (₹) <span className="font-normal text-gray-400">— current balance if starting now</span>
+            {form.type === 'CREDIT_CARD'
+              ? <>Opening Outstanding (₹) <span className="font-normal text-gray-400">— amount already owed before tracking</span></>
+              : <>Opening Balance (₹) <span className="font-normal text-gray-400">— current balance if starting now</span></>
+            }
           </label>
           <input
             type="number"
@@ -107,18 +110,28 @@ export default function AccountsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
+  const bankAccounts  = accounts.filter((a) => a.type !== 'CREDIT_CARD');
+  const creditCards   = accounts.filter((a) => a.type === 'CREDIT_CARD');
+  const totalAssets   = bankAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const totalDebt     = creditCards.reduce((s, a) => s + Number(a.balance), 0);
+  const netBalance    = totalAssets - totalDebt;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
-      <TopBar title="Bank Accounts" showBack onBack={() => navigate(-1)} />
+      <TopBar title="Accounts" showBack onBack={() => navigate(-1)} />
 
       {/* Total strip */}
       <div className="bg-white dark:bg-gray-800 px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Total Balance Across All Accounts</p>
-        <p className={`text-2xl font-bold mt-0.5 ${totalBalance >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-500'}`}>
-          {totalBalance < 0 ? '-' : ''}{fmt(totalBalance)}
+        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-semibold">Net Balance</p>
+        <p className={`text-2xl font-bold mt-0.5 ${netBalance >= 0 ? 'text-gray-900 dark:text-white' : 'text-red-500'}`}>
+          {netBalance < 0 ? '-' : ''}{fmt(netBalance)}
         </p>
+        {creditCards.length > 0 && (
+          <div className="flex gap-4 mt-2">
+            <p className="text-xs text-gray-400">Assets <span className="text-emerald-600 font-semibold">{fmt(totalAssets)}</span></p>
+            <p className="text-xs text-gray-400">CC Outstanding <span className="text-red-500 font-semibold">{fmt(totalDebt)}</span></p>
+          </div>
+        )}
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-3">
@@ -149,9 +162,16 @@ export default function AccountsPage() {
                   <p className="text-xs text-gray-400">{meta.label}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className={`text-base font-bold ${isNeg ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
-                    {isNeg ? '-' : ''}{fmt(bal)}
-                  </p>
+                  {account.type === 'CREDIT_CARD' ? (
+                    <>
+                      <p className="text-base font-bold text-red-500">{fmt(bal)}</p>
+                      <p className="text-[10px] text-red-400 font-medium">outstanding</p>
+                    </>
+                  ) : (
+                    <p className={`text-base font-bold ${isNeg ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
+                      {isNeg ? '-' : ''}{fmt(bal)}
+                    </p>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditing(account); }}
                     className="text-xs text-primary-500 mt-0.5"

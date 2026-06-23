@@ -148,6 +148,7 @@ model User {
   contactRequestsRecv  ContactRequest[] @relation("ContactRequestRecipient")
   incomes              Income[]
   accounts             Account[]
+  creditCardPayments   CreditCardPayment[]
   subscriptions        Subscription[]
   expenseTemplates     ExpenseTemplate[]
   financialGoals       FinancialGoal[]
@@ -225,8 +226,28 @@ model Account {
   updatedAt      DateTime    @updatedAt
   expenses       Expense[]
   incomes        Income[]
+  cardPaymentsReceived CreditCardPayment[] @relation("CardPaymentsReceived")
+  bankPaymentsSent     CreditCardPayment[] @relation("BankPaymentsSent")
 
   @@index([userId])
+}
+
+model CreditCardPayment {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCardAccountId String
+  creditCardAccount   Account  @relation("CardPaymentsReceived", fields: [creditCardAccountId], references: [id])
+  fromAccountId       String?
+  fromAccount         Account? @relation("BankPaymentsSent", fields: [fromAccountId], references: [id], onDelete: SetNull)
+  amount              Decimal  @db.Decimal(14, 2)
+  paymentDate         DateTime
+  note                String?
+  createdAt           DateTime @default(now())
+
+  @@index([userId])
+  @@index([creditCardAccountId])
+  @@index([fromAccountId])
 }
 
 model Asset {

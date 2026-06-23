@@ -39,3 +39,11 @@ export function useDeleteAccount() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
+
+export function usePayCreditCardBill() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }) => api.post(`/accounts/${id}/pay-bill`, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+}
