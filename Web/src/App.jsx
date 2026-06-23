@@ -52,6 +52,7 @@ import IncomePage from './pages/income/IncomePage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import AccountsPage from './pages/accounts/AccountsPage';
 import AccountDetailPage from './pages/accounts/AccountDetailPage';
+import CartPage from './pages/cart/CartPage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -162,6 +163,7 @@ export default function App() {
           <Route path="/subscriptions" element={<Protected><SubscriptionsPage /></Protected>} />
           <Route path="/accounts" element={<Protected><AccountsPage /></Protected>} />
           <Route path="/accounts/:id" element={<Protected><AccountDetailPage /></Protected>} />
+          <Route path="/cart" element={<Protected><CartPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

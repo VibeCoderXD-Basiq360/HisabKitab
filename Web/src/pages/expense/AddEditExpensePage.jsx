@@ -92,6 +92,7 @@ const EMPTY = {
   personalShare: '',
   tabId: '',
   accountId: '',
+  items: [], // [{id, name, amount}]
 };
 
 export default function AddEditExpensePage() {
@@ -275,6 +276,7 @@ export default function AddEditExpensePage() {
         currency: existing.currency || 'INR',
         tags: existing.tags || [],
         isReimbursement: existing.isReimbursement || false,
+        items: (existing.items || []).map((it) => ({ id: it.id, name: it.name, amount: String(it.amount) })),
       });
       setReceiptUrl(existing.receiptUrl || '');
     }
@@ -324,6 +326,9 @@ export default function AddEditExpensePage() {
       willRepay: activeDelegation ? form.willRepay : false,
       tabId: form.tabId || undefined,
       accountId: form.accountId || undefined,
+      items: form.items.length > 0
+        ? form.items.map((it, i) => ({ name: it.name, amount: Number(it.amount), order: i }))
+        : undefined,
     };
     let expenseId = id;
     if (isEdit) {
@@ -404,16 +409,99 @@ export default function AddEditExpensePage() {
       )}
 
       <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-4 flex flex-col gap-4 pb-10">
-        <Input
-          label={t('expense.amount')}
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          min="0"
-          value={form.amount}
-          onChange={field('amount')}
-          required
-        />
+        {/* Amount — computed from items if itemized, manual otherwise */}
+        {form.items.length > 0 ? (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.amount')}</label>
+            <div className="min-h-[48px] px-4 flex items-center rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+              <span className="text-base font-bold text-gray-900 dark:text-white">
+                ₹{form.items.reduce((s, i) => s + Number(i.amount || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+              </span>
+              <span className="ml-2 text-xs text-gray-400">auto from {form.items.length} items</span>
+            </div>
+          </div>
+        ) : (
+          <Input
+            label={t('expense.amount')}
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={form.amount}
+            onChange={field('amount')}
+            required={form.items.length === 0}
+          />
+        )}
+
+        {/* Itemized breakdown */}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (form.items.length > 0) {
+                if (window.confirm('Remove all items and switch to manual amount?'))
+                  setForm((f) => ({ ...f, items: [] }));
+              } else {
+                setForm((f) => ({
+                  ...f,
+                  items: [{ id: `new-${Date.now()}`, name: '', amount: '' }],
+                }));
+              }
+            }}
+            className={`flex items-center justify-between min-h-[44px] px-4 rounded-xl border transition-colors ${
+              form.items.length > 0
+                ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base">🧾</span>
+              <span className={`text-sm font-medium ${form.items.length > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                {form.items.length > 0 ? `Itemized (${form.items.length} items)` : 'Add itemized breakdown'}
+              </span>
+            </div>
+            {form.items.length > 0 && <span className="text-xs text-indigo-400">tap to remove</span>}
+          </button>
+
+          {form.items.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+              {form.items.map((item, idx) => (
+                <div key={item.id} className={`flex items-center gap-2 px-3 py-2 ${idx > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''}`}>
+                  <span className="text-xs text-gray-300 dark:text-gray-600 w-4 shrink-0">{idx + 1}</span>
+                  <input
+                    value={item.name}
+                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it) }))}
+                    placeholder="Item name"
+                    className="flex-1 text-sm text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-300 dark:placeholder-gray-600"
+                  />
+                  <span className="text-xs text-gray-300 dark:text-gray-600">₹</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={item.amount}
+                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, amount: e.target.value } : it) }))}
+                    placeholder="0"
+                    className="w-20 text-sm text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-300 text-right"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))}
+                    className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-400 text-sm shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, items: [...f.items, { id: `new-${Date.now()}-${f.items.length}`, name: '', amount: '' }] }))}
+                className="w-full text-xs text-primary-500 font-semibold py-2.5 border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                + Add item
+              </button>
+            </div>
+          )}
+        </div>
 
         {form.currency !== 'INR' && (
           <div className="flex flex-col gap-1">

@@ -425,6 +425,7 @@ model Expense {
   people        ExpensePerson[]
   splits        ExpenseSplit[]
   comments      ExpenseComment[]
+  items         ExpenseItem[]
 
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
@@ -435,6 +436,19 @@ model Expense {
   @@index([userId, categoryId])
   @@index([userId, paymentTypeId])
   @@index([groupId])
+}
+
+model ExpenseItem {
+  id        String  @id @default(cuid())
+  expenseId String
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  name      String
+  amount    Decimal @db.Decimal(14, 2)
+  qty       Float?
+  unit      String?
+  order     Int     @default(0)
+
+  @@index([expenseId])
 }
 
 model ExpensePerson {

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { startOfMonth, endOfMonth, subMonths, addMonths, format, isSameMonth } from 'date-fns';
 import { useExpenses, useDeleteExpense, useCreateExpense } from '../../hooks/useExpenses';
+import { useCartStore } from '../../store/cartStore';
 import { useBalances } from '../../hooks/useSplits';
 import { useBudgets } from '../../hooks/useBudgets';
 import { useSavingsGoal } from '../../hooks/useSavingsGoal';
@@ -79,6 +80,8 @@ export default function HomePage() {
   const { data: financialGoals = [] } = useFinancialGoals();
   const useTemplate = useUseTemplate();
   const { isOnline, isSyncing, pendingCount, failedCount, syncQueue, syncResult, clearSyncResult, queue, retryFailed, dequeue } = useOfflineQueue();
+  const cartItems = useCartStore((s) => s.items);
+  const cartCount = cartItems.length;
 
   function handleDuplicate(expense) {
     createExpense.mutate({
@@ -160,6 +163,19 @@ export default function HomePage() {
         showSearch
         action={
           <div className="flex items-center gap-1">
+            {/* Cart button with badge */}
+            <button
+              onClick={() => navigate('/cart')}
+              className="relative w-10 h-10 flex items-center justify-center text-xl"
+              title="Shopping Cart"
+            >
+              🛒
+              {cartCount > 0 && (
+                <span className="absolute top-1.5 right-1 min-w-[16px] h-4 bg-primary-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                  {cartCount > 9 ? '9+' : cartCount}
+                </span>
+              )}
+            </button>
             {templates.length > 0 && (
               <button
                 onClick={() => setShowQuickAdd(true)}

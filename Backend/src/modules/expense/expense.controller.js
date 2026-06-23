@@ -73,6 +73,7 @@ const include = {
     orderBy: { createdAt: 'asc' },
   },
   comments: { orderBy: { createdAt: 'asc' } },
+  items:    { orderBy: { order: 'asc' } },
 };
 
 async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId, customSplitAmount = null) {
@@ -171,7 +172,12 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false, splitAmount, tabId, accountId } = req.body;
+  const { amount: rawAmount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false, splitAmount, tabId, accountId, items = [] } = req.body;
+
+  // If items provided, auto-compute total from their sum
+  const amount = items.length > 0
+    ? items.reduce((s, i) => s + Number(i.amount || 0), 0)
+    : rawAmount;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
@@ -224,6 +230,9 @@ const create = async (req, res) => {
       isReimbursement: !!isReimbursement,
       accountId: accountId || null,
       people: { create: splitPeopleIds.map((personId) => ({ personId })) },
+      items: items.length > 0
+        ? { create: items.map((it, idx) => ({ name: it.name, amount: Number(it.amount), qty: it.qty || null, unit: it.unit || null, order: idx })) }
+        : undefined,
     },
     include,
   });
@@ -314,7 +323,11 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Expense not found' });
 
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, tags = [], isReimbursement } = req.body;
+  const { amount: rawAmount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, tags = [], isReimbursement, items } = req.body;
+
+  const amount = Array.isArray(items) && items.length > 0
+    ? items.reduce((s, i) => s + Number(i.amount || 0), 0)
+    : rawAmount;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
@@ -349,6 +362,14 @@ const update = async (req, res) => {
         deleteMany: {},
         create: splitPeopleIds.map((personId) => ({ personId })),
       },
+      ...(Array.isArray(items) && {
+        items: {
+          deleteMany: {},
+          create: items.length > 0
+            ? items.map((it, idx) => ({ name: it.name, amount: Number(it.amount), qty: it.qty || null, unit: it.unit || null, order: idx }))
+            : [],
+        },
+      }),
     },
     include,
   });
