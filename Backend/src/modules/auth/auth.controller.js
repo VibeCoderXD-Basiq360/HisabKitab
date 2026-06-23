@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const admin = require('../../config/firebase');
 const prisma = require('../../lib/prisma');
+const { linkPendingInvites } = require('../contact/contact.controller');
 
 const DEFAULT_CATEGORIES = [
   { name: 'Food', icon: '🍔', color: '#FF5722' },
@@ -53,6 +54,7 @@ const login = async (req, res) => {
         },
       });
       await seedDefaults(user.id);
+      linkPendingInvites(user).catch(console.error);
     } else {
       user = await prisma.user.update({
         where: { firebaseUid: decoded.uid },

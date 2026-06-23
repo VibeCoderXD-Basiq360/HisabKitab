@@ -10,6 +10,7 @@ import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useAnalytics, useTrend } from '../../hooks/useExpenses';
 import { useBudgets } from '../../hooks/useBudgets';
+import { useInsights } from '../../hooks/useInsights';
 
 const now = new Date();
 
@@ -165,6 +166,7 @@ export default function AnalyticsPage() {
   const [periodIdx, setPeriodIdx] = useState(0);
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+  const [shareToast, setShareToast] = useState('');
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -177,6 +179,7 @@ export default function AnalyticsPage() {
   const { data, isLoading } = useAnalytics(period.params, { enabled: !isCustom || customReady });
   const { data: trendData } = useTrend();
   const { data: budgets = [] } = useBudgets();
+  const { data: insights = [] } = useInsights();
 
   const comparison = useMemo(() => getComparison(periodIdx, trendData), [periodIdx, trendData]);
 
@@ -238,6 +241,41 @@ export default function AnalyticsPage() {
     if (!pt.id) return;
     navigate(`/analytics/payment/${pt.id}?${buildQS()}`);
   };
+
+  async function handleShare() {
+    const lines = [
+      `💸 HisabKitab — ${period.label}`,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `Total Spent: ${fmt(total)}`,
+      `Transactions: ${txnCount}`,
+    ];
+    if (avgPerDay > 0) lines.push(`Avg per day: ${fmtK(avgPerDay)}`);
+    if (comparison && comparison.prev > 0) {
+      const pct = Math.round(((comparison.curr - comparison.prev) / comparison.prev) * 100);
+      lines.push(`${pct > 0 ? '▲' : '▼'} ${Math.abs(pct)}% vs ${comparison.label}`);
+    }
+    if (data?.byCategory?.length > 0) {
+      lines.push('');
+      lines.push('Top categories:');
+      data.byCategory.slice(0, 5).forEach((c) => {
+        const pct = total > 0 ? Math.round((c.total / total) * 100) : 0;
+        lines.push(`  ${c.icon || '•'} ${c.name}: ${fmt(c.total)} (${pct}%)`);
+      });
+    }
+    lines.push('');
+    lines.push('Tracked with HisabKitab 📊');
+    const text = lines.join('\n');
+
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch (_) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        setShareToast('Copied to clipboard!');
+        setTimeout(() => setShareToast(''), 2500);
+      } catch (_) {}
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -325,9 +363,20 @@ export default function AnalyticsPage() {
             <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-5 text-white shadow-sm">
               <div className="flex items-start justify-between mb-1">
                 <p className="text-xs font-medium opacity-70">{period.label}</p>
-                {comparison && comparison.prev > 0 && (
-                  <ChangeBadge curr={comparison.curr} prev={comparison.prev} label={comparison.label} />
-                )}
+                <div className="flex items-center gap-2">
+                  {comparison && comparison.prev > 0 && (
+                    <ChangeBadge curr={comparison.curr} prev={comparison.prev} label={comparison.label} />
+                  )}
+                  {total > 0 && (
+                    <button
+                      onClick={handleShare}
+                      className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-sm hover:bg-white/30 transition-colors"
+                      title="Share summary"
+                    >
+                      📤
+                    </button>
+                  )}
+                </div>
               </div>
               <p className="text-4xl font-bold tracking-tight mt-1">{fmt(total)}</p>
               <div className="flex items-center gap-4 mt-3 opacity-80">
@@ -358,6 +407,61 @@ export default function AnalyticsPage() {
                 sub={period.labelKey !== 'all_time' ? period.label : null}
               />
             </div>
+
+            {/* Spending insights — only for This Month */}
+            {periodIdx === 0 && insights.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">💡 Spending Insights</h2>
+                <div className="flex flex-col gap-2.5">
+                  {insights.map((ins, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <span className="text-base shrink-0 mt-0.5">{ins.icon}</span>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{ins.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Source breakdown — manual vs tab vs reimbursements */}
+            {data?.bySource && (data.bySource.tab > 0 || data.bySource.reimbursements > 0) && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">🤝 {t('analytics.by_source')}</h2>
+                <div className="flex flex-col gap-3">
+                  {[
+                    { label: t('analytics.source_manual'), value: data.bySource.manual, color: '#6366f1', icon: '✏️' },
+                    { label: t('analytics.source_tab'), value: data.bySource.tab, color: '#0d9488', icon: '🤝' },
+                    { label: t('analytics.source_reimbursements'), value: data.bySource.reimbursements, color: '#22c55e', icon: '↩' },
+                  ].filter((r) => r.value > 0).map((row) => {
+                    const gross = data.bySource.manual + data.bySource.tab;
+                    const pct = gross > 0 ? Math.round((row.value / gross) * 100) : 0;
+                    return (
+                      <div key={row.label} className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base shrink-0">{row.icon}</span>
+                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1">{row.label}</span>
+                          {row.icon !== '↩' && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{pct}%</span>}
+                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                            {row.icon === '↩' ? `−${fmt(row.value)}` : fmt(row.value)}
+                          </span>
+                        </div>
+                        {row.icon !== '↩' && (
+                          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: row.color }} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-2 mt-1 flex justify-between items-center">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.source_net')}</span>
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {fmt(data.bySource.manual + data.bySource.tab - data.bySource.reimbursements)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Daily spend chart */}
             {period.showDaily && dailyData.length > 0 && (
@@ -432,6 +536,28 @@ export default function AnalyticsPage() {
         )}
       </div>
 
+      {/* Net worth entry point */}
+      <div className="mx-4 mb-2">
+        <button
+          onClick={() => navigate('/net-worth')}
+          className="w-full flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800 rounded-2xl px-4 py-3"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">💎</span>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">Net Worth Dashboard</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Assets · Liabilities · Snapshot</p>
+            </div>
+          </div>
+          <span className="text-gray-400 text-sm">→</span>
+        </button>
+      </div>
+
+      {shareToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none animate-fade-in">
+          {shareToast}
+        </div>
+      )}
       <BottomNav />
     </div>
   );

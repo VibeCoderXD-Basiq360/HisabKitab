@@ -19,7 +19,7 @@ function NotificationBell() {
   );
 }
 
-export default function TopBar({ title, showBack = false, action, showBell = false }) {
+export default function TopBar({ title, showBack = false, action, showBell = false, showSearch = false }) {
   const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center px-4 min-h-[56px]">
@@ -32,6 +32,14 @@ export default function TopBar({ title, showBack = false, action, showBell = fal
         </button>
       )}
       <h1 className="flex-1 text-lg font-semibold text-gray-900 dark:text-white">{title}</h1>
+      {showSearch && (
+        <button
+          onClick={() => navigate('/search')}
+          className="w-10 h-10 flex items-center justify-center text-gray-500 text-xl"
+        >
+          🔍
+        </button>
+      )}
       {showBell && <NotificationBell />}
       {action}
     </header>

@@ -19,6 +19,10 @@ import PersonExpensesPage from './pages/balances/PersonExpensesPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PeoplePage from './pages/settings/PeoplePage';
+import TemplatesPage from './pages/settings/TemplatesPage';
+import FinancialGoalsPage from './pages/settings/FinancialGoalsPage';
+import NetWorthPage from './pages/netWorth/NetWorthPage';
+import QuickAddPage from './pages/quickAdd/QuickAddPage';
 import PaymentTypesPage from './pages/settings/PaymentTypesPage';
 import RecurringPage from './pages/settings/RecurringPage';
 import BudgetsPage from './pages/settings/BudgetsPage';
@@ -38,8 +42,14 @@ import AppLockPage from './pages/settings/AppLockPage';
 import LoansPage from './pages/loans/LoansPage';
 import CreateLoanPage from './pages/loans/CreateLoanPage';
 import LoanDetailPage from './pages/loans/LoanDetailPage';
+import SearchPage from './pages/search/SearchPage';
 import ExchangeRatesPage from './pages/settings/ExchangeRatesPage';
 import CardDelegationsPage from './pages/settings/CardDelegationsPage';
+import SharedTabsPage from './pages/tabs/SharedTabsPage';
+import SharedTabDetailPage from './pages/tabs/SharedTabDetailPage';
+import TabGroupDetailPage from './pages/tabs/TabGroupDetailPage';
+import IncomePage from './pages/income/IncomePage';
+import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -123,6 +133,10 @@ export default function App() {
           <Route path="/settings/budgets" element={<Protected><BudgetsPage /></Protected>} />
           <Route path="/settings/budgets/:categoryId" element={<Protected><CategoryBudgetPage /></Protected>} />
           <Route path="/settings/export" element={<Protected><ExportPage /></Protected>} />
+          <Route path="/settings/templates" element={<Protected><TemplatesPage /></Protected>} />
+          <Route path="/settings/goals" element={<Protected><FinancialGoalsPage /></Protected>} />
+          <Route path="/net-worth" element={<Protected><NetWorthPage /></Protected>} />
+          <Route path="/quick-add" element={<Protected><QuickAddPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
           <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
           <Route path="/groups/new" element={<Protected><CreateGroupPage /></Protected>} />
@@ -133,11 +147,17 @@ export default function App() {
           <Route path="/activity" element={<Protected><ActivityPage /></Protected>} />
           <Route path="/settings/savings-goal" element={<Protected><SavingsGoalPage /></Protected>} />
           <Route path="/settings/app-lock" element={<Protected><AppLockPage /></Protected>} />
+          <Route path="/search" element={<Protected><SearchPage /></Protected>} />
           <Route path="/loans" element={<Protected><LoansPage /></Protected>} />
           <Route path="/loans/new" element={<Protected><CreateLoanPage /></Protected>} />
           <Route path="/loans/:id" element={<Protected><LoanDetailPage /></Protected>} />
           <Route path="/settings/exchange-rates" element={<Protected><ExchangeRatesPage /></Protected>} />
           <Route path="/settings/card-delegations" element={<Protected><CardDelegationsPage /></Protected>} />
+          <Route path="/tabs" element={<Protected><SharedTabsPage /></Protected>} />
+          <Route path="/tabs/:id" element={<Protected><SharedTabDetailPage /></Protected>} />
+          <Route path="/tab-groups/:id" element={<Protected><TabGroupDetailPage /></Protected>} />
+          <Route path="/income" element={<Protected><IncomePage /></Protected>} />
+          <Route path="/subscriptions" element={<Protected><SubscriptionsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

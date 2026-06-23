@@ -14,10 +14,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Add Expense",
+      "name": "Quick Add",
       "short_name": "Add",
-      "description": "Quickly add a new expense",
-      "url": "/expense/new",
+      "description": "Instantly add an expense — 3 taps",
+      "url": "/quick-add",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import Button from '../../components/ui/Button';
-import { useBalances, usePaidForSummary, useRequestPayment, useAcceptPayment, useRejectPayment, useWaiveSplit, useMarkReceived } from '../../hooks/useSplits';
+import { useBalances, usePaidForSummary, useRequestPayment, useAcceptPayment, useRejectPayment, useWaiveSplit, useMarkReceived, useMarkAllReceived } from '../../hooks/useSplits';
 import { useBulkPayments, useCreateBulkPayment, useRespondBulkPayment, useCancelBulkPayment } from '../../hooks/useBulkPayments';
 import { useGroups } from '../../hooks/useGroups';
 import { useCardDelegationBalance } from '../../hooks/useCardDelegation';
@@ -304,10 +304,12 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
 }
 
 /* ─── PersonCard for "Owed to me" ─── */
-function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, isBusy }) {
+function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, onMarkAllReceived, isBusy }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const navigate = useNavigate();
+
+  const pendingSplits = group.splits.filter((s) => ['PENDING', 'PAYMENT_REQUESTED'].includes(s.status));
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
@@ -336,6 +338,18 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, is
           📈
         </button>
       </div>
+
+      {pendingSplits.length > 1 && (
+        <div className="px-4 pb-2">
+          <button
+            onClick={() => onMarkAllReceived(group.personId)}
+            disabled={isBusy}
+            className="w-full py-2 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-xs font-semibold flex items-center justify-center gap-2 active:opacity-70 disabled:opacity-50"
+          >
+            ✓ Mark all received · {fmt(group.total)}
+          </button>
+        </div>
+      )}
 
       {expanded &&
         group.splits.map((split) => (
@@ -514,10 +528,11 @@ export default function BalancesPage() {
   const reject = useRejectPayment();
   const waive = useWaiveSplit();
   const markReceived = useMarkReceived();
+  const markAllReceived = useMarkAllReceived();
   const respondBulk = useRespondBulkPayment();
   const cancelBulk = useCancelBulkPayment();
 
-  const isBusy = pay.isPending || accept.isPending || reject.isPending || waive.isPending || markReceived.isPending || respondBulk.isPending || cancelBulk.isPending;
+  const isBusy = pay.isPending || accept.isPending || reject.isPending || waive.isPending || markReceived.isPending || markAllReceived.isPending || respondBulk.isPending || cancelBulk.isPending;
 
   const sentBulkPayments = bulkData?.sent || [];
   const receivedBulkPayments = (bulkData?.received || []).filter((bp) => bp.status === 'PENDING');
@@ -527,9 +542,56 @@ export default function BalancesPage() {
   const paidForCount = paidFor.filter((p) => p.totalOutstanding > 0).length;
   const incomingBulkCount = receivedBulkPayments.length;
 
+  const [shareToast, setShareToast] = useState('');
+
+  async function handleShare() {
+    const lines = ['💰 HisabKitab — Balances', '━━━━━━━━━━━━━━━━━━━━'];
+    const owedGroups = data?.owedToMe || [];
+    const iOweGroups = data?.iOwe || [];
+    const totalOwed = owedGroups.reduce((s, g) => s + g.total, 0);
+    const totalIOwe = iOweGroups.reduce((s, g) => s + g.total, 0);
+
+    if (owedGroups.length > 0) {
+      lines.push('Owed to me:');
+      owedGroups.forEach((g) => lines.push(`  • ${g.personName}: ${fmt(g.total)}`));
+      lines.push(`Total: ${fmt(totalOwed)}`);
+    }
+    if (iOweGroups.length > 0) {
+      lines.push('');
+      lines.push('I owe:');
+      iOweGroups.forEach((g) => lines.push(`  • ${g.payerName}: ${fmt(g.total)}`));
+      lines.push(`Total: ${fmt(totalIOwe)}`);
+    }
+    const net = totalOwed - totalIOwe;
+    if (totalOwed > 0 || totalIOwe > 0) {
+      lines.push('');
+      lines.push(`Net: ${net >= 0 ? '+' : ''}${fmt(net)}`);
+    }
+    lines.push('');
+    lines.push('Tracked with HisabKitab 📊');
+    const text = lines.join('\n');
+
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch (_) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        setShareToast('Copied to clipboard!');
+        setTimeout(() => setShareToast(''), 2500);
+      } catch (_) {}
+    }
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title={t('balance.title')} />
+      <TopBar
+        title={t('balance.title')}
+        action={
+          <button onClick={handleShare} className="w-10 h-10 flex items-center justify-center text-gray-500 text-xl">
+            📤
+          </button>
+        }
+      />
 
       <div className="flex bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
         <button
@@ -615,6 +677,7 @@ export default function BalancesPage() {
                     onReject={(id) => reject.mutate(id)}
                     onWaive={(id) => waive.mutate(id)}
                     onMarkReceived={(id) => markReceived.mutate(id)}
+                    onMarkAllReceived={(pid) => markAllReceived.mutate(pid)}
                     isBusy={isBusy}
                   />
                 ))}
@@ -745,6 +808,11 @@ export default function BalancesPage() {
         )}
       </div>
 
+      {shareToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none">
+          {shareToast}
+        </div>
+      )}
       <BottomNav />
     </div>
   );

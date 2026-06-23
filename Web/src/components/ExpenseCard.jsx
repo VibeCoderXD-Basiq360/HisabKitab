@@ -20,11 +20,11 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
 
   const confirmedSplits = expense.splits?.filter((s) => s.status === 'CONFIRMED') || [];
   const waivedSplits = expense.splits?.filter((s) => s.status === 'WAIVED') || [];
+  const pendingSplits = expense.splits?.filter((s) => ['PENDING', 'PAYMENT_REQUESTED'].includes(s.status)) || [];
   const settledAmount = confirmedSplits.reduce((s, sp) => s + Number(sp.amount), 0);
   const currentAmount = Number(expense.amount);
-  const originalAmount = currentAmount + settledAmount;
-  const isFullySettled = settledAmount > 0 && currentAmount === 0;
-  const isPartiallySettled = settledAmount > 0 && currentAmount > 0;
+  const isFullySettled = confirmedSplits.length > 0 && pendingSplits.length === 0;
+  const isPartiallySettled = confirmedSplits.length > 0 && pendingSplits.length > 0;
   const isReimbursement = !!expense.isReimbursement;
 
   const settledNames = confirmedSplits.map((s) => s.person?.name).filter(Boolean);
@@ -144,12 +144,12 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
 
             {isFullySettled && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
-                ✓ Settled · not in total
+                ✓ Settled
               </span>
             )}
             {isPartiallySettled && (
               <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
-                ↩ ₹{settledAmount.toFixed(0)} back from {settledLabel}
+                ↩ {settledLabel} paid ₹{settledAmount.toFixed(0)}
               </span>
             )}
             {waivedSplits.length > 0 && (
@@ -168,6 +168,28 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
                 {expense.group.icon} {expense.group.name}
               </span>
             )}
+            {expense.tabEntry?.tab && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); navigate(`/tabs/${expense.tabEntry.tab.id}`); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); navigate(`/tabs/${expense.tabEntry.tab.id}`); } }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-full cursor-pointer"
+              >
+                🤝 {expense.tabEntry.tab.name}
+              </span>
+            )}
+            {expense.tabSettlement?.tab && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => { e.stopPropagation(); navigate(`/tabs/${expense.tabSettlement.tab.id}`); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); navigate(`/tabs/${expense.tabSettlement.tab.id}`); } }}
+                className="inline-flex items-center gap-1 text-xs font-medium text-teal-600 bg-teal-50 dark:bg-teal-900/30 px-2 py-0.5 rounded-full cursor-pointer"
+              >
+                🤝 {expense.tabSettlement.tab.name} (settled)
+              </span>
+            )}
           </div>
 
           {expense.tags?.length > 0 && (
@@ -182,17 +204,7 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
         </div>
 
         <div className="shrink-0 text-right">
-          {isFullySettled ? (
-            <>
-              <p className="text-xs text-gray-300 dark:text-gray-600 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
-              <p className="text-xs font-semibold text-green-500">₹0 net</p>
-            </>
-          ) : isPartiallySettled ? (
-            <>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
-              <p className="text-xs text-gray-300 dark:text-gray-600 line-through">{formatCurrency(originalAmount, expense.currency || 'INR')}</p>
-            </>
-          ) : isReimbursement ? (
+          {isReimbursement ? (
             <>
               <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">+{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
               {inrEquiv !== null && (
@@ -201,7 +213,9 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(currentAmount, expense.currency || 'INR')}</p>
+              <p className={`text-sm font-semibold ${isFullySettled ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
+                {formatCurrency(currentAmount, expense.currency || 'INR')}
+              </p>
               {inrEquiv !== null && (
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 text-right">≈ {formatCurrency(inrEquiv, 'INR')}</p>
               )}

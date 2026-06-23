@@ -63,6 +63,8 @@ const include = {
   paidForPerson: true,
   recurringExpense: { select: { id: true, frequency: true, isActive: true } },
   group: { select: { id: true, name: true, icon: true } },
+  tabEntry: { select: { id: true, tab: { select: { id: true, name: true } } } },
+  tabSettlement: { select: { id: true, tab: { select: { id: true, name: true } } } },
   splits: {
     include: {
       person: true,
@@ -73,7 +75,7 @@ const include = {
   comments: { orderBy: { createdAt: 'asc' } },
 };
 
-async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId) {
+async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId, customSplitAmount = null) {
   await prisma.expenseSplit.deleteMany({ where: { expenseId } });
 
   const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { name: true } });
@@ -95,7 +97,9 @@ async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, p
 
   if (!peopleIds.length) return;
 
-  const share = Math.round((amount / (peopleIds.length + 1)) * 100) / 100;
+  const share = customSplitAmount !== null
+    ? Math.round(customSplitAmount * 100) / 100
+    : Math.round((amount / (peopleIds.length + 1)) * 100) / 100;
 
   const splits = await Promise.all(
     peopleIds.map((personId) =>
@@ -167,7 +171,7 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false, splitAmount } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
@@ -223,7 +227,7 @@ const create = async (req, res) => {
     include,
   });
 
-  await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null);
+  await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null, splitAmount != null ? Number(splitAmount) : null);
 
   await linkDelegation(expense.id, paymentTypeId, req.user.userId, title, amount);
 
@@ -296,8 +300,28 @@ const update = async (req, res) => {
 const remove = async (req, res) => {
   const existing = await prisma.expense.findFirst({
     where: { id: req.params.id, userId: req.user.userId },
+    include: {
+      tabEntry: { select: { tab: { select: { name: true } } } },
+      tabSettlement: { select: { tab: { select: { name: true } } } },
+    },
   });
   if (!existing) return res.status(404).json({ error: 'Expense not found' });
+
+  if (existing.tabEntryId) {
+    const tabName = existing.tabEntry?.tab?.name || 'Shared Tab';
+    return res.status(403).json({
+      error: `This expense was auto-created from "${tabName}". Delete the entry from the tab instead.`,
+      tabEntryId: existing.tabEntryId,
+    });
+  }
+
+  if (existing.tabSettlementId) {
+    const tabName = existing.tabSettlement?.tab?.name || 'Shared Tab';
+    return res.status(403).json({
+      error: `This reimbursement was auto-created from a "${tabName}" settlement. Remove the settlement from the tab instead.`,
+      tabSettlementId: existing.tabSettlementId,
+    });
+  }
 
   await prisma.expense.delete({ where: { id: req.params.id } });
   res.status(204).end();
@@ -322,6 +346,9 @@ const analytics = async (req, res) => {
       paymentType: { select: { name: true, icon: true, color: true } },
       categoryId: true,
       category: { select: { name: true, icon: true, color: true } },
+      isReimbursement: true,
+      tabEntryId: true,
+      tabSettlementId: true,
     },
   });
 
@@ -330,9 +357,19 @@ const analytics = async (req, res) => {
   const byDayMap = {};
   let total = 0;
   let topExpense = null;
+  let tabTotal = 0;
+  let manualTotal = 0;
+  let reimbursementTotal = 0;
 
   for (const e of expenses) {
     const amount = Number(e.amount);
+
+    // Reimbursements are money coming back — excluded from main totals/charts
+    if (e.isReimbursement) {
+      reimbursementTotal = Math.round((reimbursementTotal + amount) * 100) / 100;
+      continue;
+    }
+
     total += amount;
 
     if (!topExpense || amount > topExpense.amount) {
@@ -352,6 +389,12 @@ const analytics = async (req, res) => {
     }
     byCategory[catKey].total = Math.round((byCategory[catKey].total + amount) * 100) / 100;
     byCategory[catKey].count++;
+
+    if (e.tabEntryId) {
+      tabTotal = Math.round((tabTotal + amount) * 100) / 100;
+    } else {
+      manualTotal = Math.round((manualTotal + amount) * 100) / 100;
+    }
 
     const day = e.expenseDate.toISOString().slice(0, 10);
     byDayMap[day] = Math.round(((byDayMap[day] || 0) + amount) * 100) / 100;
@@ -381,6 +424,7 @@ const analytics = async (req, res) => {
     byCategory: sort(byCategory),
     byDay,
     topExpense,
+    bySource: { manual: manualTotal, tab: tabTotal, reimbursements: reimbursementTotal },
   });
 };
 
@@ -396,11 +440,11 @@ const trend = async (req, res) => {
 
     const [sumResult, count] = await Promise.all([
       prisma.expense.aggregate({
-        where: { userId, expenseDate: { gte: from, lte: to } },
+        where: { userId, expenseDate: { gte: from, lte: to }, isReimbursement: false },
         _sum: { amount: true },
       }),
       prisma.expense.count({
-        where: { userId, expenseDate: { gte: from, lte: to } },
+        where: { userId, expenseDate: { gte: from, lte: to }, isReimbursement: false },
       }),
     ]);
 

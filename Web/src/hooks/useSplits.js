@@ -78,3 +78,14 @@ export function useWaiveSplit() {
     },
   });
 }
+
+export function useMarkAllReceived() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (personId) => api.post(`/splits/settle-all/${personId}`).then((r) => r.data),
+    onSuccess: () => {
+      invalidateAll(qc);
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+    },
+  });
+}

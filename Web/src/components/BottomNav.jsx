@@ -7,6 +7,7 @@ export default function BottomNav() {
   const tabs = [
     { to: '/home',      label: t('nav.home'),      icon: '🏠' },
     { to: '/groups',    label: t('nav.groups'),    icon: '👥' },
+    { to: '/tabs',      label: t('nav.tabs'),      icon: '🤝' },
     { to: '/balances',  label: t('nav.balances'),  icon: '⚖️' },
     { to: '/analytics', label: t('nav.analytics'), icon: '📊' },
     { to: '/settings',  label: t('nav.settings'),  icon: '⚙️' },

@@ -156,21 +156,37 @@ const acceptPayment = async (req, res) => {
 
   const splitAmount = Number(split.amount);
 
-  // Confirm the split + reduce original expense amount
+  // Confirm the split (no decrement — reimbursement expense created below instead)
   await prisma.$transaction([
     prisma.expenseSplit.update({ where: { id: splitId }, data: { status: 'CONFIRMED' } }),
-    prisma.expense.update({
-      where: { id: split.expenseId },
-      data: { amount: { decrement: splitAmount } },
-    }),
     ...(latestRequest
       ? [prisma.paymentRequest.update({ where: { id: latestRequest.id }, data: { status: 'ACCEPTED' } })]
       : []),
   ]);
 
-  // Create a real expense in the ower's account so it shows on their home page
+  // Create reimbursement expense for payer (B) — visible in their list as +money back
+  const origExpense = split.expense;
+  const payerUserId = origExpense.userId;
+  const paymentTypeId = origExpense.paymentTypeId ||
+    (await prisma.paymentType.findFirst({ where: { userId: payerUserId } }))?.id;
+  if (paymentTypeId) {
+    await prisma.expense.create({
+      data: {
+        userId: payerUserId,
+        amount: splitAmount,
+        currency: origExpense.currency || 'INR',
+        title: `Reimbursement: ${origExpense.title || 'Expense'}`,
+        note: `${split.person.name || split.person.email} paid back their share`,
+        expenseDate: new Date(),
+        categoryId: origExpense.categoryId || null,
+        paymentTypeId,
+        isReimbursement: true,
+      },
+    });
+  }
+
+  // Create expense in the debtor's account (A) so it shows on their list
   if (linkedUserId) {
-    const origExpense = split.expense;
     const isPaidFor = origExpense.paidForPersonId === split.personId;
 
     const [matchedCat, matchedType, fallbackType] = await Promise.all([
@@ -183,13 +199,12 @@ const acceptPayment = async (req, res) => {
       prisma.paymentType.findFirst({ where: { userId: linkedUserId } }),
     ]);
 
-    const paymentTypeId = matchedType?.id || fallbackType?.id;
+    const debtorPaymentTypeId = matchedType?.id || fallbackType?.id;
 
-    if (paymentTypeId) {
+    if (debtorPaymentTypeId) {
       const expenseTitle = isPaidFor
         ? origExpense.title || 'Expense'
         : origExpense.title ? `Split: ${origExpense.title}` : 'Split expense';
-      const expenseNote = `Settled — paid to ${origExpense.user?.name || 'someone'}`;
 
       await prisma.expense.create({
         data: {
@@ -197,10 +212,10 @@ const acceptPayment = async (req, res) => {
           amount: splitAmount,
           currency: origExpense.currency || 'INR',
           title: expenseTitle,
-          note: expenseNote,
+          note: `Settled — paid to ${origExpense.user?.name || 'someone'}`,
           expenseDate: new Date(),
           categoryId: matchedCat?.id || null,
-          paymentTypeId,
+          paymentTypeId: debtorPaymentTypeId,
         },
       });
     }
@@ -342,18 +357,34 @@ const markReceived = async (req, res) => {
 
   await prisma.$transaction([
     prisma.expenseSplit.update({ where: { id: splitId }, data: { status: 'CONFIRMED' } }),
-    prisma.expense.update({
-      where: { id: split.expenseId },
-      data: { amount: { decrement: splitAmount } },
-    }),
     ...(latestRequest
       ? [prisma.paymentRequest.update({ where: { id: latestRequest.id }, data: { status: 'ACCEPTED' } })]
       : []),
   ]);
 
+  // Create reimbursement expense for payer (B)
+  const origExpense = split.expense;
+  const payerUserId = origExpense.userId;
+  const reimbursePaymentTypeId = origExpense.paymentTypeId ||
+    (await prisma.paymentType.findFirst({ where: { userId: payerUserId } }))?.id;
+  if (reimbursePaymentTypeId) {
+    await prisma.expense.create({
+      data: {
+        userId: payerUserId,
+        amount: splitAmount,
+        currency: origExpense.currency || 'INR',
+        title: `Reimbursement: ${origExpense.title || 'Expense'}`,
+        note: `${split.person.name || split.person.email} paid back their share`,
+        expenseDate: new Date(),
+        categoryId: origExpense.categoryId || null,
+        paymentTypeId: reimbursePaymentTypeId,
+        isReimbursement: true,
+      },
+    });
+  }
+
   // Create expense in the debtor's account so it appears on their home page
   if (linkedUserId) {
-    const origExpense = split.expense;
     const isPaidFor = origExpense.paidForPersonId === split.personId;
 
     const [matchedCat, matchedType, fallbackType] = await Promise.all([
@@ -366,9 +397,9 @@ const markReceived = async (req, res) => {
       prisma.paymentType.findFirst({ where: { userId: linkedUserId } }),
     ]);
 
-    const paymentTypeId = matchedType?.id || fallbackType?.id;
+    const debtorPaymentTypeId = matchedType?.id || fallbackType?.id;
 
-    if (paymentTypeId) {
+    if (debtorPaymentTypeId) {
       const expenseTitle = isPaidFor
         ? origExpense.title || 'Expense'
         : origExpense.title ? `Split: ${origExpense.title}` : 'Split expense';
@@ -382,7 +413,7 @@ const markReceived = async (req, res) => {
           note: `Recorded by ${split.expense.user?.name || 'payer'}`,
           expenseDate: new Date(),
           categoryId: matchedCat?.id || null,
-          paymentTypeId,
+          paymentTypeId: debtorPaymentTypeId,
         },
       });
     }
@@ -472,4 +503,75 @@ const getBalanceHistory = async (req, res) => {
   res.json({ person: { id: person.id, name: person.name }, timeline });
 };
 
-module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, getPaidForSummary, getPaidForPerson, getBalanceHistory };
+const markAllReceived = async (req, res) => {
+  const myId = req.user.userId;
+  const { personId } = req.params;
+
+  const splits = await prisma.expenseSplit.findMany({
+    where: { personId, status: { in: ['PENDING', 'PAYMENT_REQUESTED'] }, expense: { userId: myId } },
+    include: {
+      person: { include: { linkedUser: { select: { id: true, name: true, fcmToken: true } } } },
+      expense: { include: { user: { select: { id: true, name: true } } } },
+      paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
+    },
+  });
+
+  if (!splits.length) return res.status(404).json({ error: 'No pending splits found' });
+
+  const totalAmount = Math.round(splits.reduce((s, sp) => s + Number(sp.amount), 0) * 100) / 100;
+  const linkedUserId = splits[0].person.linkedUser?.id;
+  const personName = splits[0].person.name || splits[0].person.email || 'Someone';
+  const payerName = splits[0].expense.user?.name || 'Someone';
+
+  await prisma.$transaction([
+    ...splits.map((sp) => prisma.expenseSplit.update({ where: { id: sp.id }, data: { status: 'CONFIRMED' } })),
+    ...splits.flatMap((sp) => {
+      const lr = sp.paymentRequests[0];
+      return lr ? [prisma.paymentRequest.update({ where: { id: lr.id }, data: { status: 'ACCEPTED' } })] : [];
+    }),
+  ]);
+
+  // Consolidated reimbursement for me (B)
+  const myPaymentType = await prisma.paymentType.findFirst({ where: { userId: myId } });
+  if (myPaymentType) {
+    await prisma.expense.create({
+      data: {
+        userId: myId,
+        amount: totalAmount,
+        currency: 'INR',
+        title: `Reimbursement from ${personName}`,
+        note: `${splits.length} expense${splits.length > 1 ? 's' : ''} settled at once`,
+        expenseDate: new Date(),
+        paymentTypeId: myPaymentType.id,
+        isReimbursement: true,
+      },
+    });
+  }
+
+  // Consolidated expense for A (if linked user)
+  if (linkedUserId) {
+    const fallbackType = await prisma.paymentType.findFirst({ where: { userId: linkedUserId } });
+    if (fallbackType) {
+      await prisma.expense.create({
+        data: {
+          userId: linkedUserId,
+          amount: totalAmount,
+          currency: 'INR',
+          title: `Settled with ${payerName}`,
+          note: `${splits.length} expense${splits.length > 1 ? 's' : ''} settled at once`,
+          expenseDate: new Date(),
+          paymentTypeId: fallbackType.id,
+        },
+      });
+    }
+    await notify(linkedUserId, splits[0].person.linkedUser?.fcmToken, {
+      title: '✅ All splits settled!',
+      body: `${payerName} marked all your splits (₹${totalAmount}) as received`,
+      data: { type: 'PAYMENT_ACCEPTED' },
+    });
+  }
+
+  res.json({ settled: splits.length, totalAmount });
+};
+
+module.exports = { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, markAllReceived, getPaidForSummary, getPaidForPerson, getBalanceHistory };

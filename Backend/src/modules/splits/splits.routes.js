@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const auth = require('../../middleware/auth');
-const { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, getPaidForSummary, getPaidForPerson, getBalanceHistory } = require('./splits.controller');
+const { getBalances, requestPayment, acceptPayment, rejectPayment, waiveSplit, markReceived, markAllReceived, getPaidForSummary, getPaidForPerson, getBalanceHistory } = require('./splits.controller');
 
 const router = Router();
 router.get('/balances', auth, getBalances);
@@ -12,5 +12,6 @@ router.post('/:splitId/accept', auth, acceptPayment);
 router.post('/:splitId/reject', auth, rejectPayment);
 router.post('/:splitId/waive', auth, waiveSplit);
 router.post('/:splitId/mark-received', auth, markReceived);
+router.post('/settle-all/:personId', auth, markAllReceived);
 
 module.exports = router;

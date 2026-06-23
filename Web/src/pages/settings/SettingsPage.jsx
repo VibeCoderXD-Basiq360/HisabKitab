@@ -36,6 +36,9 @@ export default function SettingsPage() {
     { to: '/settings/recurring',       label: t('settings.recurring'),     icon: '🔁', desc: t('settings.recurring_desc') },
     { to: '/settings/budgets',         label: t('settings.budgets'),       icon: '💰', desc: t('settings.budgets_desc') },
     { to: '/settings/export',          label: t('settings.export'),        icon: '📤', desc: t('settings.export_desc') },
+    { to: '/settings/templates',       label: 'Quick-Add Templates',       icon: '⚡', desc: 'Manage your expense templates' },
+    { to: '/settings/goals',           label: 'Financial Goals',           icon: '🎯', desc: 'Track savings targets & milestones' },
+    { to: '/net-worth',                label: 'Net Worth',                 icon: '💎', desc: 'Assets vs liabilities snapshot' },
     { to: '/calendar',                 label: t('settings.calendar'),      icon: '📅', desc: t('settings.calendar_desc') },
     { to: '/settings/import',          label: t('settings.import'),        icon: '📥', desc: t('settings.import_desc') },
     { to: '/activity',                 label: t('settings.activity'),      icon: '📋', desc: t('settings.activity_desc') },
@@ -43,6 +46,8 @@ export default function SettingsPage() {
     { to: '/settings/app-lock',        label: t('settings.app_lock'),      icon: '🔒', desc: t('settings.app_lock_desc') },
     { to: '/loans',                    label: t('settings.loans'),         icon: '🏦', desc: t('settings.loans_desc') },
     { to: '/settings/exchange-rates',  label: t('settings.exchange_rates'),icon: '💱', desc: t('settings.exchange_rates_desc') },
+    { to: '/income',                   label: 'Income',                    icon: '💰', desc: 'Log salary, freelance & other income' },
+    { to: '/subscriptions',            label: 'Subscriptions',             icon: '📱', desc: 'Track recurring bills & due dates' },
   ];
 
   async function handleDeleteAccount() {

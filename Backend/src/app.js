@@ -22,10 +22,23 @@ const exchangeRateRoutes = require('./modules/exchangeRate/exchangeRate.routes')
 const cardDelegationRoutes = require('./modules/cardDelegation/cardDelegation.routes');
 const webauthnRoutes       = require('./modules/auth/webauthn.routes');
 const pinResetRoutes       = require('./modules/auth/pinReset.routes');
+const sharedTabRoutes      = require('./modules/sharedTab/sharedTab.routes');
+const tabGroupRoutes       = require('./modules/tabGroup/tabGroup.routes');
+const contactRoutes        = require('./modules/contact/contact.routes');
+const searchRoutes         = require('./modules/search/search.routes');
+const incomeRoutes         = require('./modules/income/income.routes');
+const subscriptionRoutes   = require('./modules/subscription/subscription.routes');
+const insightsRoutes       = require('./modules/insights/insights.routes');
+const templateRoutes       = require('./modules/template/template.routes');
+const financialGoalRoutes  = require('./modules/financialGoal/financialGoal.routes');
+const assetRoutes          = require('./modules/asset/asset.routes');
+const netWorthRoutes       = require('./modules/netWorth/netWorth.routes');
+const ocrRoutes            = require('./modules/ocr/ocr.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
 require('./jobs/creditCardReminder');
+require('./jobs/subscriptionReminder');
 
 const app = express();
 
@@ -58,6 +71,18 @@ app.use('/api/exchange-rates', exchangeRateRoutes);
 app.use('/api/card-delegations', cardDelegationRoutes);
 app.use('/api/auth/webauthn',    webauthnRoutes);
 app.use('/api/auth/pin-reset',  pinResetRoutes);
+app.use('/api/shared-tabs',     sharedTabRoutes);
+app.use('/api/tab-groups',      tabGroupRoutes);
+app.use('/api/contacts',        contactRoutes);
+app.use('/api/search',          searchRoutes);
+app.use('/api/income',          incomeRoutes);
+app.use('/api/subscriptions',   subscriptionRoutes);
+app.use('/api/insights',        insightsRoutes);
+app.use('/api/templates',       templateRoutes);
+app.use('/api/financial-goals', financialGoalRoutes);
+app.use('/api/assets',         assetRoutes);
+app.use('/api/net-worth',      netWorthRoutes);
+app.use('/api/ocr',            ocrRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
