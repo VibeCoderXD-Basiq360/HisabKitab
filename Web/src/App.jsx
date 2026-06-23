@@ -50,6 +50,8 @@ import SharedTabDetailPage from './pages/tabs/SharedTabDetailPage';
 import TabGroupDetailPage from './pages/tabs/TabGroupDetailPage';
 import IncomePage from './pages/income/IncomePage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
+import AccountsPage from './pages/accounts/AccountsPage';
+import AccountDetailPage from './pages/accounts/AccountDetailPage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -158,6 +160,8 @@ export default function App() {
           <Route path="/tab-groups/:id" element={<Protected><TabGroupDetailPage /></Protected>} />
           <Route path="/income" element={<Protected><IncomePage /></Protected>} />
           <Route path="/subscriptions" element={<Protected><SubscriptionsPage /></Protected>} />
+          <Route path="/accounts" element={<Protected><AccountsPage /></Protected>} />
+          <Route path="/accounts/:id" element={<Protected><AccountDetailPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

@@ -11,6 +11,8 @@ import { usePeople } from '../../hooks/usePeople';
 import { useCardDelegations } from '../../hooks/useCardDelegation';
 import { useComments, useAddComment, useDeleteComment, useExpenseTags } from '../../hooks/useComments';
 import { useCreateTemplate } from '../../hooks/useTemplates';
+import { useSharedTabs } from '../../hooks/useSharedTabs';
+import { useAccounts } from '../../hooks/useAccounts';
 import { useOCR } from '../../hooks/useOCR';
 import { useOfflineQueue } from '../../hooks/useOfflineQueue';
 import TopBar from '../../components/TopBar';
@@ -88,6 +90,8 @@ const EMPTY = {
   isReimbursement: false,
   willRepay: false,
   personalShare: '',
+  tabId: '',
+  accountId: '',
 };
 
 export default function AddEditExpensePage() {
@@ -109,6 +113,9 @@ export default function AddEditExpensePage() {
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();
   const { data: allTags = [] } = useExpenseTags();
+  const { data: tabs = [] } = useSharedTabs();
+  const activeTabs = tabs.filter((t) => t.status === 'ACTIVE');
+  const { data: accounts = [] } = useAccounts();
   const { data: comments = [] } = useComments(isEdit ? id : null);
   const addComment = useAddComment(id);
   const deleteComment = useDeleteComment(id);
@@ -315,6 +322,8 @@ export default function AddEditExpensePage() {
       tags: form.tags,
       isReimbursement: form.isReimbursement,
       willRepay: activeDelegation ? form.willRepay : false,
+      tabId: form.tabId || undefined,
+      accountId: form.accountId || undefined,
     };
     let expenseId = id;
     if (isEdit) {
@@ -478,6 +487,22 @@ export default function AddEditExpensePage() {
             ))}
           </select>
         </div>
+
+        {accounts.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🏦 Deduct from Account <span className="text-xs font-normal text-gray-400">(optional)</span></label>
+            <select
+              value={form.accountId}
+              onChange={field('accountId')}
+              className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            >
+              <option value="">No account</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name} — ₹{Number(a.balance).toLocaleString('en-IN')}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <Input label={t('expense.note')} value={form.note} onChange={field('note')} placeholder={t('expense.note_placeholder')} />
 
@@ -655,6 +680,31 @@ export default function AddEditExpensePage() {
                   );
                 })()}
               </>
+            )}
+          </div>
+        )}
+
+        {/* Link to Shared Tab — shown only when there's a split person and active tabs exist */}
+        {!isEdit && activeTabs.length > 0 && ((form.forMode === 'other' && form.paidForPersonId) || (form.forMode === 'self' && form.peopleIds.length > 0)) && (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🤝 Link to Shared Tab <span className="text-xs font-normal text-gray-400">(optional)</span></label>
+            <select
+              value={form.tabId}
+              onChange={(e) => setForm((f) => ({ ...f, tabId: e.target.value }))}
+              className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+            >
+              <option value="">Don't link to a tab</option>
+              {activeTabs.map((tab) => (
+                <option key={tab.id} value={tab.id}>{tab.name}</option>
+              ))}
+            </select>
+            {form.tabId && (
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-700 rounded-xl px-4 py-3 flex items-center gap-3">
+                <span className="text-lg">🤝</span>
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  This expense will appear in the tab and update the shared balance automatically.
+                </p>
+              </div>
             )}
           </div>
         )}

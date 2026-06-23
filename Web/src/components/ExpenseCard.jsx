@@ -4,7 +4,7 @@ import { formatCurrency } from '../utils/currency';
 import { formatDate } from '../utils/date';
 import { useRateMap } from '../hooks/useExchangeRates';
 
-export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate }) {
+export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate, onTransfer }) {
   const navigate = useNavigate();
   const rateMap = useRateMap();
   const isForeign = expense.currency && expense.currency !== 'INR';
@@ -41,7 +41,8 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
       ? `${waivedNames[0]} & ${waivedNames[1]}`
       : `${waivedNames.length} people`;
 
-  const DELETE_THRESHOLD = 80;
+  const BUTTON_W = 80;
+  const DELETE_THRESHOLD = (onTransfer ? BUTTON_W : 0) + (onDelete ? BUTTON_W : 0) || BUTTON_W;
   const isRevealed = swipeX <= -(DELETE_THRESHOLD - 8);
 
   function handleTouchStart(e) {
@@ -63,7 +64,7 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
       isDraggingRef.current = true;
       clearTimeout(longPressRef.current);
     }
-    if (!onDelete || dx > 0) return;
+    if ((!onDelete && !onTransfer) || dx > 0) return;
     setSwipeX(Math.max(dx, -DELETE_THRESHOLD));
   }
 
@@ -86,14 +87,27 @@ export default function ExpenseCard({ expense, onClick, onDelete, onDuplicate })
 
   return (
     <div className="relative overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-      {onDelete && (
-        <button
-          className="absolute right-0 top-0 bottom-0 w-20 bg-red-500 flex flex-col items-center justify-center gap-0.5 text-white"
-          onClick={() => { setSwipeX(0); onDelete(expense.id); }}
-        >
-          <span className="text-lg">🗑️</span>
-          <span className="text-[10px] font-semibold">Delete</span>
-        </button>
+      {(onTransfer || onDelete) && (
+        <div className="absolute right-0 top-0 bottom-0 flex">
+          {onTransfer && (
+            <button
+              className="w-20 bg-teal-500 flex flex-col items-center justify-center gap-0.5 text-white"
+              onClick={() => { setSwipeX(0); onTransfer(expense); }}
+            >
+              <span className="text-lg">↗️</span>
+              <span className="text-[10px] font-semibold">Transfer</span>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              className="w-20 bg-red-500 flex flex-col items-center justify-center gap-0.5 text-white"
+              onClick={() => { setSwipeX(0); onDelete(expense.id); }}
+            >
+              <span className="text-lg">🗑️</span>
+              <span className="text-[10px] font-semibold">Delete</span>
+            </button>
+          )}
+        </div>
       )}
 
       <button

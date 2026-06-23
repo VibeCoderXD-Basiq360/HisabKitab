@@ -34,6 +34,7 @@ const financialGoalRoutes  = require('./modules/financialGoal/financialGoal.rout
 const assetRoutes          = require('./modules/asset/asset.routes');
 const netWorthRoutes       = require('./modules/netWorth/netWorth.routes');
 const ocrRoutes            = require('./modules/ocr/ocr.routes');
+const accountRoutes        = require('./modules/account/account.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
@@ -83,6 +84,7 @@ app.use('/api/financial-goals', financialGoalRoutes);
 app.use('/api/assets',         assetRoutes);
 app.use('/api/net-worth',      netWorthRoutes);
 app.use('/api/ocr',            ocrRoutes);
+app.use('/api/accounts',       accountRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

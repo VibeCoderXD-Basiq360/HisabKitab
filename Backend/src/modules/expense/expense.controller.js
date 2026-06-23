@@ -171,7 +171,7 @@ const list = async (req, res) => {
 };
 
 const create = async (req, res) => {
-  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false, splitAmount } = req.body;
+  const { amount, currency, title, note, expenseDate, categoryId, paymentTypeId, peopleIds = [], paidForPersonId, isRecurring, frequency, recurringStartAt, recurringEndDate, tags = [], isReimbursement = false, splitAmount, tabId, accountId } = req.body;
 
   const splitPeopleIds = paidForPersonId ? [] : peopleIds;
 
@@ -222,6 +222,7 @@ const create = async (req, res) => {
       recurringExpenseId,
       tags: Array.isArray(tags) ? tags : [],
       isReimbursement: !!isReimbursement,
+      accountId: accountId || null,
       people: { create: splitPeopleIds.map((personId) => ({ personId })) },
     },
     include,
@@ -230,6 +231,68 @@ const create = async (req, res) => {
   await syncSplits(expense.id, title, req.user.userId, Number(amount), splitPeopleIds, paidForPersonId || null, splitAmount != null ? Number(splitAmount) : null);
 
   await linkDelegation(expense.id, paymentTypeId, req.user.userId, title, amount);
+
+  if (tabId) {
+    try {
+      const tab = await prisma.sharedTab.findFirst({
+        where: { id: tabId },
+        include: { members: true },
+      });
+      if (tab) {
+        const isMultiMember = tab.memberId === null;
+        let splitType = 'SPLIT';
+        let splitRatio = 50;
+        if (paidForPersonId) {
+          splitType = 'THEIRS_ONLY';
+          splitRatio = 100;
+        } else if (splitPeopleIds.length > 0 && splitAmount != null) {
+          splitRatio = Math.min(99, Math.max(1, Math.round((Number(splitAmount) / Number(amount)) * 100)));
+        }
+        let categoryName = null;
+        if (categoryId) {
+          const cat = await prisma.expenseCategory.findUnique({ where: { id: categoryId }, select: { name: true } });
+          categoryName = cat?.name || null;
+        }
+        const tabEntry = await prisma.tabEntry.create({
+          data: {
+            tabId,
+            paidById: req.user.userId,
+            amount: Number(amount),
+            description: title,
+            date: new Date(expenseDate),
+            splitType,
+            splitRatio,
+            category: categoryName,
+            note: note || null,
+          },
+        });
+        await prisma.expense.update({ where: { id: expense.id }, data: { tabEntryId: tabEntry.id } });
+        if (isMultiMember) {
+          const perShare = Math.round((Number(amount) / tab.members.length) * 100) / 100;
+          for (const m of tab.members) {
+            if (m.userId === req.user.userId) continue;
+            await prisma.expense.create({
+              data: { userId: m.userId, amount: perShare, title, note: `From "${tab.name}" tab`, expenseDate: new Date(expenseDate), tabEntryId: tabEntry.id },
+            });
+          }
+        } else {
+          const otherUserId = tab.creatorId === req.user.userId ? tab.memberId : tab.creatorId;
+          if (otherUserId) {
+            const otherShare = splitType === 'MINE_ONLY' ? 0
+              : splitType === 'THEIRS_ONLY' ? Number(amount)
+              : Math.round(Number(amount) * (splitRatio / 100) * 100) / 100;
+            if (otherShare > 0) {
+              await prisma.expense.create({
+                data: { userId: otherUserId, amount: otherShare, title, note: `From "${tab.name}" tab`, expenseDate: new Date(expenseDate), tabEntryId: tabEntry.id },
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Tab linking failed:', err.message);
+    }
+  }
 
   const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
   res.status(201).json(full);
@@ -621,4 +684,91 @@ const deleteComment = async (req, res) => {
   res.status(204).end();
 };
 
-module.exports = { list, create, getOne, update, remove, analytics, trend, exportCsv, uploadReceipt, importCsv, listTags, listComments, createComment, deleteComment };
+const transfer = async (req, res) => {
+  const { personId, transferType, customRatio, tabId } = req.body;
+  if (!personId || !transferType) return res.status(400).json({ error: 'personId and transferType are required' });
+
+  const expense = await prisma.expense.findFirst({
+    where: { id: req.params.id, userId: req.user.userId },
+    include: { category: true, splits: true },
+  });
+  if (!expense) return res.status(404).json({ error: 'Expense not found' });
+  if (expense.tabEntryId) return res.status(403).json({ error: 'Tab-linked expenses cannot be transferred. Manage from the tab instead.' });
+
+  const person = await prisma.person.findFirst({
+    where: { id: personId, userId: req.user.userId },
+    include: { linkedUser: { select: { id: true, name: true, fcmToken: true } } },
+  });
+  if (!person) return res.status(404).json({ error: 'Person not found' });
+
+  const amount = Number(expense.amount);
+  let theirShare, splitType, splitRatio;
+  if (transferType === 'FULL') {
+    theirShare = amount; splitType = 'THEIRS_ONLY'; splitRatio = 100;
+  } else if (transferType === 'SPLIT') {
+    theirShare = Math.round((amount / 2) * 100) / 100; splitType = 'SPLIT'; splitRatio = 50;
+  } else {
+    const ratio = Math.min(99, Math.max(1, Number(customRatio) || 50));
+    theirShare = Math.round(amount * (ratio / 100) * 100) / 100; splitType = 'SPLIT'; splitRatio = ratio;
+  }
+
+  // Replace any existing splits with the new one
+  await prisma.expenseSplit.deleteMany({ where: { expenseId: expense.id } });
+  await prisma.expense.update({ where: { id: expense.id }, data: { paidForPersonId: null } });
+  await prisma.expenseSplit.create({ data: { expenseId: expense.id, personId, amount: theirShare } });
+
+  // Create expense on the other person's account if they're a registered user
+  let otherExpenseId = null;
+  if (person.linkedUser?.id && theirShare > 0) {
+    const payer = await prisma.user.findUnique({ where: { id: req.user.userId }, select: { name: true } });
+    const otherExp = await prisma.expense.create({
+      data: {
+        userId: person.linkedUser.id,
+        amount: theirShare,
+        title: expense.title,
+        note: `Owed to ${payer?.name || 'someone'} — transferred expense`,
+        expenseDate: expense.expenseDate,
+        categoryId: expense.categoryId,
+      },
+    });
+    otherExpenseId = otherExp.id;
+    await notify(person.linkedUser.id, person.linkedUser.fcmToken, {
+      title: 'Expense transferred to you',
+      body: `${payer?.name || 'Someone'} transferred "${expense.title}" — you owe ₹${theirShare}`,
+      data: { type: 'EXPENSE_TRANSFERRED', expenseId: otherExp.id },
+    });
+  }
+
+  // Optionally link both expenses to a shared tab
+  if (tabId) {
+    try {
+      const tab = await prisma.sharedTab.findFirst({ where: { id: tabId } });
+      if (tab) {
+        const tabEntry = await prisma.tabEntry.create({
+          data: {
+            tabId,
+            paidById: req.user.userId,
+            amount,
+            description: expense.title,
+            date: expense.expenseDate,
+            splitType,
+            splitRatio,
+            category: expense.category?.name || null,
+            note: expense.note || null,
+          },
+        });
+        await prisma.expense.update({ where: { id: expense.id }, data: { tabEntryId: tabEntry.id } });
+        if (otherExpenseId) {
+          await prisma.expense.update({ where: { id: otherExpenseId }, data: { tabEntryId: tabEntry.id } });
+        }
+      }
+    } catch (err) {
+      console.error('Tab linking in transfer failed:', err.message);
+    }
+  }
+
+  const full = await prisma.expense.findUnique({ where: { id: expense.id }, include });
+  res.json(full);
+};
+
+module.exports = { list, create, getOne, update, remove, transfer, analytics, trend, exportCsv, uploadReceipt, importCsv, listTags, listComments, createComment, deleteComment };

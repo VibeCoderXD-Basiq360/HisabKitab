@@ -14,6 +14,7 @@ import { formatDate } from '../../utils/date';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import ExpenseCard from '../../components/ExpenseCard';
+import TransferExpenseSheet from '../expense/TransferExpenseSheet';
 import MonthSummary from '../../components/MonthSummary';
 import CreditCardDueBanner from '../../components/CreditCardDueBanner';
 import Button from '../../components/ui/Button';
@@ -33,6 +34,7 @@ export default function HomePage() {
 
   const [tab, setTab] = useState('overview'); // 'overview' | 'expenses'
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [transferringExpense, setTransferringExpense] = useState(null);
   const [viewMonth, setViewMonth] = useState(now); // month shown in Expenses tab
   const [searchInput, setSearchInput] = useState('');
   const [query, setQuery] = useState('');
@@ -540,6 +542,7 @@ export default function HomePage() {
                       onClick={() => navigate(`/expense/${e.id}`)}
                       onDelete={(id) => deleteExpense.mutate(id)}
                       onDuplicate={handleDuplicate}
+                      onTransfer={(exp) => setTransferringExpense(exp)}
                     />
                   ))}
                 </div>
@@ -647,6 +650,13 @@ export default function HomePage() {
       )}
 
       <BottomNav />
+
+      {transferringExpense && (
+        <TransferExpenseSheet
+          expense={transferringExpense}
+          onClose={() => setTransferringExpense(null)}
+        />
+      )}
     </div>
   );
 }

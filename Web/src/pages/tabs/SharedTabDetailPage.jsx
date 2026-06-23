@@ -19,7 +19,7 @@ const fmt = (n) =>
 
 const today = () => new Date().toISOString().split('T')[0];
 
-const SPLIT_TYPES = ['MINE_ONLY', 'THEIRS_ONLY', 'SPLIT'];
+const SPLIT_TYPES = ['THEIRS_ONLY', 'SPLIT'];
 
 export default function SharedTabDetailPage() {
   const { id } = useParams();
@@ -556,7 +556,6 @@ export default function SharedTabDetailPage() {
                       ))}
                     </div>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {entryForm.splitType === 'MINE_ONLY' && t('tabs.mine_only_hint')}
                       {entryForm.splitType === 'THEIRS_ONLY' && t('tabs.theirs_only_hint', { name: other?.name || other?.email })}
                       {entryForm.splitType === 'SPLIT' && t('tabs.split_hint')}
                     </p>

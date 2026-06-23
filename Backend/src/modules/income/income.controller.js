@@ -42,7 +42,7 @@ const summary = async (req, res) => {
 
 const create = async (req, res) => {
   const userId = req.user.userId;
-  const { amount, currency, title, category, source, incomeDate, note, tags } = req.body;
+  const { amount, currency, title, category, source, incomeDate, note, tags, accountId } = req.body;
 
   if (!amount || !title || !incomeDate) {
     return res.status(400).json({ error: 'amount, title, incomeDate are required' });
@@ -59,6 +59,7 @@ const create = async (req, res) => {
       incomeDate: new Date(incomeDate),
       note:       note || null,
       tags:       tags || [],
+      accountId:  accountId || null,
     },
   });
 
@@ -68,7 +69,7 @@ const create = async (req, res) => {
 const update = async (req, res) => {
   const userId = req.user.userId;
   const { id } = req.params;
-  const { amount, currency, title, category, source, incomeDate, note, tags } = req.body;
+  const { amount, currency, title, category, source, incomeDate, note, tags, accountId } = req.body;
 
   const existing = await prisma.income.findFirst({ where: { id, userId } });
   if (!existing) return res.status(404).json({ error: 'Not found' });
@@ -84,6 +85,7 @@ const update = async (req, res) => {
       ...(incomeDate !== undefined && { incomeDate: new Date(incomeDate) }),
       ...(note       !== undefined && { note }),
       ...(tags       !== undefined && { tags }),
+      ...(accountId  !== undefined && { accountId: accountId || null }),
     },
   });
 

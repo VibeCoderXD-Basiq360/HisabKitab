@@ -41,6 +41,19 @@ export function useDeleteExpense() {
   });
 }
 
+export function useTransferExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }) => api.post(`/expenses/${id}/transfer`, data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['splits'] });
+      qc.invalidateQueries({ queryKey: ['balances'] });
+      qc.invalidateQueries({ queryKey: ['shared-tabs'] });
+    },
+  });
+}
+
 export function useAnalytics(params = {}, options = {}) {
   return useQuery({
     queryKey: ['analytics', params],

@@ -48,6 +48,7 @@ export default function SettingsPage() {
     { to: '/settings/exchange-rates',  label: t('settings.exchange_rates'),icon: '💱', desc: t('settings.exchange_rates_desc') },
     { to: '/income',                   label: 'Income',                    icon: '💰', desc: 'Log salary, freelance & other income' },
     { to: '/subscriptions',            label: 'Subscriptions',             icon: '📱', desc: 'Track recurring bills & due dates' },
+    { to: '/accounts',                 label: 'Bank Accounts',             icon: '🏦', desc: 'Track balances updated by expenses & income' },
   ];
 
   async function handleDeleteAccount() {

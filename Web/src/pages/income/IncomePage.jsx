@@ -3,6 +3,7 @@ import { format, startOfMonth, endOfMonth, subMonths, addMonths, isSameMonth } f
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 import { useIncome, useCreateIncome, useUpdateIncome, useDeleteIncome } from '../../hooks/useIncome';
+import { useAccounts } from '../../hooks/useAccounts';
 
 const now = new Date();
 
@@ -19,9 +20,9 @@ const CATEGORIES = [
 
 const CAT_MAP = Object.fromEntries(CATEGORIES.map((c) => [c.value, c]));
 
-const EMPTY = { title: '', amount: '', category: 'SALARY', source: '', incomeDate: format(now, 'yyyy-MM-dd'), note: '' };
+const EMPTY = { title: '', amount: '', category: 'SALARY', source: '', incomeDate: format(now, 'yyyy-MM-dd'), note: '', accountId: '' };
 
-function IncomeForm({ initial, onSave, onClose, saving }) {
+function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
   const [form, setForm] = useState(initial || EMPTY);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -127,6 +128,22 @@ function IncomeForm({ initial, onSave, onClose, saving }) {
           />
         </div>
 
+        {accounts.length > 0 && (
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">🏦 Add to Account <span className="font-normal text-gray-400">(optional)</span></label>
+            <select
+              value={form.accountId}
+              onChange={(e) => set('accountId', e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <option value="">No account</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.name} — ₹{Number(a.balance).toLocaleString('en-IN')}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={saving}
@@ -155,6 +172,7 @@ export default function IncomePage() {
   const create = useCreateIncome();
   const update = useUpdateIncome();
   const del    = useDeleteIncome();
+  const { data: accounts = [] } = useAccounts();
 
   const totalIncome = incomes.reduce((s, i) => s + Number(i.amount), 0);
 
@@ -295,10 +313,12 @@ export default function IncomePage() {
             source:     editing.source || '',
             incomeDate: format(new Date(editing.incomeDate), 'yyyy-MM-dd'),
             note:       editing.note || '',
+            accountId:  editing.accountId || '',
           } : null}
           onSave={handleSave}
           onClose={closeForm}
           saving={saving}
+          accounts={accounts}
         />
       )}
 

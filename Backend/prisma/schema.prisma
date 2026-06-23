@@ -98,6 +98,15 @@ enum BillingCycle {
   YEARLY
 }
 
+enum AccountType {
+  SAVINGS
+  CURRENT
+  CREDIT_CARD
+  CASH
+  WALLET
+  OTHER
+}
+
 model User {
   id            String        @id @default(cuid())
   firebaseUid   String        @unique
@@ -138,6 +147,7 @@ model User {
   contactRequestsSent  ContactRequest[] @relation("ContactRequestSender")
   contactRequestsRecv  ContactRequest[] @relation("ContactRequestRecipient")
   incomes              Income[]
+  accounts             Account[]
   subscriptions        Subscription[]
   expenseTemplates     ExpenseTemplate[]
   financialGoals       FinancialGoal[]
@@ -199,6 +209,24 @@ enum AssetType {
   PROPERTY
   VEHICLE
   OTHER
+}
+
+model Account {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  type           AccountType @default(SAVINGS)
+  openingBalance Decimal     @default(0) @db.Decimal(14, 2)
+  color          String?
+  icon           String?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  expenses       Expense[]
+  incomes        Income[]
+
+  @@index([userId])
 }
 
 model Asset {
@@ -369,6 +397,9 @@ model Expense {
   tabEntry        TabEntry?      @relation(fields: [tabEntryId], references: [id], onDelete: Cascade)
   tabSettlementId String?        @unique
   tabSettlement   TabSettlement? @relation(fields: [tabSettlementId], references: [id], onDelete: Cascade)
+
+  accountId     String?
+  account       Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   people        ExpensePerson[]
   splits        ExpenseSplit[]
@@ -787,6 +818,8 @@ model Income {
   incomeDate DateTime
   note       String?
   tags       String[]       @default([])
+  accountId  String?
+  account    Account?       @relation(fields: [accountId], references: [id], onDelete: SetNull)
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
