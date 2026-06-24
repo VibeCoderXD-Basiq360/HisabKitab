@@ -134,7 +134,7 @@ export default function BusinessDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <TopBar title={business.name} subtitle={business.tagline} />
+      <TopBar title={business.name} subtitle={business.tagline} showBack />
 
       <div className="px-4 pt-4 space-y-4">
         {/* P&L Summary */}

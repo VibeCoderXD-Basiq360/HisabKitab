@@ -279,7 +279,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title={t('analytics.title')} />
+      <TopBar title={t('analytics.title')} showBack />
 
       {/* Period selector */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-2 pb-2 sticky top-0 z-10">

@@ -55,7 +55,7 @@ export default function SearchPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title={t('search.title', 'Search')} />
+      <TopBar title={t('search.title', 'Search')} showBack />
 
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm">

@@ -78,7 +78,7 @@ export default function ProfilePage() {
       )}
 
       <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-        <TopBar title={t('profile.title')} />
+        <TopBar title={t('profile.title')} showBack />
         <div className="flex-1 flex flex-col items-center p-6 gap-6 pb-8">
 
           {/* Avatar */}

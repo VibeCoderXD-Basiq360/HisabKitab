@@ -586,6 +586,7 @@ export default function BalancesPage() {
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
         title={t('balance.title')}
+        showBack
         action={
           <button onClick={handleShare} className="w-10 h-10 flex items-center justify-center text-gray-500 text-xl">
             📤

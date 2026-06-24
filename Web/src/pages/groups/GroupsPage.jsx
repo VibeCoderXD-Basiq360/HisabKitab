@@ -107,6 +107,7 @@ export default function GroupsPage() {
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar
         title={t('groups.title')}
+        showBack
         action={
           <button
             onClick={() => navigate('/groups/new')}
