@@ -16,7 +16,7 @@ export default function JobsPage() {
   const updateJob = useUpdateJob();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title="Jobs" onBack={() => navigate('/business')} />
 
       <div className="px-4 pt-4">

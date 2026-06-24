@@ -242,7 +242,7 @@ export default function HomePage() {
 
       {/* ── OVERVIEW TAB ── */}
       {tab === 'overview' && (
-        <div className="flex-1 overflow-auto pb-24 pt-4 flex flex-col gap-3">
+        <div className="flex-1 overflow-auto pb-8 pt-4 flex flex-col gap-3">
 
           <MonthSummary total={monthTotal} count={monthCount} />
 
@@ -548,7 +548,7 @@ export default function HomePage() {
           </div>
 
           {/* Scrollable list */}
-          <div className="flex-1 overflow-y-auto pb-24">
+          <div className="flex-1 overflow-y-auto pb-8">
 
             {isLoading ? (
               <div className="flex items-center justify-center py-20 text-gray-300 dark:text-gray-600 text-sm">{t('common.loading')}</div>

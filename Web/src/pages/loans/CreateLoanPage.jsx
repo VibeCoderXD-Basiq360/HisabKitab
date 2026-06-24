@@ -45,7 +45,7 @@ export default function CreateLoanPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('loans.new_loan')} showBack />
-      <div className="flex-1 pb-24 p-4 flex flex-col gap-4">
+      <div className="flex-1 pb-8 p-4 flex flex-col gap-4">
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-4">
           {/* Name */}

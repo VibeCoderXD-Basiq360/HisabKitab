@@ -67,7 +67,7 @@ export default function LoanDetailPage() {
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={loan.name} showBack />
 
-      <div className="flex-1 pb-24 flex flex-col gap-4 p-4">
+      <div className="flex-1 pb-8 flex flex-col gap-4 p-4">
         {/* Summary card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">

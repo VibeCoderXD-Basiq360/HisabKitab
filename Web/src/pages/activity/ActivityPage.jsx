@@ -68,7 +68,7 @@ export default function ActivityPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('settings.activity')} showBack />
-      <div className="flex-1 pb-24">
+      <div className="flex-1 pb-8">
         {isLoading && (
           <div className="flex flex-col gap-3 p-4">
             {[...Array(6)].map((_, i) => (

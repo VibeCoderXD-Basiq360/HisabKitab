@@ -220,7 +220,7 @@ export default function ExportPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('settings.export')} showBack />
-      <div className="flex-1 pb-24 p-4 space-y-4">
+      <div className="flex-1 pb-8 p-4 space-y-4">
 
         {/* Period selector */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">

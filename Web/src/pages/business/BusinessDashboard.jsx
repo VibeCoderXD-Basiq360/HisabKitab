@@ -82,7 +82,7 @@ export default function BusinessDashboard() {
   const recentJobs = pl?.jobs?.slice(0, 5) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title={business.name} subtitle={business.tagline} />
 
       <div className="px-4 pt-4 space-y-4">

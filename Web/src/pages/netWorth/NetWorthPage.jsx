@@ -63,7 +63,7 @@ export default function NetWorthPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
         <TopBar title="Net Worth" onBack={() => navigate(-1)} />
         <p className="text-center text-gray-400 py-16 text-sm">Loading…</p>
         <BottomNav />
@@ -86,7 +86,7 @@ export default function NetWorthPage() {
     .filter((t) => t.value > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar
         title="Net Worth"
         onBack={() => navigate(-1)}

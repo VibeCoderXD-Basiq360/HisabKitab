@@ -83,7 +83,7 @@ export default function InventoryPage() {
   function openAction(item, action) { setSelItem(item); setErr(''); setSheet(action); }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title="Inventory" onBack={() => navigate('/business')} />
 
       <div className="px-4 pt-4">

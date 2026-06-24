@@ -251,7 +251,7 @@ export default function AccountsPage() {
   const netBalance    = totalAssets - totalDebt;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title="Accounts" showBack onBack={() => navigate(-1)} />
 
       {/* Total strip */}

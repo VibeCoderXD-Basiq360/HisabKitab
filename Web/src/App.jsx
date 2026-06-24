@@ -65,6 +65,7 @@ import BusinessExpensePage from './pages/business/BusinessExpensePage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
+import Sidebar from './components/Sidebar';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useLockStore } from './store/lockStore';
 
@@ -121,6 +122,7 @@ export default function App() {
         <KeyboardShortcuts />
         <BackgroundLock />
         <LockScreen />
+        <Sidebar />
         <KeyboardShortcutsHelp />
         <OfflineBar />
         <Routes>

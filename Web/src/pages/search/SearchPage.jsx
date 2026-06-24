@@ -76,7 +76,7 @@ export default function SearchPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-2 flex flex-col gap-4 overflow-y-auto pb-24">
+      <div className="flex-1 px-4 py-2 flex flex-col gap-4 overflow-y-auto pb-8">
         {debouncedQ.length < 2 && (
           <div className="flex flex-col items-center justify-center mt-20 gap-2 text-center">
             <span className="text-5xl">🔍</span>

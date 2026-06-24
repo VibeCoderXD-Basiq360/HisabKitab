@@ -45,7 +45,7 @@ export default function SavingsGoalPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('settings.savings_goal')} showBack />
-      <div className="flex-1 pb-24 p-4 flex flex-col gap-4">
+      <div className="flex-1 pb-8 p-4 flex flex-col gap-4">
 
         {/* Explainer */}
         <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl px-4 py-3">

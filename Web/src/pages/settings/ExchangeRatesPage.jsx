@@ -74,7 +74,7 @@ export default function ExchangeRatesPage() {
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('settings.exchange_rates')} showBack />
 
-      <div className="flex-1 overflow-auto pb-24 p-4 flex flex-col gap-3">
+      <div className="flex-1 overflow-auto pb-8 p-4 flex flex-col gap-3">
 
         {/* Info + refresh button */}
         <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-700 rounded-2xl px-4 py-3 flex items-start gap-3">

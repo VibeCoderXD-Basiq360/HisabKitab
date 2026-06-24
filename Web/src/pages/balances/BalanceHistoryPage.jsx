@@ -59,7 +59,7 @@ export default function BalanceHistoryPage() {
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={person ? `${person.name} · Balance` : 'Balance History'} showBack />
 
-      <div className="flex-1 pb-24 px-4">
+      <div className="flex-1 pb-8 px-4">
         {isLoading && (
           <div className="flex flex-col gap-4 pt-6 animate-pulse">
             <div className="h-32 bg-white dark:bg-gray-800 rounded-2xl" />

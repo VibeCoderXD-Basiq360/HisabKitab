@@ -220,7 +220,7 @@ export default function AppLockPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('applock_settings.title')} showBack />
-      <div className="flex-1 pb-24 p-4 flex flex-col gap-4">
+      <div className="flex-1 pb-8 p-4 flex flex-col gap-4">
 
         {/* ── Idle: overview ─────────────────────────────────────────── */}
         {step === 'idle' && (

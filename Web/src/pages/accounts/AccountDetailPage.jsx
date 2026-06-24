@@ -270,7 +270,7 @@ export default function AccountDetailPage() {
   const [showWithdraw, setShowWithdraw]   = useState(false);
 
   if (isLoading) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title="Account" showBack onBack={() => navigate(-1)} />
       <p className="text-center text-gray-400 py-12">Loading…</p>
     </div>
@@ -291,7 +291,7 @@ export default function AccountDetailPage() {
   const isBankAccount = account.type === 'SAVINGS' || account.type === 'CURRENT';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
       <TopBar title={account.name} showBack onBack={() => navigate(-1)} />
 
       {/* Account header */}

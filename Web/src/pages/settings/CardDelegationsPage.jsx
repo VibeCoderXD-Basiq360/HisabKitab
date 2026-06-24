@@ -346,7 +346,7 @@ export default function CardDelegationsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
       <TopBar title={t('settings.shared_cards')} showBack />
-      <div className="flex-1 pb-24 overflow-auto">
+      <div className="flex-1 pb-8 overflow-auto">
 
         {/* ── Cards I use (outgoing) ── */}
         <div className="px-4 pt-4">

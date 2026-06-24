@@ -27,7 +27,7 @@ export default function LoansPage() {
         }
       />
 
-      <div className="flex-1 pb-24 p-4 flex flex-col gap-3">
+      <div className="flex-1 pb-8 p-4 flex flex-col gap-3">
         {isLoading && (
           <div className="flex flex-col gap-3 animate-pulse">
             {[1, 2].map((i) => (
