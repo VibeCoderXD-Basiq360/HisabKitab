@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum BulkPaymentStatus {
@@ -149,6 +150,7 @@ model User {
   incomes              Income[]
   accounts             Account[]
   creditCardPayments   CreditCardPayment[]
+  accountTransfers     AccountTransfer[]
   subscriptions        Subscription[]
   expenseTemplates     ExpenseTemplate[]
   financialGoals       FinancialGoal[]
@@ -228,8 +230,30 @@ model Account {
   incomes        Income[]
   cardPaymentsReceived CreditCardPayment[] @relation("CardPaymentsReceived")
   bankPaymentsSent     CreditCardPayment[] @relation("BankPaymentsSent")
+  paymentTypes         PaymentType[]       @relation("PaymentTypeAccount")
+  transfersFrom        AccountTransfer[]   @relation("TransferFrom")
+  transfersTo          AccountTransfer[]   @relation("TransferTo")
 
   @@index([userId])
+}
+
+model AccountTransfer {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromAccountId String
+  fromAccount   Account  @relation("TransferFrom", fields: [fromAccountId], references: [id])
+  toAccountId   String
+  toAccount     Account  @relation("TransferTo", fields: [toAccountId], references: [id])
+  amount        Decimal  @db.Decimal(14, 2)
+  transferDate  DateTime
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
 }
 
 model CreditCardPayment {
@@ -303,6 +327,9 @@ model PaymentType {
   cardLastFour    String?
   cardHolderName  String?
   cardExpiry      String?
+
+  linkedAccountId   String?
+  linkedAccount     Account?  @relation("PaymentTypeAccount", fields: [linkedAccountId], references: [id], onDelete: SetNull)
 
   expenses          Expense[]
   recurringExpenses RecurringExpense[]

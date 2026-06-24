@@ -11,14 +11,22 @@ async function computeBalance(accountId, openingBalance, accountType) {
       (Number(openingBalance) + Number(expAgg._sum.amount || 0) - Number(payAgg._sum.amount || 0)) * 100
     ) / 100;
   } else {
-    // Balance = opening + income - expenses - CC bill payments sent from this account
-    const [incAgg, expAgg, payAgg] = await Promise.all([
+    // Balance = opening + income - expenses - CC bill payments sent + transfers in - transfers out
+    const [incAgg, expAgg, payAgg, xferInAgg, xferOutAgg] = await Promise.all([
       prisma.income.aggregate({ where: { accountId }, _sum: { amount: true } }),
       prisma.expense.aggregate({ where: { accountId }, _sum: { amount: true } }),
       prisma.creditCardPayment.aggregate({ where: { fromAccountId: accountId }, _sum: { amount: true } }),
+      prisma.accountTransfer.aggregate({ where: { toAccountId: accountId }, _sum: { amount: true } }),
+      prisma.accountTransfer.aggregate({ where: { fromAccountId: accountId }, _sum: { amount: true } }),
     ]);
     return Math.round(
-      (Number(openingBalance) + Number(incAgg._sum.amount || 0) - Number(expAgg._sum.amount || 0) - Number(payAgg._sum.amount || 0)) * 100
+      (Number(openingBalance)
+        + Number(incAgg._sum.amount || 0)
+        - Number(expAgg._sum.amount || 0)
+        - Number(payAgg._sum.amount || 0)
+        + Number(xferInAgg._sum.amount || 0)
+        - Number(xferOutAgg._sum.amount || 0)
+      ) * 100
     ) / 100;
   }
 }
@@ -102,6 +110,34 @@ const payBill = async (req, res) => {
   res.status(201).json(payment);
 };
 
+const transfer = async (req, res) => {
+  const { fromAccountId, toAccountId, amount, transferDate, note } = req.body;
+  if (!fromAccountId || !toAccountId || !amount || Number(amount) <= 0)
+    return res.status(400).json({ error: 'fromAccountId, toAccountId, and amount are required' });
+  if (fromAccountId === toAccountId)
+    return res.status(400).json({ error: 'Cannot transfer to the same account' });
+
+  const [from, to] = await Promise.all([
+    prisma.account.findFirst({ where: { id: fromAccountId, userId: req.user.userId } }),
+    prisma.account.findFirst({ where: { id: toAccountId,   userId: req.user.userId } }),
+  ]);
+  if (!from) return res.status(404).json({ error: 'fromAccount not found' });
+  if (!to)   return res.status(404).json({ error: 'toAccount not found' });
+
+  const xfer = await prisma.accountTransfer.create({
+    data: {
+      userId:       req.user.userId,
+      fromAccountId,
+      toAccountId,
+      amount:       Number(amount),
+      transferDate: new Date(transferDate || Date.now()),
+      note:         note || null,
+    },
+    include: { fromAccount: true, toAccount: true },
+  });
+  res.status(201).json(xfer);
+};
+
 const ledger = async (req, res) => {
   const account = await prisma.account.findFirst({ where: { id: req.params.id, userId: req.user.userId } });
   if (!account) return res.status(404).json({ error: 'Not found' });
@@ -123,11 +159,11 @@ const ledger = async (req, res) => {
       }),
     ]);
     rows = [
-      ...expenses.map((e) => ({ ...e, _type: 'expense', date: e.expenseDate })),
+      ...expenses.map((e) => ({ ...e, _type: 'expense',    date: e.expenseDate })),
       ...payments.map((p) => ({ ...p, _type: 'cc_payment', date: p.paymentDate })),
     ];
   } else {
-    const [expenses, incomes, ccPayments] = await Promise.all([
+    const [expenses, incomes, ccPayments, xferOut, xferIn] = await Promise.all([
       prisma.expense.findMany({
         where: { accountId: req.params.id },
         include: { category: true },
@@ -142,11 +178,23 @@ const ledger = async (req, res) => {
         include: { creditCardAccount: true },
         orderBy: { paymentDate: 'asc' },
       }),
+      prisma.accountTransfer.findMany({
+        where: { fromAccountId: req.params.id },
+        include: { toAccount: true },
+        orderBy: { transferDate: 'asc' },
+      }),
+      prisma.accountTransfer.findMany({
+        where: { toAccountId: req.params.id },
+        include: { fromAccount: true },
+        orderBy: { transferDate: 'asc' },
+      }),
     ]);
     rows = [
-      ...expenses.map((e) => ({ ...e, _type: 'expense', date: e.expenseDate })),
-      ...incomes.map((i) => ({ ...i, _type: 'income', date: i.incomeDate })),
-      ...ccPayments.map((p) => ({ ...p, _type: 'cc_payment_sent', date: p.paymentDate })),
+      ...expenses.map((e)   => ({ ...e, _type: 'expense',          date: e.expenseDate })),
+      ...incomes.map((i)    => ({ ...i, _type: 'income',           date: i.incomeDate })),
+      ...ccPayments.map((p) => ({ ...p, _type: 'cc_payment_sent',  date: p.paymentDate })),
+      ...xferOut.map((x)    => ({ ...x, _type: 'transfer_out',     date: x.transferDate })),
+      ...xferIn.map((x)     => ({ ...x, _type: 'transfer_in',      date: x.transferDate })),
     ];
   }
 
@@ -155,11 +203,11 @@ const ledger = async (req, res) => {
   let running = Number(account.openingBalance);
   const transactions = rows.map((r) => {
     if (isCC) {
-      if (r._type === 'expense') running += Number(r.amount); // purchase increases outstanding
-      else running -= Number(r.amount);                        // payment reduces outstanding
+      if (r._type === 'expense') running += Number(r.amount);
+      else running -= Number(r.amount);
     } else {
-      if (r._type === 'income') running += Number(r.amount);
-      else running -= Number(r.amount); // expense & cc_payment_sent both reduce balance
+      if (r._type === 'income' || r._type === 'transfer_in') running += Number(r.amount);
+      else running -= Number(r.amount);
     }
     return { ...r, runningBalance: Math.round(running * 100) / 100 };
   });
@@ -170,4 +218,4 @@ const ledger = async (req, res) => {
   res.json({ account: { ...account, balance }, transactions });
 };
 
-module.exports = { list, create, update, remove, payBill, ledger };
+module.exports = { list, create, update, remove, payBill, transfer, ledger };

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
-import { useAccountLedger, useAccounts, usePayCreditCardBill } from '../../hooks/useAccounts';
+import { useAccountLedger, useAccounts, usePayCreditCardBill, useCreateTransfer } from '../../hooks/useAccounts';
 
 const TYPE_META = {
   SAVINGS:     { icon: '🏦', label: 'Savings' },
@@ -134,12 +134,140 @@ function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) 
   );
 }
 
+function CashWithdrawSheet({ fromAccount, cashAccounts, onClose }) {
+  const first = cashAccounts[0];
+  const [toId, setToId]     = useState(first?.id || '');
+  const [amount, setAmount] = useState('');
+  const [date, setDate]     = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [note, setNote]     = useState('Cash Withdrawal');
+  const createTransfer = useCreateTransfer();
+
+  const toAcct = cashAccounts.find((a) => a.id === toId);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!toId || !amount || Number(amount) <= 0) return;
+    await createTransfer.mutateAsync({
+      fromAccountId: fromAccount.id,
+      toAccountId:   toId,
+      amount:        Number(amount),
+      transferDate:  date,
+      note:          note.trim() || 'Cash Withdrawal',
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4"
+      >
+        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">Withdraw Cash</h2>
+
+        {/* From (locked) */}
+        <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
+          <div className="flex-1">
+            <p className="text-xs text-gray-400 mb-0.5">From</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              {TYPE_META[fromAccount.type]?.icon} {fromAccount.name}
+            </p>
+          </div>
+          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{fmt(Number(fromAccount.balance))}</p>
+        </div>
+
+        {/* To */}
+        {cashAccounts.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+            No wallet or cash account found. Add one in Accounts first.
+          </p>
+        ) : (
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">To (Wallet / Cash)</label>
+            <select
+              value={toId}
+              onChange={(e) => setToId(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            >
+              {cashAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {TYPE_META[a.type]?.icon} {a.name} — {fmt(Number(a.balance))}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Amount */}
+        <div>
+          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            autoFocus
+            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+          />
+        </div>
+
+        {/* Date + Note */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+        </div>
+
+        {/* Balance preview */}
+        {toAcct && amount && Number(amount) > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex flex-col gap-1">
+            <p><span className="font-semibold">{fromAccount.name}</span> {fmt(Number(fromAccount.balance))} → {fmt(Number(fromAccount.balance) - Number(amount))}</p>
+            <p><span className="font-semibold">{toAcct.name}</span> {fmt(Number(toAcct.balance))} → {fmt(Number(toAcct.balance) + Number(amount))}</p>
+          </div>
+        )}
+
+        {createTransfer.error && (
+          <p className="text-xs text-red-500">{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={!toId || !amount || Number(amount) <= 0 || cashAccounts.length === 0 || createTransfer.isPending}
+          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+        >
+          {createTransfer.isPending ? 'Processing…' : `Withdraw${amount ? ' ' + fmt(amount) : ''}`}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function AccountDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data, isLoading } = useAccountLedger(id);
   const { data: allAccounts = [] } = useAccounts();
-  const [showPayBill, setShowPayBill] = useState(false);
+  const [showPayBill, setShowPayBill]     = useState(false);
+  const [showWithdraw, setShowWithdraw]   = useState(false);
 
   if (isLoading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
@@ -157,7 +285,10 @@ export default function AccountDetailPage() {
   const isNeg  = bal < 0;
 
   // For the Pay Bill sheet: only show bank/cash/wallet accounts as sources
-  const bankAccounts = allAccounts.filter((a) => a.id !== id && a.type !== 'CREDIT_CARD' && a.isActive !== false);
+  const bankAccounts  = allAccounts.filter((a) => a.id !== id && a.type !== 'CREDIT_CARD' && a.isActive !== false);
+  // For Cash Withdraw: destination must be WALLET or CASH type
+  const cashAccounts  = allAccounts.filter((a) => a.id !== id && (a.type === 'WALLET' || a.type === 'CASH') && a.isActive !== false);
+  const isBankAccount = account.type === 'SAVINGS' || account.type === 'CURRENT';
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
@@ -179,6 +310,14 @@ export default function AccountDetailPage() {
               className="bg-primary-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
             >
               Pay Bill
+            </button>
+          )}
+          {isBankAccount && (
+            <button
+              onClick={() => setShowWithdraw(true)}
+              className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
+            >
+              💵 Withdraw
             </button>
           )}
         </div>
@@ -219,13 +358,13 @@ export default function AccountDetailPage() {
             <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2">
               <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total In</p>
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                {fmt(transactions.filter((t) => t._type === 'income').reduce((s, t) => s + Number(t.amount), 0))}
+                {fmt(transactions.filter((t) => t._type === 'income' || t._type === 'transfer_in').reduce((s, t) => s + Number(t.amount), 0))}
               </p>
             </div>
             <div className="flex-1 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-2">
               <p className="text-xs text-red-500 font-medium">Total Out</p>
               <p className="text-sm font-bold text-red-600">
-                {fmt(transactions.filter((t) => t._type !== 'income').reduce((s, t) => s + Number(t.amount), 0))}
+                {fmt(transactions.filter((t) => t._type !== 'income' && t._type !== 'transfer_in').reduce((s, t) => s + Number(t.amount), 0))}
               </p>
             </div>
           </div>
@@ -252,10 +391,18 @@ export default function AccountDetailPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700">
             {transactions.map((txn, i) => {
               const isIncome    = txn._type === 'income';
-              const isCCPay    = txn._type === 'cc_payment';
+              const isCCPay     = txn._type === 'cc_payment';
               const isCCPaySent = txn._type === 'cc_payment_sent';
-              const date = new Date(isIncome ? txn.incomeDate : isCCPay || isCCPaySent ? txn.paymentDate : txn.expenseDate);
+              const date = new Date(
+                isIncome ? txn.incomeDate
+                : isCCPay || isCCPaySent ? txn.paymentDate
+                : txn._type === 'transfer_in' || txn._type === 'transfer_out' ? txn.transferDate
+                : txn.expenseDate
+              );
               const runBal = Number(txn.runningBalance);
+
+              const isXferIn  = txn._type === 'transfer_in';
+              const isXferOut = txn._type === 'transfer_out';
 
               let icon, label, sublabel, amountColor, amountSign;
               if (isIncome) {
@@ -269,17 +416,27 @@ export default function AccountDetailPage() {
                 icon = '↑'; label = txn.note || 'CC Bill Payment';
                 sublabel = `To ${txn.creditCardAccount?.name || 'Credit Card'}`;
                 amountColor = 'text-orange-500'; amountSign = '-';
+              } else if (isXferIn) {
+                icon = '↙'; label = txn.note || 'Transfer Received';
+                sublabel = `From ${txn.fromAccount?.name || 'Account'}`;
+                amountColor = 'text-emerald-600'; amountSign = '+';
+              } else if (isXferOut) {
+                icon = '↗'; label = txn.note || 'Transfer Sent';
+                sublabel = `To ${txn.toAccount?.name || 'Account'}`;
+                amountColor = 'text-blue-500'; amountSign = '-';
               } else {
                 icon = '↑'; label = txn.title;
                 sublabel = txn.category?.name || '';
                 amountColor = 'text-red-500'; amountSign = '-';
               }
 
-              const dotBg = (isIncome || isCCPay)
+              const dotBg = (isIncome || isCCPay || isXferIn)
                 ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600'
                 : isCCPaySent
                   ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-500'
-                  : 'bg-red-100 dark:bg-red-900/40 text-red-500';
+                  : isXferOut
+                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-500'
+                    : 'bg-red-100 dark:bg-red-900/40 text-red-500';
 
               return (
                 <div
@@ -319,6 +476,14 @@ export default function AccountDetailPage() {
           outstanding={bal}
           bankAccounts={bankAccounts}
           onClose={() => setShowPayBill(false)}
+        />
+      )}
+
+      {showWithdraw && (
+        <CashWithdrawSheet
+          fromAccount={{ ...account, balance: bal }}
+          cashAccounts={cashAccounts}
+          onClose={() => setShowWithdraw(false)}
         />
       )}
     </div>

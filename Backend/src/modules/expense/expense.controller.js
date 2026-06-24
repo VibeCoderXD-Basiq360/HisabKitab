@@ -213,6 +213,12 @@ const create = async (req, res) => {
     recurringExpenseId = rec.id;
   }
 
+  let resolvedAccountId = accountId || null;
+  if (!resolvedAccountId && paymentTypeId) {
+    const pt = await prisma.paymentType.findUnique({ where: { id: paymentTypeId }, select: { linkedAccountId: true } });
+    resolvedAccountId = pt?.linkedAccountId || null;
+  }
+
   const expense = await prisma.expense.create({
     data: {
       userId: req.user.userId,
@@ -228,7 +234,7 @@ const create = async (req, res) => {
       recurringExpenseId,
       tags: Array.isArray(tags) ? tags : [],
       isReimbursement: !!isReimbursement,
-      accountId: accountId || null,
+      accountId: resolvedAccountId,
       people: { create: splitPeopleIds.map((personId) => ({ personId })) },
       items: items.length > 0
         ? { create: items.map((it, idx) => ({ name: it.name, amount: Number(it.amount), qty: it.qty || null, unit: it.unit || null, order: idx })) }

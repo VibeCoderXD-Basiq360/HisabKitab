@@ -276,6 +276,7 @@ export default function AddEditExpensePage() {
         currency: existing.currency || 'INR',
         tags: existing.tags || [],
         isReimbursement: existing.isReimbursement || false,
+        accountId: existing.accountId || '',
         items: (existing.items || []).map((it) => ({ id: it.id, name: it.name, amount: String(it.amount) })),
       });
       setReceiptUrl(existing.receiptUrl || '');
@@ -563,7 +564,15 @@ export default function AddEditExpensePage() {
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.payment_type')} *</label>
           <select
             value={form.paymentTypeId}
-            onChange={field('paymentTypeId')}
+            onChange={(e) => {
+              const ptId = e.target.value;
+              const pt = paymentTypes.find((p) => p.id === ptId);
+              setForm((f) => ({
+                ...f,
+                paymentTypeId: ptId,
+                accountId: pt?.linkedAccountId || '',
+              }));
+            }}
             required
             className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
           >
@@ -576,21 +585,41 @@ export default function AddEditExpensePage() {
           </select>
         </div>
 
-        {accounts.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🏦 Deduct from Account <span className="text-xs font-normal text-gray-400">(optional)</span></label>
-            <select
-              value={form.accountId}
-              onChange={field('accountId')}
-              className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-            >
-              <option value="">No account</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.name} — ₹{Number(a.balance).toLocaleString('en-IN')}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {accounts.length > 0 && (() => {
+          const linkedPt = paymentTypes.find((p) => p.id === form.paymentTypeId);
+          const isAutoLinked = linkedPt?.linkedAccountId && form.accountId === linkedPt.linkedAccountId;
+          const linkedAcct = isAutoLinked ? accounts.find((a) => a.id === form.accountId) : null;
+          return isAutoLinked ? (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800">
+              <span className="text-primary-600 dark:text-primary-400 text-sm">🔗</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-primary-700 dark:text-primary-300">Auto-linked to {linkedAcct?.name}</p>
+                <p className="text-xs text-primary-500 dark:text-primary-400">Balance: ₹{Number(linkedAcct?.balance || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, accountId: '' }))}
+                className="text-xs text-primary-500 dark:text-primary-400 underline shrink-0"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🏦 Deduct from Account <span className="text-xs font-normal text-gray-400">(optional)</span></label>
+              <select
+                value={form.accountId}
+                onChange={field('accountId')}
+                className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+              >
+                <option value="">No account</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>{a.name} — ₹{Number(a.balance).toLocaleString('en-IN')}</option>
+                ))}
+              </select>
+            </div>
+          );
+        })()}
 
         <Input label={t('expense.note')} value={form.note} onChange={field('note')} placeholder={t('expense.note_placeholder')} />
 

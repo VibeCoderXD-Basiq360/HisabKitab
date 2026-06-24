@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
-import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from '../../hooks/useAccounts';
+import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount, useCreateTransfer } from '../../hooks/useAccounts';
+import { format } from 'date-fns';
 
 const TYPE_META = {
   SAVINGS:     { icon: '🏦', label: 'Savings' },
@@ -100,6 +101,138 @@ function AccountForm({ initial, onSave, onClose, saving }) {
   );
 }
 
+function TransferSheet({ accounts, onClose }) {
+  const [fromId, setFromId]   = useState(accounts[0]?.id || '');
+  const [toId, setToId]       = useState(accounts[1]?.id || '');
+  const [amount, setAmount]   = useState('');
+  const [date, setDate]       = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [note, setNote]       = useState('');
+  const createTransfer = useCreateTransfer();
+
+  const from = accounts.find((a) => a.id === fromId);
+  const to   = accounts.find((a) => a.id === toId);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!fromId || !toId || fromId === toId || !amount || Number(amount) <= 0) return;
+    await createTransfer.mutateAsync({ fromAccountId: fromId, toAccountId: toId, amount: Number(amount), transferDate: date, note: note || undefined });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+      >
+        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">Transfer Between Accounts</h2>
+
+        {/* From → To */}
+        <div className="flex gap-3 items-center">
+          <div className="flex-1 flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">From</label>
+            <select
+              value={fromId}
+              onChange={(e) => setFromId(e.target.value)}
+              className="bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{TYPE_META[a.type]?.icon} {a.name}</option>
+              ))}
+            </select>
+            {from && (
+              <p className="text-xs text-gray-400 pl-1">Balance: {fmt(from.balance)}</p>
+            )}
+          </div>
+
+          <div className="text-gray-400 dark:text-gray-500 text-xl mt-4">→</div>
+
+          <div className="flex-1 flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">To</label>
+            <select
+              value={toId}
+              onChange={(e) => setToId(e.target.value)}
+              className="bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{TYPE_META[a.type]?.icon} {a.name}</option>
+              ))}
+            </select>
+            {to && (
+              <p className="text-xs text-gray-400 pl-1">Balance: {fmt(to.balance)}</p>
+            )}
+          </div>
+        </div>
+
+        {fromId === toId && (
+          <p className="text-xs text-red-500">From and To accounts must be different</p>
+        )}
+
+        {/* Amount */}
+        <div>
+          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            autoFocus
+            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+          />
+        </div>
+
+        {/* Date + Note */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note (optional)</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="e.g. ATM withdrawal"
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+        </div>
+
+        {/* Preview */}
+        {from && to && amount && Number(amount) > 0 && fromId !== toId && (
+          <div className="bg-primary-50 dark:bg-primary-900/20 rounded-xl px-4 py-3 text-sm text-primary-700 dark:text-primary-300">
+            <span className="font-semibold">{from.name}</span> {fmt(from.balance)} → {fmt(Number(from.balance) - Number(amount))}
+            <br />
+            <span className="font-semibold">{to.name}</span> {fmt(to.balance)} → {fmt(Number(to.balance) + Number(amount))}
+          </div>
+        )}
+
+        {createTransfer.error && (
+          <p className="text-xs text-red-500">{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={!fromId || !toId || fromId === toId || !amount || Number(amount) <= 0 || createTransfer.isPending}
+          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+        >
+          {createTransfer.isPending ? 'Transferring…' : `Transfer${amount ? ' ' + fmt(amount) : ''}`}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function AccountsPage() {
   const navigate = useNavigate();
   const { data: accounts = [], isLoading } = useAccounts();
@@ -107,8 +240,9 @@ export default function AccountsPage() {
   const updateAccount = useUpdateAccount();
   const deleteAccount = useDeleteAccount();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null);
+  const [showForm, setShowForm]       = useState(false);
+  const [editing, setEditing]         = useState(null);
+  const [showTransfer, setShowTransfer] = useState(false);
 
   const bankAccounts  = accounts.filter((a) => a.type !== 'CREDIT_CARD');
   const creditCards   = accounts.filter((a) => a.type === 'CREDIT_CARD');
@@ -184,6 +318,15 @@ export default function AccountsPage() {
           })
         )}
 
+        {accounts.length >= 2 && (
+          <button
+            onClick={() => setShowTransfer(true)}
+            className="w-full h-12 rounded-2xl bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-sm font-semibold flex items-center justify-center gap-2 active:bg-primary-100 transition-colors"
+          >
+            ↔ Transfer Between Accounts
+          </button>
+        )}
+
         <button
           onClick={() => setShowForm(true)}
           className="w-full h-12 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 text-sm font-medium flex items-center justify-center gap-2 active:bg-gray-50 dark:active:bg-gray-800 transition-colors"
@@ -214,6 +357,13 @@ export default function AccountsPage() {
           }}
           onClose={() => setEditing(null)}
           saving={updateAccount.isPending}
+        />
+      )}
+
+      {showTransfer && (
+        <TransferSheet
+          accounts={accounts.filter((a) => a.type !== 'CREDIT_CARD')}
+          onClose={() => setShowTransfer(false)}
         />
       )}
     </div>

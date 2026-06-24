@@ -9,6 +9,7 @@ import {
   useDeletePaymentType,
 } from '../../hooks/usePaymentTypes';
 import { useCardDelegations, useCreateDelegation } from '../../hooks/useCardDelegation';
+import { useAccounts } from '../../hooks/useAccounts';
 import TopBar from '../../components/TopBar';
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
@@ -24,9 +25,10 @@ const EMPTY_FORM = {
   cardLastFour: '',
   cardHolderName: '',
   cardExpiry: '',
+  linkedAccountId: '',
 };
 
-function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
+function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
   const { t } = useTranslation();
   const [form, setForm] = useState(initial || EMPTY_FORM);
   const field = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -45,6 +47,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
       cardLastFour:   isCC && form.cardLastFour   ? form.cardLastFour.trim()   : null,
       cardHolderName: isCC && form.cardHolderName ? form.cardHolderName.trim() : null,
       cardExpiry:     isCC && form.cardExpiry     ? form.cardExpiry.trim()     : null,
+      linkedAccountId: form.linkedAccountId || null,
     });
   };
 
@@ -244,6 +247,31 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending }) {
             </>
           )}
 
+          {accounts.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                🔗 Link to account <span className="font-normal">(optional — auto-tracks balance)</span>
+              </label>
+              <select
+                value={form.linkedAccountId}
+                onChange={field('linkedAccountId')}
+                className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+              >
+                <option value="">No account linked</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.type})
+                  </option>
+                ))}
+              </select>
+              {form.linkedAccountId && (
+                <p className="text-xs text-primary-600 dark:text-primary-400">
+                  Expenses paid with this method will auto-deduct from this account
+                </p>
+              )}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={!form.name.trim() || isPending}
@@ -363,6 +391,7 @@ export default function PaymentTypesPage() {
   const { t: translate } = useTranslation();
   const { data: types = [], isLoading } = usePaymentTypes();
   const { data: delegations } = useCardDelegations();
+  const { data: accounts = [] } = useAccounts();
   const create = useCreatePaymentType();
   const update = useUpdatePaymentType();
   const remove = useDeletePaymentType();
@@ -439,6 +468,11 @@ export default function PaymentTypesPage() {
                       {t.cardExpiry ? `  ${t.cardExpiry}` : ''}
                     </p>
                   )}
+                  {t.linkedAccount && (
+                    <p className="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+                      🔗 Auto-tracks: {t.linkedAccount.name}
+                    </p>
+                  )}
                   {info && (
                     <div className="mt-0.5 flex flex-col gap-0.5">
                       <p className={`text-xs font-medium ${
@@ -502,13 +536,15 @@ export default function PaymentTypesPage() {
             paymentDueDay: sheet.paymentDueDay || '',
             reminderDaysBefore: sheet.reminderDaysBefore ?? 3,
             reminderEnabled: sheet.reminderEnabled || false,
-            cardLastFour:   sheet.cardLastFour   || '',
-            cardHolderName: sheet.cardHolderName || '',
-            cardExpiry:     sheet.cardExpiry     || '',
+            cardLastFour:    sheet.cardLastFour    || '',
+            cardHolderName:  sheet.cardHolderName  || '',
+            cardExpiry:      sheet.cardExpiry      || '',
+            linkedAccountId: sheet.linkedAccountId || '',
           }}
           onSave={handleSave}
           onClose={closeSheet}
           isPending={isPending}
+          accounts={accounts}
         />
       )}
 

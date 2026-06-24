@@ -5,6 +5,7 @@ const list = async (req, res) => {
   const types = await prisma.paymentType.findMany({
     where: { userId: req.user.userId },
     orderBy: { name: 'asc' },
+    include: { linkedAccount: { select: { id: true, name: true, type: true } } },
   });
   res.json(types);
 };
@@ -25,12 +26,13 @@ function cardFields(body) {
 }
 
 const create = async (req, res) => {
-  const { name } = req.body;
+  const { name, linkedAccountId } = req.body;
   const auto = getIconForPaymentType(name);
   const icon = req.body.icon || auto.icon;
   const color = req.body.color || auto.color;
   const type = await prisma.paymentType.create({
-    data: { userId: req.user.userId, name, icon, color, ...cardFields(req.body) },
+    data: { userId: req.user.userId, name, icon, color, linkedAccountId: linkedAccountId || null, ...cardFields(req.body) },
+    include: { linkedAccount: { select: { id: true, name: true, type: true } } },
   });
   res.status(201).json(type);
 };
@@ -41,13 +43,14 @@ const update = async (req, res) => {
   });
   if (!existing) return res.status(404).json({ error: 'Payment type not found' });
 
-  const { name } = req.body;
+  const { name, linkedAccountId } = req.body;
   const auto = getIconForPaymentType(name);
   const icon = req.body.icon || auto.icon;
   const color = req.body.color || auto.color;
   const type = await prisma.paymentType.update({
     where: { id: req.params.id },
-    data: { name, icon, color, ...cardFields(req.body) },
+    data: { name, icon, color, linkedAccountId: linkedAccountId || null, ...cardFields(req.body) },
+    include: { linkedAccount: { select: { id: true, name: true, type: true } } },
   });
   res.json(type);
 };

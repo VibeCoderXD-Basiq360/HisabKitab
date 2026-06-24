@@ -47,3 +47,11 @@ export function usePayCreditCardBill() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
   });
 }
+
+export function useCreateTransfer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.post('/accounts/transfer', data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+}
