@@ -5,6 +5,21 @@ import api from '../lib/api';
 export const useBusiness = () =>
   useQuery({ queryKey: ['business'], queryFn: () => api.get('/business').then(r => r.data), retry: false });
 
+export const usePartnerInvites = () =>
+  useQuery({ queryKey: ['partner-invites'], queryFn: () => api.get('/business/partners/invites').then(r => r.data), retry: false });
+
+export const useAcceptPartner = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id) => api.post(`/business/partners/${id}/accept`).then(r => r.data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['partner-invites'] }); qc.invalidateQueries({ queryKey: ['business'] }); } });
+};
+
+export const useDeclinePartner = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id) => api.post(`/business/partners/${id}/decline`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['partner-invites'] }) });
+};
+
 export const useCreateBusiness = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: d => api.post('/business', d).then(r => r.data),
@@ -142,6 +157,7 @@ export const useWithdraw = () => {
 };
 
 // ── P&L ──────────────────────────────────────────────────────────────────────
-export const useBusinessPL = (params = {}) =>
+export const useBusinessPL = (params = {}, opts = {}) =>
   useQuery({ queryKey: ['business-pl', params],
-    queryFn: () => api.get('/business-pl', { params }).then(r => r.data) });
+    queryFn: () => api.get('/business-pl', { params }).then(r => r.data),
+    retry: false, ...opts });

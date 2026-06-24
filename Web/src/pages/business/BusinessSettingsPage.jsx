@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner } from '../../hooks/useBusiness';
+import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 
@@ -28,6 +28,7 @@ function Sheet({ title, onClose, children }) {
 export default function BusinessSettingsPage() {
   const navigate = useNavigate();
   const { data: business, isLoading, refetch } = useBusiness();
+  const { data: sentInvites = [] } = usePartnerInvites();
   const updateSettings = useUpdateSettings();
   const addLocation = useAddLocation();
   const invitePartner = useInvitePartner();
@@ -166,11 +167,16 @@ export default function BusinessSettingsPage() {
                   <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{p.user?.name || p.user?.email}</p>
                   <p className="text-xs text-gray-400">{p.role} · {p.profitSharePct}% profit share</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${p.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                    {p.isActive ? 'Active' : 'Inactive'}
-                  </span>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-600">Active</span>
+              </div>
+            ))}
+            {sentInvites.map(inv => (
+              <div key={inv.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0 opacity-70">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{inv.user?.name || inv.user?.email}</p>
+                  <p className="text-xs text-gray-400">PARTNER · {Number(inv.profitSharePct)}% profit share</p>
                 </div>
+                <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-yellow-100 text-yellow-700">⏳ Pending</span>
               </div>
             ))}
           </div>

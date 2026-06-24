@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness, useCreateBusiness, useAddLocation, useBusinessPL } from '../../hooks/useBusiness';
+import { useBusiness, useCreateBusiness, useBusinessPL, usePartnerInvites, useAcceptPartner, useDeclinePartner } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
 import BottomNav from '../../components/BottomNav';
 
@@ -8,9 +8,9 @@ const fmt = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: '
 
 function SetupFlow({ onCreate }) {
   const [step, setStep] = useState(1);
-  const [name, setName] = useState('OXY');
-  const [tagline, setTagline] = useState('3D Printing Studio');
-  const [locations, setLocations] = useState([{ name: 'Faridabad' }, { name: 'Gurgaon' }]);
+  const [name, setName] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [locations, setLocations] = useState([{ name: '' }]);
   const create = useCreateBusiness();
 
   const handleSubmit = async () => {
@@ -66,16 +66,67 @@ function SetupFlow({ onCreate }) {
   );
 }
 
+function PendingInviteCard({ invite, onAccepted }) {
+  const accept = useAcceptPartner();
+  const decline = useDeclinePartner();
+  const [declined, setDeclined] = useState(false);
+
+  if (declined) return null;
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
+        <div className="text-center">
+          <div className="text-4xl mb-2">🏭</div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Business Invite</h1>
+          <p className="text-sm text-gray-400 mt-1">You've been invited to join a business</p>
+        </div>
+
+        <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-2xl p-4 text-center">
+          <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">{invite.business.name}</p>
+          {invite.business.tagline && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{invite.business.tagline}</p>}
+          <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <div className="w-7 h-7 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
+              {invite.user?.name?.[0]?.toUpperCase() || '?'}
+            </div>
+            <span>Invited by <strong className="text-gray-700 dark:text-gray-200">{invite.user?.name || invite.user?.email}</strong></span>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={async () => { await decline.mutateAsync(invite.id); setDeclined(true); }}
+            disabled={decline.isPending || accept.isPending}
+            className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold disabled:opacity-50">
+            {decline.isPending ? '…' : 'Decline'}
+          </button>
+          <button
+            onClick={async () => { await accept.mutateAsync(invite.id); onAccepted(); }}
+            disabled={accept.isPending || decline.isPending}
+            className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-bold disabled:opacity-50">
+            {accept.isPending ? 'Joining…' : 'Accept & Join'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BusinessDashboard() {
   const navigate = useNavigate();
   const { data: business, isLoading, refetch } = useBusiness();
-  const { data: pl } = useBusinessPL({});
+  const { data: invites = [], isLoading: invitesLoading } = usePartnerInvites();
+  const { data: pl } = useBusinessPL({}, { enabled: !isLoading && !!business });
 
-  if (isLoading) return (
+  if (isLoading || invitesLoading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
       <p className="text-gray-400">Loading…</p>
     </div>
   );
+
+  if (!business && invites.length > 0) {
+    return <PendingInviteCard invite={invites[0]} onAccepted={() => refetch()} />;
+  }
 
   if (!business) return <SetupFlow onCreate={() => refetch()} />;
 

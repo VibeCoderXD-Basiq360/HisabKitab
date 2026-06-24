@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const notify = require('../../lib/notify');
 
 // GET /api/business — get my business (or null)
 const getMyBusiness = async (req, res) => {
@@ -9,7 +10,7 @@ const getMyBusiness = async (req, res) => {
         include: {
           settings: true,
           locations: { where: { isActive: true }, orderBy: { name: 'asc' } },
-          partners: { include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } } },
+          partners: { where: { status: 'ACTIVE' }, include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } } },
         },
       },
     },
@@ -30,7 +31,7 @@ const createBusiness = async (req, res) => {
       name: name.trim(),
       tagline: tagline?.trim() || null,
       settings: { create: {} },
-      partners: { create: { userId: req.user.userId, role: 'OWNER', equityPct: 100, profitSharePct: 100 } },
+      partners: { create: { userId: req.user.userId, role: 'OWNER', status: 'ACTIVE', equityPct: 100, profitSharePct: 100 } },
       locations: { create: (locations.length ? locations : [{ name: 'Main' }]).map(l => ({ name: l.name, address: l.address || null })) },
     },
     include: { settings: true, locations: true, partners: true },
@@ -82,19 +83,93 @@ const invitePartner = async (req, res) => {
   const already = await prisma.businessPartner.findUnique({
     where: { businessId_userId: { businessId: req.businessId, userId: targetUser.id } },
   });
-  if (already) return res.status(400).json({ error: 'Already a partner' });
+  if (already) {
+    if (already.status === 'DECLINED') {
+      await prisma.businessPartner.update({ where: { id: already.id }, data: { status: 'PENDING' } });
+      return res.json({ ...already, status: 'PENDING' });
+    }
+    return res.status(400).json({ error: already.status === 'PENDING' ? 'Invite already sent' : 'Already a partner' });
+  }
 
   const partner = await prisma.businessPartner.create({
     data: {
       businessId: req.businessId,
       userId: targetUser.id,
       role: 'PARTNER',
+      status: 'PENDING',
       equityPct: equityPct ?? 50,
       profitSharePct: profitSharePct ?? 50,
     },
     include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } },
   });
+
+  await notify(targetUser.id, targetUser.fcmToken, {
+    title: '🏭 Business Invite',
+    body: `${req.user.name || req.user.email} invited you to join ${req.business.name}`,
+    data: { type: 'BUSINESS_PARTNER_INVITE', partnerId: partner.id },
+  });
+
   res.status(201).json(partner);
+};
+
+// GET /api/business/partners/invites — auth-only, pending invites for current user
+const listInvites = async (req, res) => {
+  const invites = await prisma.businessPartner.findMany({
+    where: { userId: req.user.userId, status: 'PENDING' },
+    include: {
+      business: { select: { id: true, name: true, tagline: true } },
+      user: { select: { id: true, name: true, email: true, photoUrl: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(invites);
+};
+
+// POST /api/business/partners/:id/accept
+const acceptInvite = async (req, res) => {
+  const invite = await prisma.businessPartner.findFirst({
+    where: { id: req.params.id, userId: req.user.userId, status: 'PENDING' },
+    include: { business: { include: { partners: { where: { role: 'OWNER', status: 'ACTIVE' }, include: { user: { select: { id: true, fcmToken: true, name: true, email: true } } } } } } },
+  });
+  if (!invite) return res.status(404).json({ error: 'Invite not found' });
+
+  const updated = await prisma.businessPartner.update({
+    where: { id: invite.id },
+    data: { status: 'ACTIVE' },
+  });
+
+  const owner = invite.business.partners[0]?.user;
+  if (owner) {
+    await notify(owner.id, owner.fcmToken, {
+      title: '✅ Partner Joined',
+      body: `${req.user.name || req.user.email} accepted your invite to ${invite.business.name}`,
+      data: { type: 'BUSINESS_PARTNER_ACCEPTED', businessId: invite.businessId },
+    });
+  }
+
+  res.json(updated);
+};
+
+// POST /api/business/partners/:id/decline
+const declineInvite = async (req, res) => {
+  const invite = await prisma.businessPartner.findFirst({
+    where: { id: req.params.id, userId: req.user.userId, status: 'PENDING' },
+    include: { business: { include: { partners: { where: { role: 'OWNER', status: 'ACTIVE' }, include: { user: { select: { id: true, fcmToken: true, name: true, email: true } } } } } } },
+  });
+  if (!invite) return res.status(404).json({ error: 'Invite not found' });
+
+  await prisma.businessPartner.update({ where: { id: invite.id }, data: { status: 'DECLINED' } });
+
+  const owner = invite.business.partners[0]?.user;
+  if (owner) {
+    await notify(owner.id, owner.fcmToken, {
+      title: '❌ Invite Declined',
+      body: `${req.user.name || req.user.email} declined the invite to ${invite.business.name}`,
+      data: { type: 'BUSINESS_PARTNER_DECLINED', businessId: invite.businessId },
+    });
+  }
+
+  res.json({ ok: true });
 };
 
 // PUT /api/business/partners/:partnerId
@@ -108,4 +183,4 @@ const updatePartner = async (req, res) => {
   res.json(p);
 };
 
-module.exports = { getMyBusiness, createBusiness, updateSettings, addLocation, invitePartner, updatePartner };
+module.exports = { getMyBusiness, createBusiness, updateSettings, addLocation, invitePartner, listInvites, acceptInvite, declineInvite, updatePartner };

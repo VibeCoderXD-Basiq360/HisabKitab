@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma');
 
 module.exports = async function businessAuth(req, res, next) {
   const partner = await prisma.businessPartner.findFirst({
-    where: { userId: req.user.userId },
+    where: { userId: req.user.userId, status: 'ACTIVE' },
     include: { business: { include: { settings: true, locations: true } } },
   });
   if (!partner) return res.status(403).json({ error: 'Not a business partner' });

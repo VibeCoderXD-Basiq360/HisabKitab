@@ -171,6 +171,12 @@ enum BusinessRole {
   PARTNER
 }
 
+enum PartnerStatus {
+  PENDING
+  ACTIVE
+  DECLINED
+}
+
 enum ItemCategory {
   FILAMENT
   PACKAGING
@@ -233,10 +239,11 @@ model BusinessPartner {
   business       Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   userId         String
   user           User         @relation("BusinessPartners", fields: [userId], references: [id], onDelete: Cascade)
-  role           BusinessRole @default(PARTNER)
-  equityPct      Decimal      @default(50) @db.Decimal(5, 2)
-  profitSharePct Decimal      @default(50) @db.Decimal(5, 2)
-  createdAt      DateTime     @default(now())
+  role           BusinessRole  @default(PARTNER)
+  status         PartnerStatus @default(PENDING)
+  equityPct      Decimal       @default(50) @db.Decimal(5, 2)
+  profitSharePct Decimal       @default(50) @db.Decimal(5, 2)
+  createdAt      DateTime      @default(now())
 
   withdrawals PartnerWithdrawal[]
 
