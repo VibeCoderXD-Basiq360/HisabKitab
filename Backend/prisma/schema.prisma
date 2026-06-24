@@ -105,6 +105,7 @@ enum AccountType {
   CREDIT_CARD
   CASH
   WALLET
+  METRO_CARD
   OTHER
 }
 

@@ -11,6 +11,7 @@ const TYPE_META = {
   CREDIT_CARD: { icon: '💳', label: 'Credit Card' },
   CASH:        { icon: '💵', label: 'Cash' },
   WALLET:      { icon: '👛', label: 'Wallet' },
+  METRO_CARD:  { icon: '🚇', label: 'Metro Card' },
   OTHER:       { icon: '💰', label: 'Other' },
 };
 

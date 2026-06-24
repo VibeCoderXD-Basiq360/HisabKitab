@@ -11,6 +11,7 @@ const TYPE_META = {
   CREDIT_CARD: { icon: '💳', label: 'Credit Card' },
   CASH:        { icon: '💵', label: 'Cash' },
   WALLET:      { icon: '👛', label: 'Wallet' },
+  METRO_CARD:  { icon: '🚇', label: 'Metro Card' },
   OTHER:       { icon: '💰', label: 'Other' },
 };
 
@@ -181,11 +182,11 @@ function CashWithdrawSheet({ fromAccount, cashAccounts, onClose }) {
         {/* To */}
         {cashAccounts.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
-            No wallet or cash account found. Add one in Accounts first.
+            No wallet, cash, or metro card account found. Add one in Accounts first.
           </p>
         ) : (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">To (Wallet / Cash)</label>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">To (Wallet / Cash / Metro Card)</label>
             <select
               value={toId}
               onChange={(e) => setToId(e.target.value)}
@@ -261,6 +262,133 @@ function CashWithdrawSheet({ fromAccount, cashAccounts, onClose }) {
   );
 }
 
+function TopUpSheet({ toAccount, sourceAccounts, onClose }) {
+  const first = sourceAccounts[0];
+  const [fromId, setFromId]   = useState(first?.id || '');
+  const [amount, setAmount]   = useState('');
+  const [date, setDate]       = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [note, setNote]       = useState('Metro Card Top Up');
+  const createTransfer = useCreateTransfer();
+
+  const fromAcct = sourceAccounts.find((a) => a.id === fromId);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!fromId || !amount || Number(amount) <= 0) return;
+    await createTransfer.mutateAsync({
+      fromAccountId: fromId,
+      toAccountId:   toAccount.id,
+      amount:        Number(amount),
+      transferDate:  date,
+      note:          note.trim() || 'Metro Card Top Up',
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+      <form
+        onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4"
+      >
+        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
+        <h2 className="text-base font-bold text-gray-900 dark:text-white">🚇 Top Up Metro Card</h2>
+
+        {/* From (bank account selector) */}
+        {sourceAccounts.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+            No savings or current account found. Add one in Accounts first.
+          </p>
+        ) : (
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">From (Bank Account)</label>
+            <select
+              value={fromId}
+              onChange={(e) => setFromId(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            >
+              {sourceAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {TYPE_META[a.type]?.icon} {a.name} — {fmt(Number(a.balance))}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* To (locked metro card) */}
+        <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
+          <div className="flex-1">
+            <p className="text-xs text-gray-400 mb-0.5">To</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              {TYPE_META[toAccount.type]?.icon} {toAccount.name}
+            </p>
+          </div>
+          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{fmt(Number(toAccount.balance))}</p>
+        </div>
+
+        {/* Amount */}
+        <div>
+          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <input
+            type="number"
+            min="1"
+            step="0.01"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            autoFocus
+            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+          />
+        </div>
+
+        {/* Date + Note */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note</label>
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+        </div>
+
+        {/* Balance preview */}
+        {fromAcct && amount && Number(amount) > 0 && (
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex flex-col gap-1">
+            <p><span className="font-semibold">{fromAcct.name}</span> {fmt(Number(fromAcct.balance))} → {fmt(Number(fromAcct.balance) - Number(amount))}</p>
+            <p><span className="font-semibold">{toAccount.name}</span> {fmt(Number(toAccount.balance))} → {fmt(Number(toAccount.balance) + Number(amount))}</p>
+          </div>
+        )}
+
+        {createTransfer.error && (
+          <p className="text-xs text-red-500">{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
+        )}
+
+        <button
+          type="submit"
+          disabled={!fromId || !amount || Number(amount) <= 0 || sourceAccounts.length === 0 || createTransfer.isPending}
+          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+        >
+          {createTransfer.isPending ? 'Processing…' : `Top Up${amount ? ' ' + fmt(amount) : ''}`}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function AccountDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -268,6 +396,7 @@ export default function AccountDetailPage() {
   const { data: allAccounts = [] } = useAccounts();
   const [showPayBill, setShowPayBill]     = useState(false);
   const [showWithdraw, setShowWithdraw]   = useState(false);
+  const [showTopUp, setShowTopUp]         = useState(false);
 
   if (isLoading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
@@ -286,9 +415,12 @@ export default function AccountDetailPage() {
 
   // For the Pay Bill sheet: only show bank/cash/wallet accounts as sources
   const bankAccounts  = allAccounts.filter((a) => a.id !== id && a.type !== 'CREDIT_CARD' && a.isActive !== false);
-  // For Cash Withdraw: destination must be WALLET or CASH type
-  const cashAccounts  = allAccounts.filter((a) => a.id !== id && (a.type === 'WALLET' || a.type === 'CASH') && a.isActive !== false);
+  // For Cash Withdraw: destination must be WALLET, CASH, or METRO_CARD type
+  const cashAccounts  = allAccounts.filter((a) => a.id !== id && (a.type === 'WALLET' || a.type === 'CASH' || a.type === 'METRO_CARD') && a.isActive !== false);
   const isBankAccount = account.type === 'SAVINGS' || account.type === 'CURRENT';
+  const isMetroCard   = account.type === 'METRO_CARD';
+  // For Metro Card Top Up: source must be a bank account
+  const sourceAccounts = allAccounts.filter((a) => a.id !== id && (a.type === 'SAVINGS' || a.type === 'CURRENT') && a.isActive !== false);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
@@ -318,6 +450,14 @@ export default function AccountDetailPage() {
               className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
             >
               💵 Withdraw
+            </button>
+          )}
+          {isMetroCard && (
+            <button
+              onClick={() => setShowTopUp(true)}
+              className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
+            >
+              🚇 Top Up
             </button>
           )}
         </div>
@@ -493,6 +633,13 @@ export default function AccountDetailPage() {
           fromAccount={{ ...account, balance: bal }}
           cashAccounts={cashAccounts}
           onClose={() => setShowWithdraw(false)}
+        />
+      )}
+      {showTopUp && (
+        <TopUpSheet
+          toAccount={{ ...account, balance: bal }}
+          sourceAccounts={sourceAccounts}
+          onClose={() => setShowTopUp(false)}
         />
       )}
     </div>
