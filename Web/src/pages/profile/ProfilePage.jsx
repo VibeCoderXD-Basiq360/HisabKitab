@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { auth } from '../../lib/firebase';
 import { useAuthStore } from '../../store/authStore';
@@ -20,10 +20,20 @@ export default function ProfilePage() {
 
   const [cropSrc, setCropSrc] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [upiEdit, setUpiEdit] = useState(false);
+  const [upiInput, setUpiInput] = useState('');
 
   const { data: profile } = useQuery({
     queryKey: ['profile'],
     queryFn: () => api.get('/user/me').then((r) => r.data),
+  });
+
+  const saveUpi = useMutation({
+    mutationFn: (upiId) => api.put('/user/me', { upiId }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['profile'] });
+      setUpiEdit(false);
+    },
   });
 
   const handleLogout = async () => {
@@ -92,6 +102,52 @@ export default function ProfilePage() {
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{profile.email}</p>
             </div>
           )}
+
+          {/* UPI ID */}
+          <div className="w-full max-w-xs bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">UPI ID</p>
+            {upiEdit ? (
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400"
+                  placeholder="yourname@upi"
+                  value={upiInput}
+                  onChange={(e) => setUpiInput(e.target.value)}
+                />
+                <button
+                  onClick={() => saveUpi.mutate(upiInput)}
+                  disabled={saveUpi.isPending}
+                  className="px-3 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60"
+                >
+                  {saveUpi.isPending ? '…' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setUpiEdit(false)}
+                  className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-500 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                {profile?.upiId ? (
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{profile.upiId}</span>
+                ) : (
+                  <span className="text-sm text-gray-400 italic">Not set</span>
+                )}
+                <button
+                  onClick={() => { setUpiInput(profile?.upiId || ''); setUpiEdit(true); }}
+                  className="text-xs text-primary-600 dark:text-primary-400 font-semibold ml-2"
+                >
+                  {profile?.upiId ? 'Edit' : 'Add'}
+                </button>
+              </div>
+            )}
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+              Others can tap to pay you directly via UPI when settling tabs.
+            </p>
+          </div>
 
           <Button variant="outline" onClick={handleLogout} className="w-full max-w-xs">
             {t('profile.sign_out')}

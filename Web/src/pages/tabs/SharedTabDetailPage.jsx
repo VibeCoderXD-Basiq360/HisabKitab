@@ -677,6 +677,28 @@ export default function SharedTabDetailPage() {
                 />
               </Field>
               {settleErr && <p className="text-sm text-red-500">{settleErr}</p>}
+
+              {/* UPI Pay button */}
+              {(() => {
+                const payeeUpi = isMultiMember
+                  ? otherMembers.find((m) => m.userId === settleForm.toUserId)?.user?.upiId
+                  : other?.upiId;
+                const payeeName = isMultiMember
+                  ? (otherMembers.find((m) => m.userId === settleForm.toUserId)?.user?.name || '')
+                  : (other?.name || '');
+                const amt = parseFloat(settleForm.amount);
+                if (!payeeUpi || !amt || amt <= 0) return null;
+                const upiUrl = `upi://pay?pa=${encodeURIComponent(payeeUpi)}&pn=${encodeURIComponent(payeeName)}&am=${amt.toFixed(2)}&cu=INR&tn=${encodeURIComponent('HisabKitab settlement')}`;
+                return (
+                  <a
+                    href={upiUrl}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-green-400 text-green-600 dark:text-green-400 font-semibold text-sm active:scale-[0.98] transition-transform"
+                  >
+                    <span className="text-lg">⚡</span> Pay ₹{amt.toFixed(2)} via UPI
+                  </a>
+                );
+              })()}
+
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"

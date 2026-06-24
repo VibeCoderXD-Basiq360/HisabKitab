@@ -8,10 +8,10 @@ const getMe = async (req, res) => {
 };
 
 const updateMe = async (req, res) => {
-  const { name, phone } = req.body;
+  const { name, phone, upiId } = req.body;
   const user = await prisma.user.update({
     where: { id: req.user.userId },
-    data: { name, phone },
+    data: { name, phone, upiId: upiId ?? undefined },
   });
   res.json(user);
 };

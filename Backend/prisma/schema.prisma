@@ -117,6 +117,7 @@ model User {
   photoUrl      String?
   photoPublicId String?
   fcmToken      String?
+  upiId         String?
 
   categories         Category[]
   paymentTypes       PaymentType[]

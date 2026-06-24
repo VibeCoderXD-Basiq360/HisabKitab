@@ -1,22 +1,24 @@
 const prisma = require('../../lib/prisma');
 const { notify } = require('../../lib/notify');
 
+const USER_SELECT = { id: true, name: true, email: true, photoUrl: true, upiId: true };
+
 const ENTRY_INCLUDE = {
-  paidBy: { select: { id: true, name: true, email: true, photoUrl: true } },
+  paidBy: { select: USER_SELECT },
 };
 
 const TAB_INCLUDE = {
-  creator:  { select: { id: true, name: true, email: true, photoUrl: true } },
-  member:   { select: { id: true, name: true, email: true, photoUrl: true } },
+  creator:  { select: USER_SELECT },
+  member:   { select: USER_SELECT },
   members: {
-    include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } },
+    include: { user: { select: USER_SELECT } },
     orderBy: { createdAt: 'asc' },
   },
   entries: { include: ENTRY_INCLUDE, orderBy: { date: 'desc' } },
   settlements: {
     include: {
-      paidBy: { select: { id: true, name: true, email: true, photoUrl: true } },
-      toUser: { select: { id: true, name: true, email: true, photoUrl: true } },
+      paidBy: { select: USER_SELECT },
+      toUser: { select: USER_SELECT },
     },
     orderBy: { date: 'desc' },
   },
