@@ -260,6 +260,17 @@ export default function AddEditExpensePage() {
     setTimeout(() => setOcrToast(''), 3000);
   }
 
+  // Default accountId to first savings/current account for new expenses
+  useEffect(() => {
+    if (!isEdit && accounts.length > 0) {
+      setForm((f) => {
+        if (f.accountId) return f; // already set (e.g. by payment type link)
+        const defaultAcc = accounts.find((a) => a.type === 'SAVINGS' || a.type === 'CURRENT') || accounts.find((a) => a.type !== 'CREDIT_CARD');
+        return defaultAcc ? { ...f, accountId: defaultAcc.id } : f;
+      });
+    }
+  }, [accounts, isEdit]);
+
   useEffect(() => {
     if (existing) {
       const hasPaidFor = !!existing.paidForPersonId;
