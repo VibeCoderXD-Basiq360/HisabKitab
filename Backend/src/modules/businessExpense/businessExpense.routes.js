@@ -5,6 +5,8 @@ const c = require('./businessExpense.controller');
 
 const ba = [auth, businessAuth];
 
+// auth-only feed for home page — returns [] if user has no business
+router.get('/feed',              auth, c.feed);
 router.get('/',                  ...ba, c.list);
 router.post('/',                 ...ba, c.create);
 router.delete('/:id',            ...ba, c.remove);

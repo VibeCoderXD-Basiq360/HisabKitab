@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { startOfMonth, endOfMonth, subMonths, addMonths, format, isSameMonth } from 'date-fns';
 import { useExpenses, useDeleteExpense, useCreateExpense } from '../../hooks/useExpenses';
-import { useBusinessExpenses } from '../../hooks/useBusiness';
+import { useBusinessExpensesFeed } from '../../hooks/useBusiness';
 import { useCartStore } from '../../store/cartStore';
 import { useBalances } from '../../hooks/useSplits';
 import { useBudgets } from '../../hooks/useBudgets';
@@ -69,7 +69,7 @@ export default function HomePage() {
   const { data: incomeSummary } = useIncomeSummary(CURRENT_MONTH_FILTERS);
   const { data: currentMonthData, isLoading: currentMonthLoading } = useExpenses(CURRENT_MONTH_FILTERS);
   const { data: viewMonthData, isLoading: viewMonthLoading } = useExpenses(viewMonthFilters);
-  const { data: bizExpenses = [] } = useBusinessExpenses({
+  const { data: bizExpenses = [] } = useBusinessExpensesFeed({
     from: startOfMonth(viewMonth).toISOString(),
     to:   endOfMonth(viewMonth).toISOString(),
   });

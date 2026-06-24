@@ -66,4 +66,20 @@ const listWithdrawals = async (req, res) => {
   res.json(withdrawals);
 };
 
-module.exports = { list, create, remove, withdraw, listWithdrawals };
+// auth-only — returns [] if user has no business (used by home page)
+const feed = async (req, res) => {
+  const { from, to } = req.query;
+  const partner = await prisma.businessPartner.findFirst({ where: { userId: req.user.userId } });
+  if (!partner) return res.json([]);
+  const expenses = await prisma.businessExpense.findMany({
+    where: {
+      businessId: partner.businessId,
+      ...(from && to && { date: { gte: new Date(from), lte: new Date(to) } }),
+    },
+    include: EXPENSE_INCLUDE,
+    orderBy: { date: 'desc' },
+  });
+  res.json(expenses);
+};
+
+module.exports = { list, create, remove, withdraw, listWithdrawals, feed };

@@ -117,6 +117,12 @@ export const useBusinessExpenses = (params = {}) =>
   useQuery({ queryKey: ['business-expenses', params],
     queryFn: () => api.get('/business-expenses', { params }).then(r => r.data) });
 
+// auth-only — safe to call from any page; returns [] if user has no business
+export const useBusinessExpensesFeed = (params = {}) =>
+  useQuery({ queryKey: ['business-expenses-feed', params],
+    queryFn: () => api.get('/business-expenses/feed', { params }).then(r => r.data),
+    retry: false });
+
 export const useCreateExpense = () => {
   const qc = useQueryClient();
   return useMutation({ mutationFn: d => api.post('/business-expenses', d).then(r => r.data),
