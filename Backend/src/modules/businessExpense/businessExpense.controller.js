@@ -1,5 +1,10 @@
 const prisma = require('../../lib/prisma');
 
+const EXPENSE_INCLUDE = {
+  location: { select: { id: true, name: true } },
+  account:  { select: { id: true, name: true, type: true, color: true, icon: true } },
+};
+
 const list = async (req, res) => {
   const { from, to } = req.query;
   const expenses = await prisma.businessExpense.findMany({
@@ -7,25 +12,32 @@ const list = async (req, res) => {
       businessId: req.businessId,
       ...(from && to && { date: { gte: new Date(from), lte: new Date(to) } }),
     },
-    include: { location: { select: { id: true, name: true } } },
+    include: EXPENSE_INCLUDE,
     orderBy: { date: 'desc' },
   });
   res.json(expenses);
 };
 
 const create = async (req, res) => {
-  const { category, amount, date, vendor, locationId, note } = req.body;
+  const { category, amount, date, vendor, locationId, note, accountId } = req.body;
   if (!category || !amount || !date) return res.status(400).json({ error: 'category, amount, date required' });
+
+  if (accountId) {
+    const acct = await prisma.account.findFirst({ where: { id: accountId, userId: req.user.userId } });
+    if (!acct) return res.status(400).json({ error: 'Invalid account' });
+  }
+
   const expense = await prisma.businessExpense.create({
     data: {
       businessId: req.businessId,
       locationId: locationId || null,
+      accountId:  accountId  || null,
       category, amount: Number(amount),
       date: new Date(date),
       vendor: vendor || null,
       note: note || null,
     },
-    include: { location: { select: { id: true, name: true } } },
+    include: EXPENSE_INCLUDE,
   });
   res.status(201).json(expense);
 };

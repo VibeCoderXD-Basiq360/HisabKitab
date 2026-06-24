@@ -11,13 +11,14 @@ async function computeBalance(accountId, openingBalance, accountType) {
       (Number(openingBalance) + Number(expAgg._sum.amount || 0) - Number(payAgg._sum.amount || 0)) * 100
     ) / 100;
   } else {
-    // Balance = opening + income - expenses - CC bill payments sent + transfers in - transfers out
-    const [incAgg, expAgg, payAgg, xferInAgg, xferOutAgg] = await Promise.all([
+    // Balance = opening + income - expenses - CC bill payments sent + transfers in - transfers out - business expenses + job credits
+    const [incAgg, expAgg, payAgg, xferInAgg, xferOutAgg, bizExpAgg] = await Promise.all([
       prisma.income.aggregate({ where: { accountId }, _sum: { amount: true } }),
       prisma.expense.aggregate({ where: { accountId }, _sum: { amount: true } }),
       prisma.creditCardPayment.aggregate({ where: { fromAccountId: accountId }, _sum: { amount: true } }),
       prisma.accountTransfer.aggregate({ where: { toAccountId: accountId }, _sum: { amount: true } }),
       prisma.accountTransfer.aggregate({ where: { fromAccountId: accountId }, _sum: { amount: true } }),
+      prisma.businessExpense.aggregate({ where: { accountId }, _sum: { amount: true } }),
     ]);
     return Math.round(
       (Number(openingBalance)
@@ -26,6 +27,7 @@ async function computeBalance(accountId, openingBalance, accountType) {
         - Number(payAgg._sum.amount || 0)
         + Number(xferInAgg._sum.amount || 0)
         - Number(xferOutAgg._sum.amount || 0)
+        - Number(bizExpAgg._sum.amount || 0)
       ) * 100
     ) / 100;
   }
@@ -163,7 +165,7 @@ const ledger = async (req, res) => {
       ...payments.map((p) => ({ ...p, _type: 'cc_payment', date: p.paymentDate })),
     ];
   } else {
-    const [expenses, incomes, ccPayments, xferOut, xferIn] = await Promise.all([
+    const [expenses, incomes, ccPayments, xferOut, xferIn, bizExps] = await Promise.all([
       prisma.expense.findMany({
         where: { accountId: req.params.id },
         include: { category: true },
@@ -188,6 +190,11 @@ const ledger = async (req, res) => {
         include: { fromAccount: true },
         orderBy: { transferDate: 'asc' },
       }),
+      prisma.businessExpense.findMany({
+        where: { accountId: req.params.id },
+        include: { business: { select: { name: true } }, location: { select: { name: true } } },
+        orderBy: { date: 'asc' },
+      }),
     ]);
     rows = [
       ...expenses.map((e)   => ({ ...e, _type: 'expense',          date: e.expenseDate })),
@@ -195,6 +202,7 @@ const ledger = async (req, res) => {
       ...ccPayments.map((p) => ({ ...p, _type: 'cc_payment_sent',  date: p.paymentDate })),
       ...xferOut.map((x)    => ({ ...x, _type: 'transfer_out',     date: x.transferDate })),
       ...xferIn.map((x)     => ({ ...x, _type: 'transfer_in',      date: x.transferDate })),
+      ...bizExps.map((b)    => ({ ...b, _type: 'biz_expense',      date: b.date, title: b.vendor || b.category, note: b.note })),
     ];
   }
 
@@ -207,7 +215,7 @@ const ledger = async (req, res) => {
       else running -= Number(r.amount);
     } else {
       if (r._type === 'income' || r._type === 'transfer_in') running += Number(r.amount);
-      else running -= Number(r.amount);
+      else running -= Number(r.amount); // expense, cc_payment_sent, transfer_out, biz_expense
     }
     return { ...r, runningBalance: Math.round(running * 100) / 100 };
   });

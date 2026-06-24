@@ -108,6 +108,8 @@ export default function BusinessDashboard() {
             { icon: '📦', label: 'Inventory', to: '/business/inventory' },
             { icon: '👤', label: 'Customers', to: '/business/customers' },
             { icon: '📊', label: 'P&L Report', to: '/business/pl' },
+            { icon: '💸', label: 'Expenses', to: '/business/expenses' },
+            { icon: '⚙️', label: 'Settings', to: '/business/settings' },
           ].map(a => (
             <button key={a.label} onClick={() => navigate(a.to)}
               className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex flex-col items-center gap-2 active:scale-[0.97] transition-transform">

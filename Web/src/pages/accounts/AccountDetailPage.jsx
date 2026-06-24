@@ -364,7 +364,7 @@ export default function AccountDetailPage() {
             <div className="flex-1 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-2">
               <p className="text-xs text-red-500 font-medium">Total Out</p>
               <p className="text-sm font-bold text-red-600">
-                {fmt(transactions.filter((t) => t._type !== 'income' && t._type !== 'transfer_in').reduce((s, t) => s + Number(t.amount), 0))}
+                {fmt(transactions.filter((t) => !['income','transfer_in'].includes(t._type)).reduce((s, t) => s + Number(t.amount), 0))}
               </p>
             </div>
           </div>
@@ -397,12 +397,15 @@ export default function AccountDetailPage() {
                 isIncome ? txn.incomeDate
                 : isCCPay || isCCPaySent ? txn.paymentDate
                 : txn._type === 'transfer_in' || txn._type === 'transfer_out' ? txn.transferDate
+                : txn._type === 'biz_expense' ? txn.date
                 : txn.expenseDate
               );
               const runBal = Number(txn.runningBalance);
 
               const isXferIn  = txn._type === 'transfer_in';
               const isXferOut = txn._type === 'transfer_out';
+
+              const isBizExp = txn._type === 'biz_expense';
 
               let icon, label, sublabel, amountColor, amountSign;
               if (isIncome) {
@@ -424,6 +427,10 @@ export default function AccountDetailPage() {
                 icon = '↗'; label = txn.note || 'Transfer Sent';
                 sublabel = `To ${txn.toAccount?.name || 'Account'}`;
                 amountColor = 'text-blue-500'; amountSign = '-';
+              } else if (isBizExp) {
+                icon = '🏭'; label = txn.vendor || txn.category;
+                sublabel = `Business · ${txn.category}${txn.location?.name ? ` · ${txn.location.name}` : ''}`;
+                amountColor = 'text-purple-600'; amountSign = '-';
               } else {
                 icon = '↑'; label = txn.title;
                 sublabel = txn.category?.name || '';
@@ -436,7 +443,9 @@ export default function AccountDetailPage() {
                   ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-500'
                   : isXferOut
                     ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-500'
-                    : 'bg-red-100 dark:bg-red-900/40 text-red-500';
+                    : isBizExp
+                      ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600'
+                      : 'bg-red-100 dark:bg-red-900/40 text-red-500';
 
               return (
                 <div

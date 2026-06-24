@@ -159,23 +159,53 @@ const createJob = async (req, res) => {
 };
 
 const updateJob = async (req, res) => {
-  const { status, actualPrice, note, deliveryDate } = req.body;
-  const existing = await prisma.job.findFirst({ where: { id: req.params.id, businessId: req.businessId } });
+  const { status, actualPrice, note, deliveryDate, creditAccountId } = req.body;
+  const existing = await prisma.job.findFirst({
+    where: { id: req.params.id, businessId: req.businessId },
+    include: { business: { select: { name: true } } },
+  });
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
-  const ap = actualPrice !== undefined && actualPrice !== '' ? Number(actualPrice) : existing.actualPrice;
+  const ap = actualPrice !== undefined && actualPrice !== '' ? Number(actualPrice) : Number(existing.actualPrice ?? 0) || null;
   const tc = Number(existing.trueCost);
   const pf = Number(existing.paymentFeePct);
-  const profit   = ap !== null ? ap - tc - (ap * pf / 100) : null;
+  const profit    = ap !== null ? ap - tc - (ap * pf / 100) : null;
   const marginPct = ap !== null && ap > 0 ? (profit / ap) * 100 : null;
+
+  const resolvedCreditAccountId = creditAccountId !== undefined ? (creditAccountId || null) : existing.creditAccountId;
+
+  // Auto-create Income record when actualPrice is first set with a credit account
+  const shouldRecordCredit = ap && resolvedCreditAccountId && !existing.creditRecorded && (
+    actualPrice !== undefined || creditAccountId !== undefined
+  );
+
+  if (shouldRecordCredit) {
+    const acct = await prisma.account.findFirst({ where: { id: resolvedCreditAccountId, userId: req.user.userId } });
+    if (acct) {
+      await prisma.income.create({
+        data: {
+          userId: req.user.userId,
+          amount: ap,
+          title: `Job: ${existing.title}`,
+          category: 'BUSINESS',
+          source: existing.business?.name || 'Business',
+          incomeDate: new Date(),
+          note: `Job payment recorded`,
+          accountId: resolvedCreditAccountId,
+        },
+      });
+    }
+  }
 
   const job = await prisma.job.update({
     where: { id: req.params.id },
     data: {
-      ...(status       !== undefined && { status }),
-      ...(actualPrice  !== undefined && { actualPrice: ap, profit, marginPct }),
-      ...(note         !== undefined && { note }),
-      ...(deliveryDate !== undefined && { deliveryDate: deliveryDate ? new Date(deliveryDate) : null }),
+      ...(status            !== undefined && { status }),
+      ...(actualPrice       !== undefined && { actualPrice: ap, profit, marginPct }),
+      ...(note              !== undefined && { note }),
+      ...(deliveryDate      !== undefined && { deliveryDate: deliveryDate ? new Date(deliveryDate) : null }),
+      ...(creditAccountId   !== undefined && { creditAccountId: creditAccountId || null }),
+      ...(shouldRecordCredit && { creditRecorded: true }),
     },
     include: JOB_INCLUDE,
   });

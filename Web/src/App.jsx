@@ -61,6 +61,7 @@ import InventoryPage from './pages/business/InventoryPage';
 import CustomersPage from './pages/business/CustomersPage';
 import PLPage from './pages/business/PLPage';
 import BusinessSettingsPage from './pages/business/BusinessSettingsPage';
+import BusinessExpensePage from './pages/business/BusinessExpensePage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -180,6 +181,7 @@ export default function App() {
           <Route path="/business/customers" element={<Protected><CustomersPage /></Protected>} />
           <Route path="/business/pl" element={<Protected><PLPage /></Protected>} />
           <Route path="/business/settings" element={<Protected><BusinessSettingsPage /></Protected>} />
+          <Route path="/business/expenses" element={<Protected><BusinessExpensePage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

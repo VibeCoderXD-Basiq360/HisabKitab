@@ -417,6 +417,10 @@ model Job {
   marginPct          Decimal? @db.Decimal(5, 2)
 
   orderDate    DateTime  @default(now())
+  creditAccountId String?
+  creditAccount   Account?  @relation("JobCreditAccount", fields: [creditAccountId], references: [id], onDelete: SetNull)
+  creditRecorded  Boolean   @default(false)
+
   deliveryDate DateTime?
   note         String?
   createdAt    DateTime  @default(now())
@@ -429,6 +433,7 @@ model Job {
   @@index([customerId])
   @@index([locationId])
   @@index([status])
+  @@index([creditAccountId])
 }
 
 model JobItem {
@@ -457,9 +462,12 @@ model BusinessExpense {
   date       DateTime
   vendor     String?
   note       String?
+  accountId  String?
+  account    Account?          @relation("BizExpAccount", fields: [accountId], references: [id], onDelete: SetNull)
   createdAt  DateTime          @default(now())
 
   @@index([businessId])
+  @@index([accountId])
 }
 
 model PartnerWithdrawal {
@@ -545,6 +553,8 @@ model Account {
   paymentTypes         PaymentType[]       @relation("PaymentTypeAccount")
   transfersFrom        AccountTransfer[]   @relation("TransferFrom")
   transfersTo          AccountTransfer[]   @relation("TransferTo")
+  bizExpenses          BusinessExpense[]   @relation("BizExpAccount")
+  jobCredits           Job[]               @relation("JobCreditAccount")
 
   @@index([userId])
 }

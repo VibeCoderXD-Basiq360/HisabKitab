@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { startOfMonth, endOfMonth, subMonths, addMonths, format, isSameMonth } from 'date-fns';
 import { useExpenses, useDeleteExpense, useCreateExpense } from '../../hooks/useExpenses';
+import { useBusinessExpenses } from '../../hooks/useBusiness';
 import { useCartStore } from '../../store/cartStore';
 import { useBalances } from '../../hooks/useSplits';
 import { useBudgets } from '../../hooks/useBudgets';
@@ -68,6 +69,10 @@ export default function HomePage() {
   const { data: incomeSummary } = useIncomeSummary(CURRENT_MONTH_FILTERS);
   const { data: currentMonthData, isLoading: currentMonthLoading } = useExpenses(CURRENT_MONTH_FILTERS);
   const { data: viewMonthData, isLoading: viewMonthLoading } = useExpenses(viewMonthFilters);
+  const { data: bizExpenses = [] } = useBusinessExpenses({
+    from: startOfMonth(viewMonth).toISOString(),
+    to:   endOfMonth(viewMonth).toISOString(),
+  });
   const { data: searchData, isLoading: searchLoading } = useExpenses(
     { search: query, limit: 50 },
     { enabled: isSearching }
@@ -139,9 +144,22 @@ export default function HomePage() {
   const sgIntact   = sgRemain === null || sgRemain >= 0;
   const sgColor    = sgPct === null ? 'bg-emerald-400' : sgPct >= 100 ? 'bg-red-500' : sgPct >= 80 ? 'bg-yellow-400' : 'bg-emerald-500';
 
-  // Expense list (search or selected month)
-  const expenses  = isSearching ? (searchData?.data || []) : (viewMonthData?.data || []);
-  const isLoading = isSearching ? searchLoading : viewMonthLoading;
+  // Expense list (search or selected month) + business expenses merged
+  const rawExpenses = isSearching ? (searchData?.data || []) : (viewMonthData?.data || []);
+  const isLoading   = isSearching ? searchLoading : viewMonthLoading;
+
+  // Normalize business expenses to the same shape for rendering
+  const bizExpensesMapped = isSearching ? [] : bizExpenses.map(b => ({
+    ...b,
+    _isBusiness: true,
+    expenseDate: b.date,
+    title: b.vendor || b.category,
+    note: b.note,
+    isReimbursement: false,
+  }));
+
+  const expenses = [...rawExpenses, ...bizExpensesMapped]
+    .sort((a, b) => new Date(b.expenseDate) - new Date(a.expenseDate));
 
   const grouped = expenses.reduce((acc, e) => {
     const key = formatDate(e.expenseDate);
@@ -600,7 +618,20 @@ export default function HomePage() {
                         </p>
                       </div>
                       <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                        {items.map((e) => (
+                        {items.map((e) => e._isBusiness ? (
+                          <div key={e.id} onClick={() => navigate('/business/expenses')}
+                            className="flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-gray-50 dark:active:bg-gray-700">
+                            <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-lg shrink-0">🏭</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{e.title}</p>
+                                <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-600 px-1.5 py-0.5 rounded-full font-bold shrink-0">Business</span>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-0.5">{e.category}{e.location?.name ? ` · ${e.location.name}` : ''}{e.account?.name ? ` · ${e.account.name}` : ''}</p>
+                            </div>
+                            <p className="text-sm font-bold text-purple-600 shrink-0">-₹{Math.round(Number(e.amount)).toLocaleString('en-IN')}</p>
+                          </div>
+                        ) : (
                           <ExpenseCard
                             key={e.id}
                             expense={e}

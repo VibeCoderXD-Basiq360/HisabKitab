@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useJob, useUpdateJob } from '../../hooks/useBusiness';
+import { useAccounts } from '../../hooks/useAccounts';
 import TopBar from '../../components/TopBar';
 
 const fmt = n => `₹${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-IN')}`;
@@ -22,7 +23,9 @@ export default function JobDetailPage() {
   const navigate = useNavigate();
   const { data: job, isLoading } = useJob(id);
   const updateJob = useUpdateJob();
+  const { data: accounts = [] } = useAccounts();
   const [actualInput, setActualInput] = useState('');
+  const [creditAccountId, setCreditAccountId] = useState('');
   const [saving, setSaving] = useState(false);
 
   if (isLoading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center"><p className="text-gray-400">Loading…</p></div>;
@@ -39,7 +42,11 @@ export default function JobDetailPage() {
 
   async function saveActual() {
     setSaving(true);
-    await updateJob.mutateAsync({ id: job.id, actualPrice: Number(actualInput) });
+    await updateJob.mutateAsync({
+      id: job.id,
+      actualPrice: Number(actualInput),
+      ...(creditAccountId && { creditAccountId }),
+    });
     setActualInput('');
     setSaving(false);
   }
@@ -85,8 +92,8 @@ export default function JobDetailPage() {
         {/* Update actual price */}
         {job.status !== 'CANCELLED' && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Update charged price</p>
-            <div className="flex gap-2">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Record Payment Received</p>
+            <div className="flex gap-2 mb-3">
               <input className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
                 type="number" placeholder={`₹${Math.round(n(job.suggestedPrice))}`}
                 value={actualInput} onChange={e => setActualInput(e.target.value)} />
@@ -94,6 +101,24 @@ export default function JobDetailPage() {
                 className="px-4 py-2.5 rounded-xl bg-primary-600 text-white font-semibold text-sm disabled:opacity-60">
                 {saving ? '…' : 'Save'}
               </button>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Credit to account (money received into)</label>
+              <select
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                value={creditAccountId || job.creditAccountId || ''}
+                onChange={e => setCreditAccountId(e.target.value)}>
+                <option value="">-- No account tracking --</option>
+                {accounts.filter(a => a.type !== 'CREDIT_CARD').map(a => (
+                  <option key={a.id} value={a.id}>{a.icon || ''} {a.name} ({a.type})</option>
+                ))}
+              </select>
+              {(creditAccountId || job.creditAccountId) && !job.creditRecorded && (
+                <p className="text-xs text-green-600 mt-1">✓ Income will be credited to this account when you save the price.</p>
+              )}
+              {job.creditRecorded && (
+                <p className="text-xs text-gray-400 mt-1">✓ Income already recorded in account.</p>
+              )}
             </div>
           </div>
         )}
