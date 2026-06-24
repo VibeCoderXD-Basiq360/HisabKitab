@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma');
+const { notify } = require('../../lib/notify');
 
 const list = async (req, res) => {
   const userId = req.user.userId;
@@ -70,16 +71,40 @@ const contribute = async (req, res) => {
 
   if (!amount || isNaN(Number(amount))) return res.status(400).json({ error: 'amount is required' });
 
-  const existing = await prisma.financialGoal.findFirst({ where: { id, userId } });
+  const existing = await prisma.financialGoal.findFirst({
+    where: { id, userId },
+    include: { user: { select: { fcmToken: true } } },
+  });
   if (!existing) return res.status(404).json({ error: 'Not found' });
 
+  const target = Number(existing.targetAmount);
+  const oldPct = Math.round((Number(existing.savedAmount) / target) * 100);
   const newSaved = Math.max(0, Number(existing.savedAmount) + Number(amount));
-  const isCompleted = newSaved >= Number(existing.targetAmount);
+  const newPct = Math.round((newSaved / target) * 100);
+  const isCompleted = newSaved >= target;
 
   const goal = await prisma.financialGoal.update({
     where: { id },
     data: { savedAmount: newSaved, isCompleted },
   });
+
+  // Fire milestone notifications (25%, 50%, goal reached)
+  const milestones = [
+    { pct: 25, title: `25% saved: ${existing.name}`, body: `You're a quarter of the way to your goal!` },
+    { pct: 50, title: `Halfway there: ${existing.name}`, body: `You've saved 50% of your ₹${target.toLocaleString('en-IN')} goal.` },
+    { pct: 100, title: `Goal reached! ${existing.emoji || '🎉'} ${existing.name}`, body: `You've hit your ₹${target.toLocaleString('en-IN')} savings goal. Congratulations!` },
+  ];
+  for (const m of milestones) {
+    if (oldPct < m.pct && newPct >= m.pct) {
+      notify(userId, existing.user.fcmToken, {
+        title: m.title,
+        body: m.body,
+        data: { type: 'GOAL_MILESTONE', goalId: id, pct: String(m.pct) },
+      }).catch(() => {});
+      break; // only fire the highest milestone crossed in one contribution
+    }
+  }
+
   res.json(goal);
 };
 

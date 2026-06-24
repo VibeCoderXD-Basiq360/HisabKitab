@@ -41,6 +41,8 @@ require('./jobs/monthlyReport');
 require('./jobs/creditCardReminder');
 require('./jobs/subscriptionReminder');
 require('./jobs/exchangeRateRefresh');
+require('./jobs/budgetAlert');
+require('./jobs/loanReminder');
 
 const app = express();
 
