@@ -6,7 +6,8 @@ import { useAuthStore } from '../store/authStore';
 import api from '../lib/api';
 
 function useProfile() {
-  return useQuery({ queryKey: ['profile'], queryFn: () => api.get('/user/me').then(r => r.data), staleTime: 60_000 });
+  const jwt = useAuthStore((s) => s.jwt);
+  return useQuery({ queryKey: ['profile'], queryFn: () => api.get('/user/me').then(r => r.data), staleTime: 60_000, enabled: !!jwt });
 }
 
 const NAV = [

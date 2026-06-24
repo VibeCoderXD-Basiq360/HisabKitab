@@ -80,6 +80,11 @@ function FCMSetup() {
   return null;
 }
 
+function AuthSidebar() {
+  const jwt = useAuthStore((s) => s.jwt);
+  return jwt ? <Sidebar /> : null;
+}
+
 function KeyboardShortcuts() {
   useKeyboardShortcuts();
   return null;
@@ -122,7 +127,7 @@ export default function App() {
         <KeyboardShortcuts />
         <BackgroundLock />
         <LockScreen />
-        <Sidebar />
+        <AuthSidebar />
         <KeyboardShortcutsHelp />
         <OfflineBar />
         <Routes>
