@@ -40,6 +40,7 @@ const accountRoutes        = require('./modules/account/account.routes');
 require('./jobs/monthlyReport');
 require('./jobs/creditCardReminder');
 require('./jobs/subscriptionReminder');
+require('./jobs/exchangeRateRefresh');
 
 const app = express();
 
