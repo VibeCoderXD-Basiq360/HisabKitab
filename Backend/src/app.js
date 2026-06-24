@@ -35,6 +35,12 @@ const assetRoutes          = require('./modules/asset/asset.routes');
 const netWorthRoutes       = require('./modules/netWorth/netWorth.routes');
 const ocrRoutes            = require('./modules/ocr/ocr.routes');
 const accountRoutes        = require('./modules/account/account.routes');
+const businessRoutes       = require('./modules/business/business.routes');
+const inventoryRoutes      = require('./modules/inventory/inventory.routes');
+const businessJobRoutes    = require('./modules/businessJob/businessJob.routes');
+const businessCustomerRoutes = require('./modules/businessCustomer/businessCustomer.routes');
+const businessExpenseRoutes  = require('./modules/businessExpense/businessExpense.routes');
+const businessPLRoutes       = require('./modules/businessPL/businessPL.routes');
 
 // Start scheduled jobs
 require('./jobs/monthlyReport');
@@ -87,7 +93,13 @@ app.use('/api/financial-goals', financialGoalRoutes);
 app.use('/api/assets',         assetRoutes);
 app.use('/api/net-worth',      netWorthRoutes);
 app.use('/api/ocr',            ocrRoutes);
-app.use('/api/accounts',       accountRoutes);
+app.use('/api/accounts',           accountRoutes);
+app.use('/api/business',           businessRoutes);
+app.use('/api/inventory',          inventoryRoutes);
+app.use('/api/business-jobs',      businessJobRoutes);
+app.use('/api/business-customers', businessCustomerRoutes);
+app.use('/api/business-expenses',  businessExpenseRoutes);
+app.use('/api/business-pl',        businessPLRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);

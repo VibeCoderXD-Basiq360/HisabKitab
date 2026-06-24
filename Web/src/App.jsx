@@ -53,6 +53,14 @@ import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import AccountsPage from './pages/accounts/AccountsPage';
 import AccountDetailPage from './pages/accounts/AccountDetailPage';
 import CartPage from './pages/cart/CartPage';
+import BusinessDashboard from './pages/business/BusinessDashboard';
+import NewJobPage from './pages/business/NewJobPage';
+import JobsPage from './pages/business/JobsPage';
+import JobDetailPage from './pages/business/JobDetailPage';
+import InventoryPage from './pages/business/InventoryPage';
+import CustomersPage from './pages/business/CustomersPage';
+import PLPage from './pages/business/PLPage';
+import BusinessSettingsPage from './pages/business/BusinessSettingsPage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
 import LockScreen from './components/LockScreen';
@@ -164,6 +172,14 @@ export default function App() {
           <Route path="/accounts" element={<Protected><AccountsPage /></Protected>} />
           <Route path="/accounts/:id" element={<Protected><AccountDetailPage /></Protected>} />
           <Route path="/cart" element={<Protected><CartPage /></Protected>} />
+          <Route path="/business" element={<Protected><BusinessDashboard /></Protected>} />
+          <Route path="/business/jobs" element={<Protected><JobsPage /></Protected>} />
+          <Route path="/business/jobs/new" element={<Protected><NewJobPage /></Protected>} />
+          <Route path="/business/jobs/:id" element={<Protected><JobDetailPage /></Protected>} />
+          <Route path="/business/inventory" element={<Protected><InventoryPage /></Protected>} />
+          <Route path="/business/customers" element={<Protected><CustomersPage /></Protected>} />
+          <Route path="/business/pl" element={<Protected><PLPage /></Protected>} />
+          <Route path="/business/settings" element={<Protected><BusinessSettingsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

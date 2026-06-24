@@ -11,6 +11,7 @@ export default function BottomNav() {
     { to: '/balances',  label: t('nav.balances'),  icon: '⚖️' },
     { to: '/analytics', label: t('nav.analytics'), icon: '📊' },
     { to: '/settings',  label: t('nav.settings'),  icon: '⚙️' },
+    { to: '/business',  label: 'Business',          icon: '🏭' },
   ];
 
   return (
