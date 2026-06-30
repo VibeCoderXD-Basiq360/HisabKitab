@@ -16,7 +16,8 @@ export function useFCM(isLoggedIn) {
         const messaging = await getFirebaseMessaging();
         const { getToken, onMessage } = await import('firebase/messaging');
 
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+        const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
         if (token) {
           await api.post('/user/fcm-token', { token });
         }
