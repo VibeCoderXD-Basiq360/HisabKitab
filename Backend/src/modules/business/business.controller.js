@@ -118,8 +118,10 @@ const listInvites = async (req, res) => {
     where: { userId: req.user.userId, status: 'PENDING' },
     include: {
       business: {
-        select: { id: true, name: true, tagline: true },
-        include: { partners: { where: { role: 'OWNER', status: 'ACTIVE' }, include: { user: { select: { id: true, name: true, email: true } } }, take: 1 } },
+        select: {
+          id: true, name: true, tagline: true,
+          partners: { where: { role: 'OWNER', status: 'ACTIVE' }, select: { user: { select: { id: true, name: true, email: true } } }, take: 1 },
+        },
       },
     },
     orderBy: { createdAt: 'desc' },
