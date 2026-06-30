@@ -11,17 +11,20 @@ import {
 } from '../../hooks/useNotifications';
 
 const TYPE_META = {
-  SPLIT_CREATED:         { icon: '⚖️', bg: 'bg-blue-100' },
-  PAYMENT_REQUESTED:     { icon: '💸', bg: 'bg-yellow-100' },
-  PAYMENT_ACCEPTED:      { icon: '✅', bg: 'bg-green-100' },
-  PAYMENT_REJECTED:      { icon: '❌', bg: 'bg-red-100' },
-  PAID_FOR_CREATED:      { icon: '🧾', bg: 'bg-amber-100' },
-  SPLIT_WAIVED:          { icon: '🎁', bg: 'bg-orange-100' },
-  GROUP_ADDED:           { icon: '👥', bg: 'bg-indigo-100' },
-  GROUP_EXPENSE_ADDED:   { icon: '➕', bg: 'bg-indigo-100' },
-  GROUP_SETTLEMENT:      { icon: '🤝', bg: 'bg-teal-100' },
-  BULK_PAYMENT:          { icon: '💰', bg: 'bg-purple-100' },
-  BULK_PAYMENT_RESPONSE: { icon: '✅', bg: 'bg-green-100' },
+  SPLIT_CREATED:              { icon: '⚖️', bg: 'bg-blue-100' },
+  PAYMENT_REQUESTED:          { icon: '💸', bg: 'bg-yellow-100' },
+  PAYMENT_ACCEPTED:           { icon: '✅', bg: 'bg-green-100' },
+  PAYMENT_REJECTED:           { icon: '❌', bg: 'bg-red-100' },
+  PAID_FOR_CREATED:           { icon: '🧾', bg: 'bg-amber-100' },
+  SPLIT_WAIVED:               { icon: '🎁', bg: 'bg-orange-100' },
+  GROUP_ADDED:                { icon: '👥', bg: 'bg-indigo-100' },
+  GROUP_EXPENSE_ADDED:        { icon: '➕', bg: 'bg-indigo-100' },
+  GROUP_SETTLEMENT:           { icon: '🤝', bg: 'bg-teal-100' },
+  BULK_PAYMENT:               { icon: '💰', bg: 'bg-purple-100' },
+  BULK_PAYMENT_RESPONSE:      { icon: '✅', bg: 'bg-green-100' },
+  BUSINESS_PARTNER_INVITE:    { icon: '🏭', bg: 'bg-primary-100' },
+  BUSINESS_PARTNER_ACCEPTED:  { icon: '🤝', bg: 'bg-green-100' },
+  BUSINESS_PARTNER_DECLINED:  { icon: '❌', bg: 'bg-red-100' },
 };
 const DEFAULT_META = { icon: '🔔', bg: 'bg-gray-100' };
 
@@ -52,9 +55,11 @@ export default function NotificationsPage() {
 
   const handleTap = (n) => {
     if (!n.isRead) markRead.mutate(n.id);
-    // Navigate to relevant page
     const d = n.data || {};
-    if (d.groupId) navigate(`/groups/${d.groupId}`);
+    if (d.type === 'BUSINESS_PARTNER_INVITE') navigate('/business');
+    else if (d.type === 'BUSINESS_PARTNER_ACCEPTED') navigate('/business');
+    else if (d.type === 'BUSINESS_PARTNER_DECLINED') navigate('/business');
+    else if (d.groupId) navigate(`/groups/${d.groupId}`);
     else if (d.splitId) navigate('/balances');
     else if (d.bulkPaymentId) navigate('/balances');
   };
