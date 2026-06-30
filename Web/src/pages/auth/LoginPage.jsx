@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { useTranslation } from 'react-i18next';
 import { auth } from '../../lib/firebase';
 import api from '../../lib/api';
@@ -24,27 +24,6 @@ export default function LoginPage() {
     navigate('/home', { replace: true });
   };
 
-  // Pick up the result after signInWithRedirect returns to this page
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result?.user) {
-          await handleFirebaseLogin(result.user);
-        } else if (active) {
-          setLoading(false);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setError(t('auth.err_google'));
-          setLoading(false);
-        }
-      });
-    return () => { active = false; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const loginWithEmail = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -59,16 +38,35 @@ export default function LoginPage() {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = () => {
+    if (!window.google?.accounts?.oauth2) {
+      setError('Google Sign-In failed to load. Please refresh and try again.');
+      return;
+    }
     setLoading(true);
     setError('');
-    try {
-      await signInWithRedirect(auth, new GoogleAuthProvider());
-      // Page navigates away — code below won't run until user returns
-    } catch {
-      setError(t('auth.err_google'));
-      setLoading(false);
-    }
+
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: 'email profile',
+      callback: async (tokenResponse) => {
+        if (tokenResponse.error) {
+          setError(t('auth.err_google'));
+          setLoading(false);
+          return;
+        }
+        try {
+          const credential = GoogleAuthProvider.credential(null, tokenResponse.access_token);
+          const { user } = await signInWithCredential(auth, credential);
+          await handleFirebaseLogin(user);
+        } catch {
+          setError(t('auth.err_google'));
+          setLoading(false);
+        }
+      },
+    });
+
+    tokenClient.requestAccessToken();
   };
 
   return (
