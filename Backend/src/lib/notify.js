@@ -1,8 +1,13 @@
-const admin = require('../config/firebase');
+const webpush = require('web-push');
 const prisma = require('./prisma');
 
-async function notify(userId, fcmToken, { title, body, data: payload = {} }) {
-  // Persist to DB so the user can see notification history
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT || 'mailto:admin@hisabkitab.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+async function notify(userId, pushSubscriptionJson, { title, body, data: payload = {} }) {
   if (userId) {
     try {
       await prisma.notification.create({
@@ -13,22 +18,30 @@ async function notify(userId, fcmToken, { title, body, data: payload = {} }) {
     }
   }
 
-  // Push via FCM
-  if (!fcmToken) return;
+  if (!pushSubscriptionJson) return;
+
+  let subscription;
   try {
-    await admin.messaging().send({
-      token: fcmToken,
-      notification: { title, body },
-      data: Object.fromEntries(Object.entries(payload).map(([k, v]) => [k, String(v)])),
-    });
+    subscription = typeof pushSubscriptionJson === 'string'
+      ? JSON.parse(pushSubscriptionJson)
+      : pushSubscriptionJson;
+    if (!subscription?.endpoint) return; // old FCM token string — skip
+  } catch {
+    return; // not valid JSON — skip
+  }
+
+  try {
+    await webpush.sendNotification(
+      subscription,
+      JSON.stringify({ title, body, ...payload })
+    );
   } catch (err) {
-    console.error('FCM error:', err.message);
+    console.error('Web push error:', err.statusCode, err.message);
   }
 }
 
-// Backward-compat shim — call sites that haven't been updated yet
-async function sendNotification(fcmToken, payload) {
-  await notify(null, fcmToken, payload);
+async function sendNotification(pushSubscriptionJson, payload) {
+  await notify(null, pushSubscriptionJson, payload);
 }
 
 module.exports = { notify, sendNotification };
