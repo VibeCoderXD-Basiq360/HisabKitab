@@ -1,6 +1,9 @@
 importScripts('https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/11.1.0/firebase-messaging-compat.js');
 
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+
 firebase.initializeApp({
   apiKey: 'AIzaSyAC8_1tmELIgt8BMhSQEj9cpPWXmZR_sks',
   authDomain: 'hisabkitab-26.firebaseapp.com',

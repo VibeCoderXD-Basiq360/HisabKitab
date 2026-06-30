@@ -21,7 +21,15 @@ export function useFCM(isLoggedIn) {
 
         console.log('[FCM] registering SW...');
         const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        console.log('[FCM] SW state — installing:', swReg.installing?.state, 'waiting:', swReg.waiting?.state, 'active:', swReg.active?.state);
+
+        // Wait for the SW to fully activate before calling getToken
+        await new Promise((resolve) => {
+          if (swReg.active?.state === 'activated') return resolve();
+          const sw = swReg.installing ?? swReg.waiting ?? swReg.active;
+          const handler = () => { if (sw.state === 'activated') resolve(); };
+          sw.addEventListener('statechange', handler);
+        });
+        console.log('[FCM] SW activated');
 
         console.log('[FCM] calling getToken...');
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
