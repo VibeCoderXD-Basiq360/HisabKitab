@@ -44,4 +44,6 @@ async function sendNotification(pushSubscriptionJson, payload) {
   await notify(null, pushSubscriptionJson, payload);
 }
 
-module.exports = { notify, sendNotification };
+module.exports = notify;
+module.exports.notify = notify;
+module.exports.sendNotification = sendNotification;
