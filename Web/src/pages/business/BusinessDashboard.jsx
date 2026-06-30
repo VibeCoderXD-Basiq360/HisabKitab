@@ -7,6 +7,7 @@ import BottomNav from '../../components/BottomNav';
 const fmt = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
 function SetupFlow({ onCreate }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [tagline, setTagline] = useState('');
@@ -21,6 +22,9 @@ function SetupFlow({ onCreate }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 -mb-2">
+          ← Back
+        </button>
         <div className="text-center">
           <div className="text-4xl mb-2">🏭</div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Set up your business</h1>
@@ -67,6 +71,7 @@ function SetupFlow({ onCreate }) {
 }
 
 function PendingInviteCard({ invite, onAccepted }) {
+  const navigate = useNavigate();
   const accept = useAcceptPartner();
   const decline = useDeclinePartner();
   const [declined, setDeclined] = useState(false);
@@ -76,6 +81,9 @@ function PendingInviteCard({ invite, onAccepted }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 -mb-2">
+          ← Back
+        </button>
         <div className="text-center">
           <div className="text-4xl mb-2">🏭</div>
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Business Invite</h1>
