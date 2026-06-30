@@ -94,10 +94,17 @@ function PendingInviteCard({ invite, onAccepted }) {
           <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">{invite.business.name}</p>
           {invite.business.tagline && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{invite.business.tagline}</p>}
           <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <div className="w-7 h-7 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
-              {invite.user?.name?.[0]?.toUpperCase() || '?'}
-            </div>
-            <span>Invited by <strong className="text-gray-700 dark:text-gray-200">{invite.user?.name || invite.user?.email}</strong></span>
+            {(() => {
+              const owner = invite.business?.partners?.[0]?.user;
+              return (
+                <>
+                  <div className="w-7 h-7 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
+                    {owner?.name?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <span>Invited by <strong className="text-gray-700 dark:text-gray-200">{owner?.name || owner?.email || 'Business Owner'}</strong></span>
+                </>
+              );
+            })()}
           </div>
         </div>
 

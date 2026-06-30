@@ -117,8 +117,10 @@ const listInvites = async (req, res) => {
   const invites = await prisma.businessPartner.findMany({
     where: { userId: req.user.userId, status: 'PENDING' },
     include: {
-      business: { select: { id: true, name: true, tagline: true } },
-      user: { select: { id: true, name: true, email: true, photoUrl: true } },
+      business: {
+        select: { id: true, name: true, tagline: true },
+        include: { partners: { where: { role: 'OWNER', status: 'ACTIVE' }, include: { user: { select: { id: true, name: true, email: true } } }, take: 1 } },
+      },
     },
     orderBy: { createdAt: 'desc' },
   });
