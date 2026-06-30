@@ -4,7 +4,7 @@ const notify = require('../../lib/notify');
 // GET /api/business — get my business (or null)
 const getMyBusiness = async (req, res) => {
   const partner = await prisma.businessPartner.findFirst({
-    where: { userId: req.user.userId },
+    where: { userId: req.user.userId, status: 'ACTIVE' },
     include: {
       business: {
         include: {
