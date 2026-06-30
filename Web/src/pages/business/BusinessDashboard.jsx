@@ -103,7 +103,7 @@ function PendingInviteCard({ invite, onAccepted }) {
 
         <div className="flex gap-3">
           <button
-            onClick={async () => { await decline.mutateAsync(invite.id); setDeclined(true); }}
+            onClick={async () => { await decline.mutateAsync(invite.id); navigate('/'); }}
             disabled={decline.isPending || accept.isPending}
             className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold disabled:opacity-50">
             {decline.isPending ? '…' : 'Decline'}
