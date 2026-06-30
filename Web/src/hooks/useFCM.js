@@ -44,6 +44,9 @@ export function useFCM(isLoggedIn) {
           console.error('[FCM] Installations failed:', instErr.code, instErr.message);
         }
 
+        const app = (await import('../lib/firebase')).default;
+        console.log('[FCM] projectId:', app.options.projectId);
+        console.log('[FCM] vapidKey:', VAPID_KEY);
         console.log('[FCM] calling getToken...');
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
         console.log('[FCM] token:', token ? 'received' : 'null');
