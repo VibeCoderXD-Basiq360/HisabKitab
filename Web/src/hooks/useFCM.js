@@ -31,6 +31,19 @@ export function useFCM(isLoggedIn) {
         });
         console.log('[FCM] SW activated');
 
+        // Diagnose Firebase Installations
+        try {
+          const { getInstallations, getId, getToken: getInstToken } = await import('firebase/installations');
+          const app = (await import('../lib/firebase')).default;
+          const inst = getInstallations(app);
+          const instId = await getId(inst);
+          const instToken = await getInstToken(inst);
+          console.log('[FCM] Installation ID:', instId);
+          console.log('[FCM] Installation token:', instToken ? 'ok' : 'null/empty');
+        } catch (instErr) {
+          console.error('[FCM] Installations failed:', instErr.code, instErr.message);
+        }
+
         console.log('[FCM] calling getToken...');
         const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
         console.log('[FCM] token:', token ? 'received' : 'null');
