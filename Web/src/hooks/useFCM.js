@@ -22,6 +22,9 @@ export function useFCM(isLoggedIn) {
         const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
         await navigator.serviceWorker.ready;
 
+        const existing = await swReg.pushManager.getSubscription();
+        if (existing) await existing.unsubscribe();
+
         const subscription = await swReg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
