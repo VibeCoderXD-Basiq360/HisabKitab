@@ -46,6 +46,8 @@ startJobs().catch((err) => console.error('[queue] Failed to start jobs:', err.me
 
 const app = express();
 
+app.set('trust proxy', 1); // behind binny-nginx reverse proxy
+
 app.use(helmet());
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
 app.use(express.json());
