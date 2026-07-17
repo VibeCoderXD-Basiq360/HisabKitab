@@ -5,10 +5,14 @@ import { useSharedTabs, useCreateTab, useAcceptTab, useDeclineTab, useDeleteTab 
 import { useTabGroups, useCreateTabGroup, useAcceptTabGroup, useDeclineTabGroup } from '../../hooks/useTabGroups';
 import { usePeople } from '../../hooks/usePeople';
 import { useAuthStore } from '../../store/authStore';
-import BottomNav from '../../components/BottomNav';
+import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(Math.abs(n));
+
+const TEAL_GRADIENT = 'linear-gradient(135deg, #00C2B2 0%, #0097A7 100%)';
 
 function PeoplePicker({ value, onChange, people }) {
   const { t } = useTranslation();
@@ -51,7 +55,18 @@ function PeoplePicker({ value, onChange, people }) {
     <div className="relative" ref={ref}>
       <div className="relative">
         <input
-          className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10"
+          style={{
+            marginTop: 4,
+            width: '100%',
+            borderRadius: 12,
+            border: '1px solid #E5E7EB',
+            background: '#F9FAFB',
+            color: '#0A0D14',
+            padding: '12px 40px 12px 16px',
+            fontSize: 14,
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
           placeholder={t('tabs.member_picker_placeholder')}
           value={query}
           onChange={handleInput}
@@ -63,7 +78,17 @@ function PeoplePicker({ value, onChange, people }) {
         {selected && (
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            style={{
+              position: 'absolute',
+              right: 12,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#B0B8C4',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
             onClick={() => { setSelected(null); setQuery(''); onChange(''); }}
           >
             ✕
@@ -71,34 +96,82 @@ function PeoplePicker({ value, onChange, people }) {
         )}
       </div>
       {selected && (
-        <p className="text-xs text-primary-600 dark:text-primary-400 mt-1 pl-1">✓ {selected.email}</p>
+        <p style={{ fontSize: 11, color: '#00C2B2', marginTop: 4, paddingLeft: 4 }}>✓ {selected.email}</p>
       )}
       {open && suggestions.length > 0 && (
-        <div className="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg overflow-hidden">
+        <div
+          style={{
+            position: 'absolute',
+            zIndex: 10,
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            background: '#fff',
+            border: '1px solid #E5E7EB',
+            borderRadius: 12,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+          }}
+        >
           {suggestions.map((p) => (
             <button
               key={p.id}
               type="button"
               onMouseDown={() => pick(p)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 16px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
             >
-              <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-sm font-bold text-primary-600 dark:text-primary-300 shrink-0">
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: TEAL_GRADIENT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#fff',
+                  flexShrink: 0,
+                }}
+              >
                 {p.name[0].toUpperCase()}
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{p.name}</p>
-                <p className="text-xs text-gray-400 truncate">{p.email}</p>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</p>
               </div>
             </button>
           ))}
         </div>
       )}
       {open && query.length > 0 && suggestions.length === 0 && !query.includes('@') && (
-        <p className="text-xs text-gray-400 mt-1 pl-1">{t('tabs.no_match_hint')}</p>
+        <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 4, paddingLeft: 4 }}>{t('tabs.no_match_hint')}</p>
       )}
     </div>
   );
 }
+
+/* ─── label styles ─── */
+const sectionLabel = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#B0B8C4',
+  textTransform: 'uppercase',
+  letterSpacing: '0.07em',
+  marginBottom: 8,
+  paddingLeft: 4,
+};
 
 export default function SharedTabsPage() {
   const { t } = useTranslation();
@@ -196,35 +269,56 @@ export default function SharedTabsPage() {
   const isEmpty = tabs.length === 0 && groups.length === 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-12 pb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('tabs.title')}</h1>
-        <button
-          onClick={() => setShowCreate('picker')}
-          className="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center text-xl font-bold shadow"
-        >
-          +
-        </button>
-      </div>
+    <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar
+        title={t('tabs.title')}
+        showBack
+        action={
+          <button
+            onClick={() => setShowCreate('picker')}
+            style={{
+              background: TEAL_GRADIENT,
+              borderRadius: 12,
+              border: 'none',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 13,
+              padding: '6px 14px',
+              cursor: 'pointer',
+            }}
+          >
+            + {t('tabs.new') || 'New Tab'}
+          </button>
+        }
+      />
 
-      <div className="p-4 space-y-5">
+      <div style={{ padding: '16px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         {isLoading && (
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2].map((i) => (
-              <div key={i} className="h-24 rounded-2xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
+              <div key={i} style={{ height: 96, borderRadius: 20, background: '#E8EAF0', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))}
           </div>
         )}
 
         {!isLoading && isEmpty && (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <span className="text-5xl mb-4">🤝</span>
-            <p className="text-gray-500 dark:text-gray-400 font-medium mb-1">{t('tabs.empty_title')}</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500">{t('tabs.empty_sub')}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingBottom: 80, textAlign: 'center' }}>
+            <span style={{ fontSize: 48, marginBottom: 16 }}>🤝</span>
+            <p style={{ fontWeight: 700, color: '#0A0D14', marginBottom: 4 }}>{t('tabs.empty_title')}</p>
+            <p style={{ fontSize: 13, color: '#B0B8C4' }}>{t('tabs.empty_sub')}</p>
             <button
               onClick={() => setShowCreate(true)}
-              className="mt-6 px-5 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold"
+              style={{
+                marginTop: 24,
+                padding: '10px 20px',
+                background: TEAL_GRADIENT,
+                color: '#fff',
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
               {t('tabs.create')}
             </button>
@@ -234,36 +328,34 @@ export default function SharedTabsPage() {
         {/* Group invites received */}
         {groupInvites.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              🗂️ Group Invites
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>🗂 Group Invites</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {groupInvites.map((g) => (
-                <div key={g.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-teal-200 dark:border-teal-800">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-xl shrink-0">🗂️</div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">{g.name}</p>
-                      <p className="text-xs text-gray-400 truncate">from {g.creator?.name || g.creator?.email}</p>
+                <SurfaceCard key={g.id} style={{ borderLeft: '3px solid #00C2B2' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F0FDF9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🗂️</div>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>from {g.creator?.name || g.creator?.email}</p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => declineGroup.mutate(g.id)}
                       disabled={declineGroup.isPending}
-                      className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold"
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       Decline
                     </button>
                     <button
                       onClick={() => acceptGroup.mutate(g.id, { onSuccess: (d) => navigate(`/tab-groups/${d.id}`) })}
                       disabled={acceptGroup.isPending}
-                      className="flex-1 py-2 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: TEAL_GRADIENT, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       ✓ Accept
                     </button>
                   </div>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           </section>
@@ -272,40 +364,36 @@ export default function SharedTabsPage() {
         {/* Active groups */}
         {activeGroups.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              Monthly Groups
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>Monthly Groups</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {activeGroups.map((g) => {
                 const other = g.creatorId === userId ? g.member : g.creator;
                 const net = g.tabs.reduce((sum, t) => sum + (t.balance?.net || 0), 0);
                 const activeMonth = g.tabs.find((t) => t.status === 'ACTIVE');
                 return (
-                  <button
-                    key={g.id}
-                    onClick={() => navigate(`/tab-groups/${g.id}`)}
-                    className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm text-left flex items-center gap-3"
-                  >
-                    <div className="w-11 h-11 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-xl shrink-0">🗂️</div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">{g.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                        with {other?.name || other?.email}
-                        {activeMonth ? ` · ${activeMonth.name}` : ''}
-                        {g.tabs.length > 1 ? ` · ${g.tabs.length} months` : ''}
-                      </p>
+                  <SurfaceCard key={g.id} onClick={() => navigate(`/tab-groups/${g.id}`)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F0FDF9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🗂️</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          with {other?.name || other?.email}
+                          {activeMonth ? ` · ${activeMonth.name}` : ''}
+                          {g.tabs.length > 1 ? ` · ${g.tabs.length} months` : ''}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        {Math.abs(net) < 0.01 ? (
+                          <Badge variant="active" label="Settled" />
+                        ) : net > 0 ? (
+                          <p style={{ fontWeight: 700, color: '#00C2B2', fontSize: 14 }}>{fmt(net)}</p>
+                        ) : (
+                          <p style={{ fontWeight: 700, color: '#F43F5E', fontSize: 14 }}>{fmt(net)}</p>
+                        )}
+                        <p style={{ color: '#D1D5DB', fontSize: 18, lineHeight: 1 }}>›</p>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      {Math.abs(net) < 0.01 ? (
-                        <span className="text-xs font-semibold text-green-600 dark:text-green-400">Settled</span>
-                      ) : net > 0 ? (
-                        <p className="font-bold text-green-600 dark:text-green-400">{fmt(net)}</p>
-                      ) : (
-                        <p className="font-bold text-red-500 dark:text-red-400">{fmt(net)}</p>
-                      )}
-                      <p className="text-gray-300 dark:text-gray-600 text-lg">›</p>
-                    </div>
-                  </button>
+                  </SurfaceCard>
                 );
               })}
             </div>
@@ -315,18 +403,18 @@ export default function SharedTabsPage() {
         {/* Pending group invites sent */}
         {groupPending.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              Group Invites Sent
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>Group Invites Sent</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {groupPending.map((g) => (
-                <div key={g.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 opacity-70">
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xl shrink-0">🗂️</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">{g.name}</p>
-                    <p className="text-xs text-gray-400">⏳ Waiting for {g.member?.name || g.member?.email}</p>
+                <SurfaceCard key={g.id} style={{ opacity: 0.7 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🗂️</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.name}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4' }}>⏳ Waiting for {g.member?.name || g.member?.email}</p>
+                    </div>
                   </div>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           </section>
@@ -335,40 +423,52 @@ export default function SharedTabsPage() {
         {/* Received invites (standalone tabs) */}
         {receivedInvites.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              {t('tabs.invites_received')}
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>{t('tabs.invites_received')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {receivedInvites.map((tab) => (
-                <div key={tab.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-primary-200 dark:border-primary-800">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-lg font-bold text-primary-600 dark:text-primary-300 shrink-0">
+                <SurfaceCard key={tab.id} style={{ borderLeft: '3px solid #00C2B2' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: TEAL_GRADIENT,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: '#fff',
+                        flexShrink: 0,
+                      }}
+                    >
                       {(tab.creator?.name || tab.creator?.email || '?')[0].toUpperCase()}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">{tab.name}</p>
-                      <p className="text-xs text-gray-400 truncate">
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {t('tabs.invited_by')} {tab.creator?.name || tab.creator?.email}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => declineTab.mutate(tab.id)}
                       disabled={declineTab.isPending}
-                      className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold"
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       {t('tabs.decline')}
                     </button>
                     <button
                       onClick={() => acceptTab.mutate(tab.id)}
                       disabled={acceptTab.isPending}
-                      className="flex-1 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold"
+                      style={{ flex: 1, padding: '8px 0', borderRadius: 12, background: TEAL_GRADIENT, border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                     >
                       ✓ {t('tabs.accept')}
                     </button>
                   </div>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           </section>
@@ -377,10 +477,8 @@ export default function SharedTabsPage() {
         {/* Active tabs */}
         {activeTabs.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              {t('tabs.active')}
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>{t('tabs.active')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {activeTabs.map((tab) => {
                 const { balance } = tab;
                 const isMultiMember = !tab.memberId;
@@ -393,69 +491,95 @@ export default function SharedTabsPage() {
                 const isSettled = totalOwed < 0.01 && totalOwe < 0.01;
 
                 return (
-                  <button
-                    key={tab.id}
-                    onClick={() => navigate(`/tabs/${tab.id}`)}
-                    className="w-full bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm text-left flex items-center gap-3"
-                  >
-                    <div className="w-11 h-11 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-xl font-bold text-primary-600 dark:text-primary-300 shrink-0">
-                      {isMultiMember ? '👥' : (other?.name || other?.email || '?')[0].toUpperCase()}
+                  <SurfaceCard key={tab.id} onClick={() => navigate(`/tabs/${tab.id}`)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: '50%',
+                          background: TEAL_GRADIENT,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: isMultiMember ? 20 : 17,
+                          fontWeight: 700,
+                          color: '#fff',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isMultiMember ? '👥' : (other?.name || other?.email || '?')[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {isMultiMember
+                            ? `${tab.members.length} members · ${memberNames}`
+                            : `${t('tabs.with')} ${other?.name || other?.email}`}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        {isSettled ? (
+                          <Badge variant="active" label={t('common.all_settled')} />
+                        ) : totalOwed > 0.01 ? (
+                          <>
+                            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('tabs.they_owe')}</p>
+                            <p style={{ fontWeight: 700, color: '#00C2B2', fontSize: 14 }}>{fmt(totalOwed)}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('tabs.you_owe')}</p>
+                            <p style={{ fontWeight: 700, color: '#F43F5E', fontSize: 14 }}>{fmt(totalOwe)}</p>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-white truncate">{tab.name}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                        {isMultiMember
-                          ? `${tab.members.length} members · ${memberNames}`
-                          : `${t('tabs.with')} ${other?.name || other?.email}`}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      {isSettled ? (
-                        <span className="text-xs font-semibold text-green-600 dark:text-green-400">{t('common.all_settled')}</span>
-                      ) : totalOwed > 0.01 ? (
-                        <>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">{t('tabs.they_owe')}</p>
-                          <p className="font-bold text-green-600 dark:text-green-400">{fmt(totalOwed)}</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs text-gray-400 dark:text-gray-500">{t('tabs.you_owe')}</p>
-                          <p className="font-bold text-red-500 dark:text-red-400">{fmt(totalOwe)}</p>
-                        </>
-                      )}
-                    </div>
-                  </button>
+                  </SurfaceCard>
                 );
               })}
             </div>
           </section>
         )}
 
-        {/* Sent invites — waiting */}
+        {/* Sent invites – waiting */}
         {sentInvites.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              {t('tabs.invites_sent')}
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>{t('tabs.invites_sent')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {sentInvites.map((tab) => (
-                <div key={tab.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 opacity-80">
-                  <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-lg font-bold text-gray-500 shrink-0">
-                    {(tab.member?.name || tab.member?.email || '?')[0].toUpperCase()}
+                <SurfaceCard key={tab.id} style={{ opacity: 0.8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: '#F3F4F6',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: '#B0B8C4',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(tab.member?.name || tab.member?.email || '?')[0].toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        ⏳ {t('tabs.waiting_for')} {tab.member?.name || tab.member?.email}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteTab.mutate(tab.id)}
+                      style={{ fontSize: 11, color: '#F43F5E', flexShrink: 0, background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      {t('common.cancel')}
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">{tab.name}</p>
-                    <p className="text-xs text-gray-400 truncate">
-                      ⏳ {t('tabs.waiting_for')} {tab.member?.name || tab.member?.email}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => deleteTab.mutate(tab.id)}
-                    className="text-xs text-red-400 shrink-0"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           </section>
@@ -464,58 +588,94 @@ export default function SharedTabsPage() {
         {/* Declined */}
         {declinedTabs.length > 0 && (
           <section>
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-              {t('tabs.declined')}
-            </p>
-            <div className="space-y-2">
+            <p style={sectionLabel}>{t('tabs.declined')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {declinedTabs.map((tab) => (
-                <div key={tab.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3 opacity-60">
-                  <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center text-lg font-bold text-red-400 shrink-0">
-                    {(tab.member?.name || tab.member?.email || '?')[0].toUpperCase()}
+                <SurfaceCard key={tab.id} style={{ opacity: 0.6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        background: '#FFF1F3',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: '#F43F5E',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {(tab.member?.name || tab.member?.email || '?')[0].toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 800, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tab.name}</p>
+                      <p style={{ fontSize: 11, color: '#F43F5E', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        ✗ {tab.member?.name || tab.member?.email} {t('tabs.declined_it')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteTab.mutate(tab.id)}
+                      style={{ fontSize: 11, color: '#B0B8C4', flexShrink: 0, background: 'transparent', border: 'none', cursor: 'pointer' }}
+                    >
+                      {t('common.delete')}
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 dark:text-white truncate">{tab.name}</p>
-                    <p className="text-xs text-red-400 truncate">
-                      ✗ {tab.member?.name || tab.member?.email} {t('tabs.declined_it')}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => deleteTab.mutate(tab.id)}
-                    className="text-xs text-gray-400 shrink-0"
-                  >
-                    {t('common.delete')}
-                  </button>
-                </div>
+                </SurfaceCard>
               ))}
             </div>
           </section>
         )}
       </div>
 
-      {/* Create picker */}
+      {/* Create picker sheet */}
       {showCreate === 'picker' && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCreate('none')} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-3">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">What do you want to create?</h2>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowCreate('none')} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0A0D14' }}>What do you want to create?</h2>
             <button
               onClick={() => { setErr(''); setForm({ name: '', memberEmail: '' }); setShowCreate('group'); }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-teal-200 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/20 text-left"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: 16,
+                borderRadius: 16,
+                border: '2px solid #99F6E4',
+                background: '#F0FDF9',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
             >
-              <span className="text-3xl">🗂️</span>
+              <span style={{ fontSize: 28 }}>🗂️</span>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Monthly Group</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Like "Ghar Kharch" — tracks month by month, stores history</p>
+                <p style={{ fontWeight: 700, color: '#0A0D14', fontSize: 14 }}>Monthly Group</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4' }}>Like "Ghar Kharch" — tracks month by month, stores history</p>
               </div>
             </button>
             <button
               onClick={() => { setErr(''); setForm({ name: '', memberEmail: '' }); setShowCreate('tab'); }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20 text-left"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: 16,
+                borderRadius: 16,
+                border: '2px solid #A7F3D0',
+                background: '#F0FDF9',
+                cursor: 'pointer',
+                textAlign: 'left',
+              }}
             >
-              <span className="text-3xl">🤝</span>
+              <span style={{ fontSize: 28 }}>🤝</span>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">Single Tab</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">One-off shared list — trip, event, project</p>
+                <p style={{ fontWeight: 700, color: '#0A0D14', fontSize: 14 }}>Single Tab</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4' }}>One-off shared list — trip, event, project</p>
               </div>
             </button>
           </div>
@@ -524,16 +684,16 @@ export default function SharedTabsPage() {
 
       {/* Create Group sheet */}
       {showCreate === 'group' && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCreate('none')} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">🗂️ Create Monthly Group</h2>
-            <p className="text-xs text-gray-400 dark:text-gray-500">Give it a name like "Ghar Kharch" or "Flat 4B Expenses". Each month gets its own tab automatically.</p>
-            <form onSubmit={handleCreateGroup} className="space-y-3">
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={() => setShowCreate('none')} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0A0D14' }}>🗂️ Create Monthly Group</h2>
+            <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: -8 }}>Give it a name like "Ghar Kharch" or "Flat 4B Expenses". Each month gets its own tab automatically.</p>
+            <form onSubmit={handleCreateGroup} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Group Name</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Group Name</label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  style={{ marginTop: 4, width: '100%', borderRadius: 12, border: '1px solid #E5E7EB', background: '#F9FAFB', color: '#0A0D14', padding: '12px 16px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                   placeholder="e.g. Ghar Kharch, Flat 4B Expenses"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -541,13 +701,13 @@ export default function SharedTabsPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tabs.member_email')}</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('tabs.member_email')}</label>
                 <PeoplePicker value={form.memberEmail} onChange={(email) => setForm((f) => ({ ...f, memberEmail: email }))} people={people} />
               </div>
-              {err && <p className="text-sm text-red-500">{err}</p>}
-              <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => setShowCreate('none')} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold text-sm">{t('common.cancel')}</button>
-                <button type="submit" disabled={createGroup.isPending} className="flex-1 py-3 rounded-xl bg-teal-600 text-white font-semibold text-sm disabled:opacity-60">
+              {err && <p style={{ fontSize: 13, color: '#F43F5E' }}>{err}</p>}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
+                <button type="button" onClick={() => setShowCreate('none')} style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('common.cancel')}</button>
+                <button type="submit" disabled={createGroup.isPending} style={{ flex: 1, padding: '12px 0', borderRadius: 12, background: TEAL_GRADIENT, border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: createGroup.isPending ? 0.6 : 1 }}>
                   {createGroup.isPending ? t('common.saving') : t('tabs.send_invite')}
                 </button>
               </div>
@@ -558,42 +718,52 @@ export default function SharedTabsPage() {
 
       {/* Create Tab sheet */}
       {showCreate === 'tab' && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => { setShowCreate('none'); resetTabForm(); }} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('tabs.create')}</h2>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={() => { setShowCreate('none'); resetTabForm(); }} />
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '20px 20px 0 0', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0A0D14' }}>{t('tabs.create')}</h2>
 
             {/* Type toggle */}
-            <div className="grid grid-cols-2 gap-2">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => setTabType('2person')}
-                className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                  tabType === '2person'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                }`}
+                style={{
+                  padding: '10px 0',
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: tabType === '2person' ? 'none' : '1px solid #E5E7EB',
+                  background: tabType === '2person' ? TEAL_GRADIENT : '#F9FAFB',
+                  color: tabType === '2person' ? '#fff' : '#6B7280',
+                  cursor: 'pointer',
+                }}
               >
                 🤝 Just 2 people
               </button>
               <button
                 type="button"
                 onClick={() => setTabType('multi')}
-                className={`py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
-                  tabType === 'multi'
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                }`}
+                style={{
+                  padding: '10px 0',
+                  borderRadius: 12,
+                  fontSize: 13,
+                  fontWeight: 700,
+                  border: tabType === 'multi' ? 'none' : '1px solid #E5E7EB',
+                  background: tabType === 'multi' ? TEAL_GRADIENT : '#F9FAFB',
+                  color: tabType === 'multi' ? '#fff' : '#6B7280',
+                  cursor: 'pointer',
+                }}
               >
                 👥 Group (3+)
               </button>
             </div>
 
-            <form onSubmit={handleCreateTab} className="space-y-3">
+            <form onSubmit={handleCreateTab} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tabs.tab_name')}</label>
+                <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('tabs.tab_name')}</label>
                 <input
-                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  style={{ marginTop: 4, width: '100%', borderRadius: 12, border: '1px solid #E5E7EB', background: '#F9FAFB', color: '#0A0D14', padding: '12px 16px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                   placeholder={t('tabs.tab_name_placeholder')}
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -603,39 +773,39 @@ export default function SharedTabsPage() {
 
               {tabType === '2person' ? (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t('tabs.member_email')}</label>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('tabs.member_email')}</label>
                   <PeoplePicker value={form.memberEmail} onChange={(email) => setForm((f) => ({ ...f, memberEmail: email }))} people={people} />
                 </div>
               ) : (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                     Members ({memberEmails.length} added)
                   </label>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 mb-2">
+                  <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 2, marginBottom: 8 }}>
                     All members get equal split. Tab is active immediately — no invite needed.
                   </p>
-                  {/* Added emails */}
                   {memberEmails.length > 0 && (
-                    <div className="space-y-1 mb-2">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                       {memberEmails.map((e) => (
-                        <div key={e} className="flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 rounded-xl px-3 py-2">
-                          <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 truncate">{e}</span>
-                          <button type="button" onClick={() => removeEmail(e)} className="text-gray-400 hover:text-red-500 text-xs">✕</button>
+                        <div key={e} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F0FDF9', borderRadius: 12, padding: '8px 12px' }}>
+                          <span style={{ flex: 1, fontSize: 13, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e}</span>
+                          <button type="button" onClick={() => removeEmail(e)} style={{ color: '#B0B8C4', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12 }}>✕</button>
                         </div>
                       ))}
                     </div>
                   )}
-                  {/* Email input + add button */}
-                  <div className="flex gap-2">
-                    <PeoplePicker
-                      value={emailInput}
-                      onChange={setEmailInput}
-                      people={people.filter((p) => !memberEmails.includes(p.email))}
-                    />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <PeoplePicker
+                        value={emailInput}
+                        onChange={setEmailInput}
+                        people={people.filter((p) => !memberEmails.includes(p.email))}
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={addEmail}
-                      className="shrink-0 px-3 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold self-start mt-1"
+                      style={{ flexShrink: 0, padding: '0 12px', background: TEAL_GRADIENT, color: '#fff', borderRadius: 12, fontSize: 13, fontWeight: 700, border: 'none', alignSelf: 'flex-start', marginTop: 4, height: 44, cursor: 'pointer' }}
                     >
                       + Add
                     </button>
@@ -643,16 +813,20 @@ export default function SharedTabsPage() {
                 </div>
               )}
 
-              {err && <p className="text-sm text-red-500">{err}</p>}
-              <div className="flex gap-3 pt-1">
+              {err && <p style={{ fontSize: 13, color: '#F43F5E' }}>{err}</p>}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => { setShowCreate('none'); resetTabForm(); }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold text-sm"
+                  style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: '#6B7280', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
                 >
                   {t('common.cancel')}
                 </button>
-                <button type="submit" disabled={createTab.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white font-semibold text-sm disabled:opacity-60">
+                <button
+                  type="submit"
+                  disabled={createTab.isPending}
+                  style={{ flex: 1, padding: '12px 0', borderRadius: 12, background: TEAL_GRADIENT, border: 'none', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', opacity: createTab.isPending ? 0.6 : 1 }}
+                >
                   {createTab.isPending ? t('common.saving') : tabType === 'multi' ? 'Create Group Tab' : t('tabs.send_invite')}
                 </button>
               </div>
@@ -660,8 +834,6 @@ export default function SharedTabsPage() {
           </div>
         </div>
       )}
-
-      <BottomNav />
     </div>
   );
 }

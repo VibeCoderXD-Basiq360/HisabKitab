@@ -2,8 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
 import { useLoans } from '../../hooks/useLoans';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
@@ -13,45 +14,100 @@ export default function LoansPage() {
   const { data: loans = [], isLoading } = useLoans();
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar
         title={t('loans.title')}
         showBack
         action={
           <button
             onClick={() => navigate('/loans/new')}
-            className="w-10 h-10 flex items-center justify-center text-2xl text-primary-600 font-light"
+            style={{
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 24,
+              color: '#00C2B2',
+              fontWeight: 300,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
             +
           </button>
         }
       />
 
-      <div className="flex-1 pb-8 p-4 flex flex-col gap-3">
+      <div
+        style={{
+          flex: 1,
+          padding: '16px 16px 0',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
+        }}
+      >
+        {/* Loading skeleton */}
         {isLoading && (
-          <div className="flex flex-col gap-3 animate-pulse">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2].map((i) => (
-              <div key={i} className="h-24 bg-white dark:bg-gray-800 rounded-2xl" />
+              <div
+                key={i}
+                style={{
+                  height: 96,
+                  background: '#FFFFFF',
+                  borderRadius: 20,
+                  opacity: 0.5,
+                }}
+              />
             ))}
           </div>
         )}
 
+        {/* Empty state */}
         {!isLoading && loans.length === 0 && (
-          <div className="flex flex-col items-center justify-center pt-24 text-center px-8">
-            <p className="text-4xl mb-3">🏦</p>
-            <p className="text-base font-medium text-gray-700 dark:text-gray-300">{t('loans.no_loans')}</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1 mb-5">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingTop: 96,
+              textAlign: 'center',
+              paddingLeft: 32,
+              paddingRight: 32,
+            }}
+          >
+            <p style={{ fontSize: 40, marginBottom: 12, color: '#00C2B2' }}>🏦</p>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+              {t('loans.no_loans')}
+            </p>
+            <p style={{ fontSize: 14, color: '#B0B8C4', marginBottom: 20 }}>
               {t('loans.no_loans_desc')}
             </p>
             <button
               onClick={() => navigate('/loans/new')}
-              className="px-6 py-3 bg-primary-500 text-white rounded-2xl text-sm font-semibold active:bg-primary-600"
+              style={{
+                padding: '12px 24px',
+                background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+                color: '#fff',
+                borderRadius: 999,
+                fontSize: 14,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(0,194,178,0.5)',
+              }}
             >
               {t('loans.add')}
             </button>
           </div>
         )}
 
+        {/* Loan list */}
         {loans.map((loan) => {
           const paid = loan.payments?.length || 0;
           const total = loan.tenureMonths;
@@ -59,52 +115,142 @@ export default function LoansPage() {
           const remaining = total - paid;
           const isComplete = paid >= total;
 
+          const initial = (loan.name || '?')[0].toUpperCase();
+
           return (
-            <button
+            <SurfaceCard
               key={loan.id}
               onClick={() => navigate(`/loans/${loan.id}`)}
-              className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-4 text-left shadow-sm active:bg-gray-50 dark:active:bg-gray-700 flex flex-col gap-2"
+              style={{ padding: '14px 16px' }}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{loan.name}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {fmt(loan.emiAmount)}/mo · {loan.interestRate}% p.a. · started {format(new Date(loan.startDate), 'MMM yyyy')}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  {isComplete ? (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                      {t('loans.complete')}
-                    </span>
-                  ) : (
-                    <>
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(loan.principal)}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{t('loans.principal')}</p>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400 dark:text-gray-500">{t('loans.emis_paid', { paid, total })}</span>
-                  <span className={`text-xs font-medium ${isComplete ? 'text-green-600' : 'text-primary-600 dark:text-primary-400'}`}>
-                    {isComplete ? t('loans.done') : t('loans.left', { n: remaining })}
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Top row: avatar + name + badge/amount */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  {/* Avatar */}
                   <div
-                    className={`h-full rounded-full transition-all ${isComplete ? 'bg-green-500' : 'bg-primary-500'}`}
-                    style={{ width: `${pct}%` }}
-                  />
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: '#E6FAF9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: '#00C2B2',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {initial}
+                  </div>
+
+                  {/* Name + meta */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#0A0D14',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {loan.name}
+                    </p>
+                    <p style={{ fontSize: 11, color: '#B0B8C4' }}>
+                      {fmt(loan.emiAmount)}/mo · {loan.interestRate}% p.a. · started {format(new Date(loan.startDate), 'MMM yyyy')}
+                    </p>
+                  </div>
+
+                  {/* Right: badge or principal */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    {isComplete ? (
+                      <Badge variant="on-track" label={t('loans.complete')} />
+                    ) : (
+                      <>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>
+                          {fmt(loan.principal)}
+                        </p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 2 }}>
+                          {t('loans.principal')}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress row */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 11, color: '#B0B8C4' }}>
+                      {t('loans.emis_paid', { paid, total })}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: isComplete ? '#059669' : '#00C2B2',
+                      }}
+                    >
+                      {isComplete ? t('loans.done') : t('loans.left', { n: remaining })}
+                    </span>
+                  </div>
+                  {/* Progress bar */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 5,
+                      background: '#F0F2F7',
+                      borderRadius: 999,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${pct}%`,
+                        background: isComplete ? '#059669' : '#00C2B2',
+                        borderRadius: 999,
+                        transition: 'width 0.3s ease',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </button>
+            </SurfaceCard>
           );
         })}
       </div>
-      <BottomNav />
+
+      {/* FAB */}
+      {!isLoading && loans.length > 0 && (
+        <button
+          onClick={() => navigate('/loans/new')}
+          style={{
+            position: 'fixed',
+            bottom: 'calc(80px + env(safe-area-inset-bottom))',
+            right: 20,
+            width: 52,
+            height: 52,
+            borderRadius: 999,
+            background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+            color: '#fff',
+            fontSize: 28,
+            fontWeight: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0,194,178,0.5)',
+          }}
+        >
+          +
+        </button>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-const cron = require('node-cron');
+// Scheduled via pg-boss in jobs/index.js
 const { PrismaClient } = require('@prisma/client');
 const { sendEmail } = require('../lib/mailer');
 const { startOfMonth, endOfMonth, subMonths, format } = require('date-fns');
@@ -141,7 +141,5 @@ async function sendMonthlyReports() {
   console.log(`[monthlyReport] Done — ${sent} sent, ${skipped} skipped (no activity)`);
 }
 
-// Run at 9:00 AM on the 1st of every month
-cron.schedule('0 9 1 * *', sendMonthlyReports);
 
 module.exports = { sendMonthlyReports };

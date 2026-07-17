@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
 import Button from '../../components/ui/Button';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import HeroCard from '../../components/ui/HeroCard';
 import { useBalances, usePaidForSummary, useRequestPayment, useAcceptPayment, useRejectPayment, useWaiveSplit, useMarkReceived, useMarkAllReceived } from '../../hooks/useSplits';
 import { useBulkPayments, useCreateBulkPayment, useRespondBulkPayment, useCancelBulkPayment } from '../../hooks/useBulkPayments';
 import { useGroups } from '../../hooks/useGroups';
@@ -13,17 +15,25 @@ import { useCardDelegationBalance } from '../../hooks/useCardDelegation';
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => (d ? format(new Date(d), 'd MMM') : '');
 
-/* ─── Status badge ─── */
+/* --- Status badge --- */
 function StatusBadge({ status }) {
   const { t } = useTranslation();
   if (status === 'PENDING')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{t('balance.pending')}</span>;
+    return (
+      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#E9ECF0', color: '#B0B8C4', fontWeight: 600 }}>
+        {t('balance.pending')}
+      </span>
+    );
   if (status === 'PAYMENT_REQUESTED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t('balance.claimed_paid')}</span>;
+    return (
+      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: '#FEF3C7', color: '#D97706', fontWeight: 600 }}>
+        {t('balance.claimed_paid')}
+      </span>
+    );
   return null;
 }
 
-/* ─── Single split row ─── */
+/* --- Single split row --- */
 function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkReceived, isBusy, isInBulk }) {
   const { t } = useTranslation();
   const [confirmWaive, setConfirmWaive] = useState(false);
@@ -31,20 +41,31 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
   const amount = Number(split.amount);
 
   return (
-    <div className={`px-4 py-3 border-t border-gray-50 dark:border-gray-700 flex flex-col gap-2 ${isInBulk ? 'opacity-60' : ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{title}</p>
-          <p className="text-xs text-gray-400">{fmtDate(split.expense?.expenseDate)}</p>
+    <div style={{
+      padding: '10px 14px',
+      borderTop: '1px solid #F0F2F7',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      opacity: isInBulk ? 0.6 : 1,
+      background: '#F8F9FB',
+      borderRadius: 10,
+      borderLeft: `3px solid ${mode === 'owed' ? '#00C2B2' : '#E11D48'}`,
+      margin: '0 14px 6px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ minWidth: 0 }}>
+          <p style={{ fontSize: 13, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</p>
+          <p style={{ fontSize: 11, color: '#B0B8C4' }}>{fmtDate(split.expense?.expenseDate)}</p>
         </div>
-        <div className="text-right shrink-0 flex flex-col items-end gap-1">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(amount)}</span>
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14' }}>{fmt(amount)}</span>
           <StatusBadge status={split.status} />
         </div>
       </div>
 
       {mode === 'owed' && split.status === 'PAYMENT_REQUESTED' && (
-        <div className="flex gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="primary" className="flex-1 !min-h-[36px] text-xs" onClick={() => onAccept(split.id)} disabled={isBusy}>
             {t('balance.accept')}
           </Button>
@@ -62,7 +83,7 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
 
       {mode === 'owed' && !confirmWaive && (
         <button
-          className="text-xs text-gray-300 text-right w-full hover:text-gray-400 transition-colors"
+          style={{ fontSize: 11, color: '#B0B8C4', textAlign: 'right', width: '100%', background: 'none', border: 'none', cursor: 'pointer' }}
           onClick={() => setConfirmWaive(true)}
         >
           {t('balance.wave_off')}
@@ -70,17 +91,17 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
       )}
 
       {mode === 'owed' && confirmWaive && (
-        <div className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/20 rounded-xl px-3 py-2">
-          <p className="text-xs text-orange-700 flex-1">{t('balance.forgive_confirm', { amount: fmt(amount) })}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF7ED', borderRadius: 10, padding: '8px 12px' }}>
+          <p style={{ fontSize: 11, color: '#C2410C', flex: 1 }}>{t('balance.forgive_confirm', { amount: fmt(amount) })}</p>
           <button
-            className="text-xs font-semibold text-orange-600 px-2 py-1 rounded-lg border border-orange-200 dark:border-orange-700 disabled:opacity-50"
+            style={{ fontSize: 11, fontWeight: 700, color: '#EA580C', padding: '4px 8px', borderRadius: 8, border: '1px solid #FED7AA', background: 'none', cursor: 'pointer' }}
             onClick={() => { onWaive(split.id); setConfirmWaive(false); }}
             disabled={isBusy}
           >
             {t('balance.yes_forgive')}
           </button>
           <button
-            className="text-xs text-gray-400 px-2 py-1"
+            style={{ fontSize: 11, color: '#B0B8C4', padding: '4px 8px', background: 'none', border: 'none', cursor: 'pointer' }}
             onClick={() => setConfirmWaive(false)}
           >
             {t('common.cancel')}
@@ -95,13 +116,13 @@ function SplitRow({ split, mode, onAccept, onReject, onPay, onWaive, onMarkRecei
       )}
 
       {mode === 'iowe' && split.status === 'PAYMENT_REQUESTED' && (
-        <p className="text-xs text-amber-600 text-center py-1">⏳ {t('balance.waiting')}</p>
+        <p style={{ fontSize: 11, color: '#D97706', textAlign: 'center', padding: '4px 0' }}>⏳ {t('balance.waiting')}</p>
       )}
     </div>
   );
 }
 
-/* ─── Bulk payment sheet (select splits + note + send) ─── */
+/* --- Bulk payment sheet (select splits + note + send) --- */
 function BulkPaySheet({ group, onClose }) {
   const { t } = useTranslation();
   const pendingSplits = group.splits.filter((s) => s.status === 'PENDING');
@@ -129,69 +150,103 @@ function BulkPaySheet({ group, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl px-5 pt-5 pb-10 flex flex-col gap-4 max-h-[85vh] overflow-y-auto">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,13,20,0.55)' }} onClick={onClose} />
+      <div style={{
+        position: 'relative', width: '100%', background: '#fff',
+        borderRadius: '24px 24px 0 0', padding: '0 20px 40px',
+        display: 'flex', flexDirection: 'column', gap: 16,
+        maxHeight: '85vh', overflowY: 'auto',
+      }}>
+        {/* Handle */}
+        <div style={{ background: '#E9ECF0', width: 40, height: 4, borderRadius: 2, margin: '12px auto 4px' }} />
+
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-base font-bold text-red-600 shrink-0">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#E11D48,#F43F5E)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>
             {group.payerName?.[0]?.toUpperCase() || '?'}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('balance.pay_together', { name: group.payerName })}</p>
-            <p className="text-xs text-gray-400">{t('balance.select_bundle')}</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>{t('balance.pay_together', { name: group.payerName })}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.select_bundle')}</p>
           </div>
         </div>
 
         {/* Split checkboxes */}
-        <div className="flex flex-col divide-y divide-gray-50 dark:divide-gray-700 border border-gray-100 dark:border-gray-700 rounded-2xl overflow-hidden">
+        <div style={{ display: 'flex', flexDirection: 'column', border: '1px solid #E9ECF0', borderRadius: 14, overflow: 'hidden' }}>
           {pendingSplits.map((split) => {
             const checked = selected.has(split.id);
             return (
               <button
                 key={split.id}
-                className={`flex items-center gap-3 px-4 py-3 text-left transition-colors ${checked ? 'bg-primary-50 dark:bg-primary-900/30' : 'bg-white dark:bg-gray-800'}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 16px', textAlign: 'left',
+                  background: checked ? '#E6FAF9' : '#fff',
+                  border: 'none', cursor: 'pointer',
+                  borderTop: '1px solid #F0F2F7',
+                  transition: 'background 0.15s',
+                }}
                 onClick={() => toggle(split.id)}
               >
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${checked ? 'bg-primary-500 border-primary-500' : 'border-gray-300'}`}>
-                  {checked && <span className="text-white text-xs leading-none">✓</span>}
+                <div style={{
+                  width: 20, height: 20, borderRadius: 6,
+                  border: checked ? '2px solid #00C2B2' : '2px solid #E9ECF0',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, background: checked ? '#00C2B2' : 'transparent',
+                  transition: 'all 0.15s',
+                }}>
+                  {checked && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{split.expense?.title || 'Expense'}</p>
-                  <p className="text-xs text-gray-400">{fmtDate(split.expense?.expenseDate)}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{split.expense?.title || 'Expense'}</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4' }}>{fmtDate(split.expense?.expenseDate)}</p>
                 </div>
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">{fmt(split.amount)}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#374151', flexShrink: 0 }}>{fmt(split.amount)}</span>
               </button>
             );
           })}
         </div>
 
         {/* Note */}
-        <div className="relative">
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t('balance.add_note')}
-            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-200 focus:outline-none focus:border-primary-400"
-          />
-        </div>
+        <input
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={t('balance.add_note')}
+          style={{
+            width: '100%', padding: '12px 16px', border: '1px solid #E9ECF0',
+            background: '#fff', borderRadius: 12, fontSize: 13, color: '#374151',
+            outline: 'none', boxSizing: 'border-box',
+          }}
+        />
 
         {/* Total */}
-        <div className="flex items-center justify-between px-1">
-          <p className="text-sm text-gray-500">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+          <p style={{ fontSize: 13, color: '#B0B8C4' }}>
             {selectedSplits.length === 1
               ? t('balance.selected_one', { n: selectedSplits.length })
               : t('balance.selected_other', { n: selectedSplits.length })}
           </p>
-          <p className="text-lg font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
+          <p style={{ fontSize: 18, fontWeight: 800, color: '#0A0D14' }}>{fmt(total)}</p>
         </div>
 
         {/* Submit */}
         <button
           onClick={submit}
           disabled={create.isPending || selectedSplits.length === 0}
-          className="w-full py-3.5 rounded-2xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-transform"
+          style={{
+            width: '100%', padding: '14px', borderRadius: 12,
+            background: '#E11D48', color: '#fff', fontWeight: 700,
+            fontSize: 14, border: 'none', cursor: 'pointer',
+            opacity: (create.isPending || selectedSplits.length === 0) ? 0.5 : 1,
+            transition: 'transform 0.15s',
+          }}
         >
           {create.isPending ? t('balance.sending') : t('balance.send_payment', { amount: fmt(total) })}
         </button>
@@ -200,7 +255,7 @@ function BulkPaySheet({ group, onClose }) {
   );
 }
 
-/* ─── Incoming bulk payment card (for Owed to me tab) ─── */
+/* --- Incoming bulk payment card (for Owed to me tab) --- */
 function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -208,52 +263,63 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
   const count = bp.splits.length;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm border border-primary-100 dark:border-primary-700">
+    <div style={{
+      background: '#fff', borderRadius: 18, overflow: 'hidden',
+      boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+      border: '1px solid #E6FAF9',
+    }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-3 pb-2">
-        <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-sm font-bold text-primary-600 shrink-0">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px 8px' }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: '50%',
+          background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 14, fontWeight: 700, color: '#fff', flexShrink: 0,
+        }}>
           {bp.fromUser.name?.[0]?.toUpperCase() || '?'}
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{t('balance.wants_to_pay', { name: bp.fromUser.name })}</p>
-          <p className="text-xs text-gray-400">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14' }}>{t('balance.wants_to_pay', { name: bp.fromUser.name })}</p>
+          <p style={{ fontSize: 11, color: '#B0B8C4' }}>
             {count === 1
               ? t('balance.exp_one', { n: count, amount: fmt(total) })
               : t('balance.exp_other', { n: count, amount: fmt(total) })}
           </p>
         </div>
-        <span className="text-xs bg-primary-100 text-primary-600 px-2 py-0.5 rounded-full font-medium">💸 {t('balance.bulk')}</span>
+        <span style={{ fontSize: 11, background: '#E6FAF9', color: '#009E90', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>
+          💸 {t('balance.bulk')}
+        </span>
       </div>
 
       {/* Note */}
       {bp.note && (
-        <p className="text-xs text-gray-400 italic px-4 pb-2">"{bp.note}"</p>
+        <p style={{ fontSize: 11, color: '#B0B8C4', fontStyle: 'italic', padding: '0 16px 8px' }}>"{bp.note}"</p>
       )}
 
       {/* Expand toggle */}
       <button
-        className="w-full text-xs text-gray-400 px-4 pb-2 text-left flex items-center gap-1"
+        style={{ width: '100%', fontSize: 11, color: '#B0B8C4', padding: '0 16px 8px', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}
         onClick={() => setExpanded((v) => !v)}
       >
         {expanded ? t('balance.hide_expenses') : t('balance.show_expenses')}
       </button>
 
       {expanded && (
-        <div className="border-t border-gray-50 dark:border-gray-700 divide-y divide-gray-50 dark:divide-gray-700">
+        <div style={{ borderTop: '1px solid #F0F2F7' }}>
           {bp.splits.map((s) => (
-            <div key={s.splitId} className="flex items-center justify-between px-4 py-2.5">
+            <div key={s.splitId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid #F0F2F7' }}>
               <div>
-                <p className="text-xs text-gray-700 dark:text-gray-200">{s.split.expense?.title || 'Expense'}</p>
-                <p className="text-xs text-gray-400">{fmtDate(s.split.expense?.expenseDate)}</p>
+                <p style={{ fontSize: 12, color: '#374151' }}>{s.split.expense?.title || 'Expense'}</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4' }}>{fmtDate(s.split.expense?.expenseDate)}</p>
               </div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{fmt(s.split.amount)}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>{fmt(s.split.amount)}</span>
             </div>
           ))}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex gap-2 px-4 pb-4 pt-2">
+      <div style={{ display: 'flex', gap: 8, padding: '8px 16px 16px' }}>
         <Button variant="primary" className="flex-1 !min-h-[40px] text-sm" onClick={() => onAccept(bp.id)} disabled={isBusy}>
           {t('balance.accept')}
         </Button>
@@ -265,7 +331,7 @@ function IncomingBulkCard({ bp, onAccept, onReject, isBusy }) {
   );
 }
 
-/* ─── Sent bulk payment (shown inside iOwe group) ─── */
+/* --- Sent bulk payment (shown inside iOwe group) --- */
 function SentBulkBanner({ bp, onCancel, isBusy }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -273,11 +339,11 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
   const count = bp.splits.length;
 
   return (
-    <div className="mx-4 mb-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
-      <div className="flex items-center justify-between gap-2">
+    <div style={{ margin: '0 14px 12px', background: '#E6FAF9', border: '1px solid #00C2B2', borderRadius: 12, padding: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <p className="text-xs font-semibold text-amber-800">⏳ {t('balance.bulk_pending')}</p>
-          <p className="text-xs text-amber-600">
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#009E90' }}>⏳ {t('balance.bulk_pending')}</p>
+          <p style={{ fontSize: 11, color: '#00C2B2' }}>
             {count === 1
               ? t('balance.exp_one', { n: count, amount: fmt(total) })
               : t('balance.exp_other', { n: count, amount: fmt(total) })}
@@ -286,16 +352,19 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
         <button
           onClick={() => onCancel(bp.id)}
           disabled={isBusy}
-          className="text-xs text-red-500 font-medium px-2.5 py-1.5 rounded-lg border border-red-100 disabled:opacity-50"
+          style={{ fontSize: 11, color: '#E11D48', fontWeight: 600, padding: '6px 10px', borderRadius: 8, border: '1px solid #FEE2E2', background: '#fff', cursor: 'pointer', opacity: isBusy ? 0.5 : 1 }}
         >
           {t('common.cancel')}
         </button>
       </div>
-      <button className="text-xs text-amber-500 mt-1" onClick={() => setExpanded((v) => !v)}>
+      <button
+        style={{ fontSize: 11, color: '#009E90', marginTop: 4, background: 'none', border: 'none', cursor: 'pointer' }}
+        onClick={() => setExpanded((v) => !v)}
+      >
         {expanded ? '▲ hide' : '▼ view expenses'}
       </button>
       {expanded && bp.splits.map((s) => (
-        <p key={s.splitId} className="text-xs text-amber-700 mt-1">
+        <p key={s.splitId} style={{ fontSize: 11, color: '#009E90', marginTop: 4 }}>
           {s.split.expense?.title || 'Expense'} · {fmt(s.split.amount)}
         </p>
       ))}
@@ -303,7 +372,7 @@ function SentBulkBanner({ bp, onCancel, isBusy }) {
   );
 }
 
-/* ─── PersonCard for "Owed to me" ─── */
+/* --- PersonCard for "Owed to me" --- */
 function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, onMarkAllReceived, isBusy }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
@@ -312,27 +381,36 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, on
   const pendingSplits = group.splits.filter((s) => ['PENDING', 'PAYMENT_REQUESTED'].includes(s.status));
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
-      <div className="flex items-center px-4 py-3 gap-3">
-        <button className="flex items-center gap-3 flex-1 min-w-0 text-left" onClick={() => setExpanded((v) => !v)}>
-          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-base font-bold text-primary-600 shrink-0">
+    <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 14px rgba(0,0,0,0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 14px', gap: 12 }}>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setExpanded((v) => !v)}>
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>
             {group.personName?.[0]?.toUpperCase() || '?'}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{group.personName}</p>
-            <p className="text-xs text-gray-400">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group.personName}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>
               {group.splits.length} {group.splits.length === 1 ? 'expense' : 'expenses'}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-base font-bold text-green-600">{fmt(group.total)}</p>
-            <p className="text-xs text-gray-400">{t('balance.owes_you')}</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 18, fontWeight: 800, color: '#059669' }}>{fmt(group.total)}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.owes_you')}</p>
           </div>
-          <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
+          <span style={{ color: '#B0B8C4', fontSize: 11, marginLeft: 4 }}>{expanded ? '▲' : '▼'}</span>
         </button>
         <button
           onClick={() => navigate(`/balances/history/${group.personId}`)}
-          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-600"
+          style={{
+            flexShrink: 0, width: 32, height: 32, display: 'flex', alignItems: 'center',
+            justifyContent: 'center', borderRadius: '50%', background: '#F0F2F7',
+            color: '#B0B8C4', border: 'none', cursor: 'pointer',
+          }}
           title={t('balance.history')}
         >
           📈
@@ -340,11 +418,17 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, on
       </div>
 
       {pendingSplits.length > 1 && (
-        <div className="px-4 pb-2">
+        <div style={{ padding: '0 14px 10px' }}>
           <button
             onClick={() => onMarkAllReceived(group.personId)}
             disabled={isBusy}
-            className="w-full py-2 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-xs font-semibold flex items-center justify-center gap-2 active:opacity-70 disabled:opacity-50"
+            style={{
+              width: '100%', padding: '8px', borderRadius: 12,
+              background: '#F0FDF4', border: '1px solid #BBF7D0',
+              color: '#059669', fontSize: 12, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              cursor: 'pointer', opacity: isBusy ? 0.5 : 1,
+            }}
           >
             ✓ Mark all received · {fmt(group.total)}
           </button>
@@ -355,11 +439,12 @@ function OwedPersonCard({ group, onAccept, onReject, onWaive, onMarkReceived, on
         group.splits.map((split) => (
           <SplitRow key={split.id} split={split} mode="owed" onAccept={onAccept} onReject={onReject} onWaive={onWaive} onMarkReceived={onMarkReceived} isBusy={isBusy} />
         ))}
+      {expanded && <div style={{ height: 8 }} />}
     </div>
   );
 }
 
-/* ─── PersonCard for "I owe" ─── */
+/* --- PersonCard for "I owe" --- */
 function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBulk, isBusy }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
@@ -375,22 +460,27 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm">
-        <button className="w-full flex items-center px-4 py-3 gap-3 text-left" onClick={() => setExpanded((v) => !v)}>
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-base font-bold text-red-500 shrink-0">
+      <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 14px rgba(0,0,0,0.05)' }}>
+        <button style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 14px', gap: 12, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setExpanded((v) => !v)}>
+          <div style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'linear-gradient(135deg,#E11D48,#F43F5E)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>
             {group.payerName?.[0]?.toUpperCase() || '?'}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{group.payerName}</p>
-            <p className="text-xs text-gray-400">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group.payerName}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>
               {group.splits.length} {group.splits.length === 1 ? 'expense' : 'expenses'}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-base font-bold text-red-500">{fmt(group.total)}</p>
-            <p className="text-xs text-gray-400">{t('balance.you_owe')}</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: 18, fontWeight: 800, color: '#E11D48' }}>{fmt(group.total)}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.you_owe')}</p>
           </div>
-          <span className="text-gray-300 text-xs ml-1">{expanded ? '▲' : '▼'}</span>
+          <span style={{ color: '#B0B8C4', fontSize: 11, marginLeft: 4 }}>{expanded ? '▲' : '▼'}</span>
         </button>
 
         {/* Pending bulk banners */}
@@ -413,23 +503,37 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
 
         {/* Pay together + UPI buttons */}
         {expanded && pendingSplitsCount >= 1 && !hasPendingBulk && (
-          <div className="px-4 py-3 border-t border-gray-50 dark:border-gray-700 flex gap-2">
+          <div style={{ padding: '10px 14px 14px', borderTop: '1px solid #F0F2F7', display: 'flex', gap: 8 }}>
             <button
               onClick={() => setBulkOpen(true)}
-              className="flex-1 py-2.5 rounded-xl border-2 border-primary-400 text-primary-600 text-sm font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              style={{
+                flex: 1, padding: '10px', borderRadius: 12,
+                border: '2px solid #00C2B2', color: '#009E90',
+                fontSize: 13, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: 'rgba(0,194,178,0.1)', cursor: 'pointer',
+                transition: 'transform 0.15s',
+              }}
             >
               💸 {t('balance.pay_together_btn')}
             </button>
             {group.payerEmail && (
               <a
                 href={`upi://pay?pa=${encodeURIComponent(group.payerEmail)}&pn=${encodeURIComponent(group.payerName || '')}&am=${group.total}&cu=INR`}
-                className="px-4 py-2.5 rounded-xl border-2 border-green-400 text-green-600 text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                style={{
+                  padding: '10px 16px', borderRadius: 12,
+                  border: '2px solid #059669', color: '#059669',
+                  fontSize: 13, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  textDecoration: 'none', transition: 'transform 0.15s',
+                }}
               >
                 {t('balance.pay_upi')}
               </a>
             )}
           </div>
         )}
+        {expanded && <div style={{ height: 4 }} />}
       </div>
 
       {bulkOpen && <BulkPaySheet group={group} onClose={() => setBulkOpen(false)} />}
@@ -437,7 +541,7 @@ function IOwePersonCard({ group, sentBulkPayments, onPay, onBulkPay, onCancelBul
   );
 }
 
-/* ─── Paid for others card ─── */
+/* --- Paid for others card --- */
 function PaidForPersonCard({ person }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -445,35 +549,45 @@ function PaidForPersonCard({ person }) {
 
   return (
     <button
-      className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left"
+      style={{
+        width: '100%', background: '#fff', borderRadius: 18,
+        boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+        padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+        textAlign: 'left', border: 'none', cursor: 'pointer',
+      }}
       onClick={() => navigate(`/balances/person/${person.personId}`)}
     >
-      <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-base font-bold text-amber-600 shrink-0">
+      <div style={{
+        width: 40, height: 40, borderRadius: '50%',
+        background: 'linear-gradient(135deg,#F59E0B,#FBBF24)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 16, fontWeight: 700, color: '#fff', flexShrink: 0,
+      }}>
         {person.personName?.[0]?.toUpperCase() || '?'}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{person.personName}</p>
-        <p className="text-xs text-gray-400">{person.expenseCount} {person.expenseCount === 1 ? 'expense' : 'expenses'}</p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{person.personName}</p>
+        <p style={{ fontSize: 11, color: '#B0B8C4' }}>{person.expenseCount} {person.expenseCount === 1 ? 'expense' : 'expenses'}</p>
       </div>
-      <div className="text-right">
+      <div style={{ textAlign: 'right' }}>
         {hasOutstanding ? (
           <>
-            <p className="text-base font-bold text-amber-600">{fmt(person.totalOutstanding)}</p>
-            <p className="text-xs text-gray-400">{t('balance.outstanding')}</p>
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#F59E0B' }}>{fmt(person.totalOutstanding)}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.outstanding')}</p>
           </>
         ) : (
           <>
-            <p className="text-base font-bold text-green-600">{t('balance.settled')}</p>
-            <p className="text-xs text-gray-400">{fmt(person.totalSettled)}</p>
+            <p style={{ fontSize: 16, fontWeight: 800, color: '#059669' }}>{t('balance.settled')}</p>
+            <p style={{ fontSize: 11, color: '#B0B8C4' }}>{fmt(person.totalSettled)}</p>
           </>
         )}
       </div>
-      <span className="text-gray-300 text-xs ml-1">›</span>
+      <span style={{ color: '#B0B8C4', fontSize: 14, marginLeft: 4 }}>›</span>
     </button>
   );
 }
 
-/* ─── Group balance card ─── */
+/* --- Group balance card --- */
 function GroupBalanceCard({ group, mode }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -481,33 +595,44 @@ function GroupBalanceCard({ group, mode }) {
 
   return (
     <button
-      className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm px-4 py-3 flex items-center gap-3 text-left border border-indigo-100 dark:border-indigo-700 active:bg-indigo-50 transition-colors"
+      style={{
+        width: '100%', background: '#fff', borderRadius: 18,
+        boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+        padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+        textAlign: 'left', border: '1px solid #E6FAF9', cursor: 'pointer',
+        transition: 'background 0.15s',
+      }}
       onClick={() => navigate(`/groups/${group.id}`)}
     >
-      <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-xl shrink-0">
+      <div style={{
+        width: 40, height: 40, borderRadius: '50%',
+        background: '#E6FAF9',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 20, flexShrink: 0,
+      }}>
         {group.icon}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
-          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 shrink-0">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group.name}</p>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 20, background: '#E6FAF9', color: '#009E90', flexShrink: 0 }}>
             👥 {t('balance.group_badge')}
           </span>
         </div>
-        <p className="text-xs text-gray-400">{t('balance.members_tap', { n: group.memberCount })}</p>
+        <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.members_tap', { n: group.memberCount })}</p>
       </div>
-      <div className="text-right shrink-0">
-        <p className={`text-base font-bold ${mode === 'owed' ? 'text-green-600' : 'text-red-500'}`}>
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <p style={{ fontSize: 16, fontWeight: 800, color: mode === 'owed' ? '#059669' : '#E11D48' }}>
           {fmt(amount)}
         </p>
-        <p className="text-xs text-gray-400">{mode === 'owed' ? t('balance.owes_you') : t('balance.you_owe')}</p>
+        <p style={{ fontSize: 11, color: '#B0B8C4' }}>{mode === 'owed' ? t('balance.owes_you') : t('balance.you_owe')}</p>
       </div>
-      <span className="text-gray-300 text-xs ml-1">›</span>
+      <span style={{ color: '#B0B8C4', fontSize: 14, marginLeft: 4 }}>›</span>
     </button>
   );
 }
 
-/* ─── Main page ─── */
+/* --- Main page --- */
 export default function BalancesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -544,12 +669,28 @@ export default function BalancesPage() {
 
   const [shareToast, setShareToast] = useState('');
 
+  // Compute hero card totals
+  const totalOwedToMe =
+    (data?.owedToMe?.reduce((s, g) => s + g.total, 0) || 0) +
+    groupsOwedToMe.reduce((s, g) => s + Math.abs(g.myNet), 0) +
+    cardOwedMe.reduce((s, c) => s + Number(c.outstanding || 0), 0);
+
+  const totalIOwe =
+    (data?.iOwe?.reduce((s, g) => s + g.total, 0) || 0) +
+    groupsIOwe.reduce((s, g) => s + Math.abs(g.myNet), 0) +
+    cardIOwe.reduce((s, c) => s + Number(c.outstanding || 0), 0);
+
+  // Tab index mapping
+  const tabKeys = ['owed', 'iowe', 'paidfor'];
+  const activeTab = tabKeys.indexOf(tab);
+  const setActiveTab = (i) => setTab(tabKeys[i]);
+
   async function handleShare() {
-    const lines = ['💰 HisabKitab — Balances', '━━━━━━━━━━━━━━━━━━━━'];
+    const lines = ['💰 HisabKitab — Balances', '────────────────────'];
     const owedGroups = data?.owedToMe || [];
     const iOweGroups = data?.iOwe || [];
     const totalOwed = owedGroups.reduce((s, g) => s + g.total, 0);
-    const totalIOwe = iOweGroups.reduce((s, g) => s + g.total, 0);
+    const totalIOweFmt = iOweGroups.reduce((s, g) => s + g.total, 0);
 
     if (owedGroups.length > 0) {
       lines.push('Owed to me:');
@@ -560,10 +701,10 @@ export default function BalancesPage() {
       lines.push('');
       lines.push('I owe:');
       iOweGroups.forEach((g) => lines.push(`  • ${g.payerName}: ${fmt(g.total)}`));
-      lines.push(`Total: ${fmt(totalIOwe)}`);
+      lines.push(`Total: ${fmt(totalIOweFmt)}`);
     }
-    const net = totalOwed - totalIOwe;
-    if (totalOwed > 0 || totalIOwe > 0) {
+    const net = totalOwed - totalIOweFmt;
+    if (totalOwed > 0 || totalIOweFmt > 0) {
       lines.push('');
       lines.push(`Net: ${net >= 0 ? '+' : ''}${fmt(net)}`);
     }
@@ -583,71 +724,61 @@ export default function BalancesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar
         title={t('balance.title')}
-        showBack
+        showBell
         action={
-          <button onClick={handleShare} className="w-10 h-10 flex items-center justify-center text-gray-500 text-xl">
+          <button onClick={handleShare} style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#B0B8C4', background: 'none', border: 'none', cursor: 'pointer' }}>
             📤
           </button>
         }
       />
 
-      <div className="flex bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-10">
-        <button
-          className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'owed' ? 'text-primary-600 border-primary-500' : 'text-gray-400 dark:text-gray-500 border-transparent'
-          }`}
-          onClick={() => setTab('owed')}
-        >
-          {t('balance.owed_to_me')}
-          {(owedCount + incomingBulkCount) > 0 && (
-            <span className="bg-primary-100 text-primary-600 text-xs rounded-full px-1.5 py-0.5 leading-none">
-              {owedCount + incomingBulkCount}
-            </span>
-          )}
-        </button>
-        <button
-          className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'iowe' ? 'text-red-500 border-red-400' : 'text-gray-400 dark:text-gray-500 border-transparent'
-          }`}
-          onClick={() => setTab('iowe')}
-        >
-          {t('balance.i_owe')}
-          {iOweCount > 0 && (
-            <span className="bg-red-100 text-red-500 text-xs rounded-full px-1.5 py-0.5 leading-none">
-              {iOweCount}
-            </span>
-          )}
-        </button>
-        <button
-          className={`flex-1 py-3 text-sm font-medium flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
-            tab === 'paidfor' ? 'text-amber-600 border-amber-500' : 'text-gray-400 dark:text-gray-500 border-transparent'
-          }`}
-          onClick={() => setTab('paidfor')}
-        >
-          {t('balance.paid_for')}
-          {paidForCount > 0 && (
-            <span className="bg-amber-100 text-amber-600 text-xs rounded-full px-1.5 py-0.5 leading-none">
-              {paidForCount}
-            </span>
-          )}
-        </button>
+      {/* Hero summary cards */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1, background: 'linear-gradient(135deg,#059669,#10B981)', borderRadius: 16, padding: '14px 16px', color: '#fff' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.8, marginBottom: 4 }}>Owed to You</div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>₹{totalOwedToMe.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+        </div>
+        <div style={{ flex: 1, background: 'linear-gradient(135deg,#E11D48,#F43F5E)', borderRadius: 16, padding: '14px 16px', color: '#fff' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, opacity: 0.8, marginBottom: 4 }}>You Owe</div>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>₹{totalIOwe.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+        </div>
       </div>
 
-      <div className="flex-1 p-4 pb-28 flex flex-col gap-3">
+      {/* Tab bar */}
+      <div style={{ display: 'flex', background: '#E9ECF0', borderRadius: 12, padding: 4, margin: '16px 16px 0', gap: 4 }}>
+        {['Owed to Me', 'I Owe', 'Paid For'].map((label, i) => (
+          <button key={i} onClick={() => setActiveTab(i)}
+            style={{
+              flex: 1, padding: '8px 4px', borderRadius: 9, fontSize: 12, fontWeight: 700,
+              background: activeTab === i ? '#fff' : 'transparent',
+              color: activeTab === i ? '#0A0D14' : '#B0B8C4',
+              boxShadow: activeTab === i ? '0 1px 6px rgba(0,0,0,0.08)' : 'none',
+              border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+            }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: '12px 16px', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
         {(isLoading || paidForLoading) && (
-          <p className="text-center text-sm text-gray-400 mt-12">{t('common.loading')}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={{ background: '#E9ECF0', borderRadius: 18, height: 80, animation: 'pulse 1.5s infinite' }} />
+            ))}
+          </div>
         )}
 
-        {/* ── Owed to me ── */}
+        {/* -- Owed to me -- */}
         {!isLoading && tab === 'owed' && (
           <>
             {/* Incoming bulk payment requests at the top */}
             {receivedBulkPayments.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0 4px' }}>
                   {t('balance.bulk_requests', { n: receivedBulkPayments.length })}
                 </p>
                 {receivedBulkPayments.map((bp) => (
@@ -664,9 +795,9 @@ export default function BalancesPage() {
 
             {/* Regular splits */}
             {data?.owedToMe?.length === 0 && receivedBulkPayments.length === 0 && groupsOwedToMe.length === 0 ? (
-              <div className="flex flex-col items-center justify-center mt-16 gap-3">
-                <span className="text-5xl">🎉</span>
-                <p className="text-sm text-gray-400">{t('balance.no_owed')}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 64, gap: 12 }}>
+                <span style={{ fontSize: 48 }}>🎉</span>
+                <p style={{ fontSize: 14, color: '#B0B8C4' }}>{t('balance.no_owed')}</p>
               </div>
             ) : (
               <>
@@ -685,7 +816,7 @@ export default function BalancesPage() {
                 {groupsOwedToMe.length > 0 && (
                   <>
                     {data?.owedToMe?.length > 0 && (
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                      <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 4px 0' }}>
                         {t('balance.from_groups')}
                       </p>
                     )}
@@ -696,28 +827,38 @@ export default function BalancesPage() {
                 )}
                 {cardOwedMe.length > 0 && (
                   <>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 4px 0' }}>
                       {t('balance.card_debts_from')}
                     </p>
                     {cardOwedMe.map((c) => (
                       <button
                         key={c.delegationId}
                         onClick={() => navigate('/settings/card-delegations')}
-                        className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex items-center gap-3 text-left"
+                        style={{
+                          width: '100%', background: '#fff', borderRadius: 18,
+                          boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+                          padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+                          textAlign: 'left', border: 'none', cursor: 'pointer',
+                        }}
                       >
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xl shrink-0">
+                        <div style={{
+                          width: 40, height: 40, borderRadius: '50%',
+                          background: '#E6FAF9',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 20, flexShrink: 0,
+                        }}>
                           {c.card.icon || '💳'}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
-                          <p className="text-xs text-gray-400">{c.card.name}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>{c.person.name || c.person.email}</p>
+                          <p style={{ fontSize: 11, color: '#B0B8C4' }}>{c.card.name}</p>
                           {c.pendingApproval > 0 && (
-                            <p className="text-xs text-amber-600">{t('balance.approval_needed', { amount: fmt(c.pendingApproval) })}</p>
+                            <p style={{ fontSize: 11, color: '#D97706' }}>{t('balance.approval_needed', { amount: fmt(c.pendingApproval) })}</p>
                           )}
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-bold text-green-600">{fmt(c.outstanding)}</p>
-                          <p className="text-xs text-gray-400">{t('balance.owes_you')}</p>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#059669' }}>{fmt(c.outstanding)}</p>
+                          <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.owes_you')}</p>
                         </div>
                       </button>
                     ))}
@@ -728,12 +869,12 @@ export default function BalancesPage() {
           </>
         )}
 
-        {/* ── I owe ── */}
+        {/* -- I owe -- */}
         {!isLoading && tab === 'iowe' && (
           data?.iOwe?.length === 0 && groupsIOwe.length === 0 && cardIOwe.length === 0 ? (
-            <div className="flex flex-col items-center justify-center mt-16 gap-3">
-              <span className="text-5xl">✅</span>
-              <p className="text-sm text-gray-400">{t('balance.no_owe')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 64, gap: 12 }}>
+              <span style={{ fontSize: 48 }}>✅</span>
+              <p style={{ fontSize: 14, color: '#B0B8C4' }}>{t('balance.no_owe')}</p>
             </div>
           ) : (
             <>
@@ -751,7 +892,7 @@ export default function BalancesPage() {
               {groupsIOwe.length > 0 && (
                 <>
                   {data?.iOwe?.length > 0 && (
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                    <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 4px 0' }}>
                       {t('balance.from_groups')}
                     </p>
                   )}
@@ -762,28 +903,38 @@ export default function BalancesPage() {
               )}
               {cardIOwe.length > 0 && (
                 <>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-2">
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '8px 4px 0' }}>
                     {t('balance.card_debts_to')}
                   </p>
                   {cardIOwe.map((c) => (
                     <button
                       key={c.delegationId}
                       onClick={() => navigate('/settings/card-delegations')}
-                      className="w-full bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 flex items-center gap-3 text-left"
+                      style={{
+                        width: '100%', background: '#fff', borderRadius: 18,
+                        boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+                        padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
+                        textAlign: 'left', border: 'none', cursor: 'pointer',
+                      }}
                     >
-                      <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-xl shrink-0">
+                      <div style={{
+                        width: 40, height: 40, borderRadius: '50%',
+                        background: '#FFF1F3',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 20, flexShrink: 0,
+                      }}>
                         {c.card.icon || '🏦'}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{c.person.name || c.person.email}</p>
-                        <p className="text-xs text-gray-400">{c.card.name}</p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>{c.person.name || c.person.email}</p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4' }}>{c.card.name}</p>
                         {c.pendingApproval > 0 && (
-                          <p className="text-xs text-amber-600">{t('balance.pending_confirmation', { amount: fmt(c.pendingApproval) })}</p>
+                          <p style={{ fontSize: 11, color: '#D97706' }}>{t('balance.pending_confirmation', { amount: fmt(c.pendingApproval) })}</p>
                         )}
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-red-500">{fmt(c.outstanding)}</p>
-                        <p className="text-xs text-gray-400">{t('balance.to_repay')}</p>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#E11D48' }}>{fmt(c.outstanding)}</p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4' }}>{t('balance.to_repay')}</p>
                       </div>
                     </button>
                   ))}
@@ -793,13 +944,13 @@ export default function BalancesPage() {
           )
         )}
 
-        {/* ── Paid for ── */}
+        {/* -- Paid for -- */}
         {!paidForLoading && tab === 'paidfor' && (
           paidFor.length === 0 ? (
-            <div className="flex flex-col items-center justify-center mt-16 gap-3">
-              <span className="text-5xl">🧾</span>
-              <p className="text-sm text-gray-400">{t('balance.no_paid')}</p>
-              <p className="text-xs text-gray-400">{t('balance.paid_hint')}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 64, gap: 12 }}>
+              <span style={{ fontSize: 48 }}>🧾</span>
+              <p style={{ fontSize: 14, color: '#B0B8C4' }}>{t('balance.no_paid')}</p>
+              <p style={{ fontSize: 12, color: '#B0B8C4' }}>{t('balance.paid_hint')}</p>
             </div>
           ) : (
             paidFor.map((person) => (
@@ -810,11 +961,15 @@ export default function BalancesPage() {
       </div>
 
       {shareToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none">
+        <div style={{
+          position: 'fixed', bottom: 96, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 50, background: '#0A0D14', color: '#fff',
+          fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 999,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)', pointerEvents: 'none',
+        }}>
           {shareToast}
         </div>
       )}
-      <BottomNav />
     </div>
   );
 }

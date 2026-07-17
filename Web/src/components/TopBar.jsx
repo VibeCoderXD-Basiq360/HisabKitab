@@ -1,82 +1,252 @@
 import { useNavigate } from 'react-router-dom';
 import { useUnreadCount } from '../hooks/useNotifications';
-import { useSidebarStore } from '../store/sidebarStore';
+import { useAuthStore } from '../store/authStore';
 
-function NotificationBell() {
+function Avatar() {
+  const profile = useAuthStore((s) => s.profile);
+  const user    = useAuthStore((s) => s.user);
+
+  const url      = profile?.avatarUrl;
+  const name     = profile?.name || user?.displayName || '';
+  const initials = name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
+
   const navigate = useNavigate();
-  const { data: count = 0 } = useUnreadCount();
+
   return (
     <button
-      onClick={() => navigate('/notifications')}
-      className="relative w-10 h-10 flex items-center justify-center text-gray-500 text-xl"
+      onClick={() => navigate('/profile')}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        flexShrink: 0,
+        background: 'linear-gradient(135deg, #00C2B2, #0B7FAD)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      🔔
-      {count > 0 && (
-        <span className="absolute top-1.5 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
-          {count > 9 ? '9+' : count}
+      {url ? (
+        <img src={url} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+          {initials || '?'}
         </span>
       )}
     </button>
   );
 }
 
-function HamburgerButton() {
-  const toggle = useSidebarStore((s) => s.toggle);
+function BellButton() {
+  const navigate = useNavigate();
+  const { data: count = 0 } = useUnreadCount();
+
   return (
     <button
-      onClick={toggle}
-      className="w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-      aria-label="Open menu"
+      onClick={() => navigate('/notifications')}
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: '50%',
+        background: '#FFFFFF',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'none',
+        cursor: 'pointer',
+        position: 'relative',
+        flexShrink: 0,
+      }}
     >
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
-        <line x1="2" y1="5"  x2="18" y2="5" />
-        <line x1="2" y1="10" x2="18" y2="10" />
-        <line x1="2" y1="15" x2="18" y2="15" />
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+      </svg>
+      {count > 0 && (
+        <span style={{
+          position: 'absolute',
+          top: 7,
+          right: 7,
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: '#E11D48',
+          border: '1.5px solid #F0F2F7',
+        }} />
+      )}
+    </button>
+  );
+}
+
+function BackButton({ onPress }) {
+  return (
+    <button
+      onClick={onPress}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: '12px',
+        background: '#FFFFFF',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: 'none',
+        cursor: 'pointer',
+        flexShrink: 0,
+      }}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0D14" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6" />
       </svg>
     </button>
   );
 }
 
-export default function TopBar({ title, subtitle, onBack, showBack = false, action, showBell = false, showSearch = false }) {
+export default function TopBar({
+  title,
+  subtitle,
+  onBack,
+  showBack = false,
+  action,
+  showBell = false,
+  showSearch = false,
+  greeting,
+}) {
   const navigate = useNavigate();
-
-  const hasBack = !!(onBack || showBack);
+  const hasBack  = !!(onBack || showBack);
 
   function handleBack() {
     if (onBack) onBack();
     else navigate(-1);
   }
 
-  return (
-    <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center px-3 min-h-[56px]">
-      {hasBack ? (
-        <button
-          onClick={handleBack}
-          className="mr-2 -ml-1 w-10 h-10 flex items-center justify-center text-gray-600 dark:text-gray-400 text-xl rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        >
-          ←
-        </button>
-      ) : (
-        <HamburgerButton />
-      )}
+  // ── Root mode (main pages, no back button) ─────────────────────────────
+  if (!hasBack) {
+    return (
+      <header style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '14px 20px 10px',
+        background: 'transparent',
+      }}>
+        {/* Left: avatar + greeting/title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <Avatar />
+          <div style={{ minWidth: 0 }}>
+            {greeting && (
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', lineHeight: 1, marginBottom: 2 }}>
+                {greeting}
+              </p>
+            )}
+            {title && (
+              <h1 style={{
+                fontSize: 17,
+                fontWeight: 800,
+                color: '#0A0D14',
+                lineHeight: 1.2,
+                margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {title}
+              </h1>
+            )}
+          </div>
+        </div>
 
-      <div className="flex-1 min-w-0 ml-1">
-        <h1 className="text-[17px] font-semibold text-gray-900 dark:text-white truncate leading-tight">{title}</h1>
-        {subtitle && <p className="text-xs text-gray-400 truncate leading-tight">{subtitle}</p>}
+        {/* Right: actions + bell */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {showSearch && (
+            <button
+              onClick={() => navigate('/search')}
+              style={{
+                width: 40, height: 40, borderRadius: '50%',
+                background: '#FFFFFF',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: 'none', cursor: 'pointer',
+              }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          )}
+          {action}
+          {(showBell || !hasBack) && <BellButton />}
+        </div>
+      </header>
+    );
+  }
+
+  // ── Back mode (sub-pages with back navigation) ─────────────────────────
+  return (
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 10,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '10px 16px',
+      background: '#F0F2F7',
+      minHeight: 56,
+    }}>
+      <BackButton onPress={handleBack} />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {title && (
+          <h1 style={{
+            fontSize: 17,
+            fontWeight: 800,
+            color: '#0A0D14',
+            margin: 0,
+            lineHeight: 1.2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {title}
+          </h1>
+        )}
+        {subtitle && (
+          <p style={{ fontSize: 11, fontWeight: 500, color: '#B0B8C4', margin: '2px 0 0', lineHeight: 1 }}>
+            {subtitle}
+          </p>
+        )}
       </div>
 
-      <div className="flex items-center gap-0.5 ml-1">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {showSearch && (
           <button
             onClick={() => navigate('/search')}
-            className="w-10 h-10 flex items-center justify-center text-gray-500 text-xl"
+            style={{
+              width: 38, height: 38, borderRadius: '12px',
+              background: '#FFFFFF',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: 'none', cursor: 'pointer',
+            }}
           >
-            🔍
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
           </button>
         )}
-        {showBell && <NotificationBell />}
+        {showBell && <BellButton />}
         {action}
-        {hasBack && <HamburgerButton />}
       </div>
     </header>
   );

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import api from '../../lib/api';
 
 const now = new Date();
@@ -29,6 +29,23 @@ const PERIODS = [
   { label: 'All Time', filename: 'all-time', params: {} },
 ];
 
+const FORMATS = [
+  {
+    key: 'csv',
+    icon: '📄',
+    label: 'CSV',
+    desc: 'Spreadsheet-ready',
+    columns: 'Date · Title · Category · Payment · Amount · Note',
+  },
+  {
+    key: 'pdf',
+    icon: '📊',
+    label: 'PDF Report',
+    desc: 'Formatted report',
+    columns: 'Summary · Category breakdown · Full expense list',
+  },
+];
+
 async function fetchAllExpenses(params) {
   const PAGE = 200;
   let page = 1, all = [];
@@ -42,7 +59,7 @@ async function fetchAllExpenses(params) {
   return all;
 }
 
-async function generatePDF(period, expenses, analyticsData) {
+async function generatePDF(period, expenses) {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
@@ -80,10 +97,10 @@ async function generatePDF(period, expenses, analyticsData) {
   const topCat = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
 
   const cards = [
-    { label: 'Total Spent',        value: `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
-    { label: 'Transactions',       value: String(count) },
-    { label: 'Avg per Transaction',value: `₹${avgPerTxn.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
-    { label: 'Top Category',       value: topCat ? topCat[0] : '—' },
+    { label: 'Total Spent',         value: `₹${total.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
+    { label: 'Transactions',        value: String(count) },
+    { label: 'Avg per Transaction', value: `₹${avgPerTxn.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` },
+    { label: 'Top Category',        value: topCat ? topCat[0] : '—' },
   ];
 
   const cardW = (W - 28 - 9) / 4;
@@ -102,7 +119,7 @@ async function generatePDF(period, expenses, analyticsData) {
   });
   y += 26;
 
-  // ── Category breakdown ────────────────────────────────────────────────────────
+  // ── Category breakdown ───────────────────────────────────────────────────────
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...accent);
@@ -131,7 +148,7 @@ async function generatePDF(period, expenses, analyticsData) {
 
   y = doc.lastAutoTable.finalY + 10;
 
-  // ── Full expense list ─────────────────────────────────────────────────────────
+  // ── Full expense list ────────────────────────────────────────────────────────
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...accent);
@@ -163,7 +180,7 @@ async function generatePDF(period, expenses, analyticsData) {
     tableWidth: W - 28,
   });
 
-  // ── Footer on every page ──────────────────────────────────────────────────────
+  // ── Footer on every page ─────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -178,13 +195,18 @@ async function generatePDF(period, expenses, analyticsData) {
 export default function ExportPage() {
   const { t } = useTranslation();
   const [periodIdx, setPeriodIdx]   = useState(0);
+  const [selectedFormat, setSelectedFormat] = useState('csv');
   const [csvLoading, setCsvLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError]           = useState('');
+  const [success, setSuccess]       = useState('');
+
+  const isLoading = csvLoading || pdfLoading;
 
   async function handleCSV() {
     setCsvLoading(true);
     setError('');
+    setSuccess('');
     try {
       const { params, filename } = PERIODS[periodIdx];
       const res = await api.get('/expenses/export', { params, responseType: 'blob' });
@@ -194,6 +216,7 @@ export default function ExportPage() {
       a.download = `hisabkitab-${filename}-${format(now, 'yyyyMMdd')}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      setSuccess('CSV downloaded successfully.');
     } catch {
       setError('CSV download failed. Please try again.');
     } finally {
@@ -204,11 +227,13 @@ export default function ExportPage() {
   async function handlePDF() {
     setPdfLoading(true);
     setError('');
+    setSuccess('');
     try {
       const { params } = PERIODS[periodIdx];
       const expenses = await fetchAllExpenses(params);
       if (expenses.length === 0) { setError('No expenses found for this period.'); return; }
       await generatePDF(PERIODS[periodIdx], expenses);
+      setSuccess('PDF downloaded successfully.');
     } catch (err) {
       console.error(err);
       setError('PDF generation failed. Please try again.');
@@ -217,90 +242,121 @@ export default function ExportPage() {
     }
   }
 
+  function handleExport() {
+    if (selectedFormat === 'csv') handleCSV();
+    else handlePDF();
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('settings.export')} showBack />
-      <div className="flex-1 pb-8 p-4 space-y-4">
+      <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
 
         {/* Period selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Select period</p>
-          <div className="flex flex-wrap gap-2">
+        <SurfaceCard style={{ padding: 16 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', marginBottom: 10 }}>Select period</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {PERIODS.map((p, i) => (
               <button
                 key={p.label}
                 onClick={() => setPeriodIdx(i)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  periodIdx === i
-                    ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
-                }`}
+                style={{
+                  padding: '7px 14px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: periodIdx === i ? '#00C2B2' : '#F0F2F7',
+                  color: periodIdx === i ? '#fff' : '#0A0D14',
+                  transition: 'background 0.15s, color 0.15s',
+                }}
               >
                 {p.label}
               </button>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* Format cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* CSV */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">📄</span>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white text-sm">CSV</p>
-                <p className="text-xs text-gray-400">Spreadsheet-ready</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Date · Title · Category · Payment · Amount · Note
-            </p>
-            <button
-              onClick={handleCSV}
-              disabled={csvLoading}
-              className="w-full py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl text-sm font-semibold disabled:opacity-50"
-            >
-              {csvLoading ? 'Exporting…' : 'Download CSV'}
-            </button>
-          </div>
-
-          {/* PDF */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">📊</span>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-white text-sm">PDF Report</p>
-                <p className="text-xs text-gray-400">Formatted report</p>
-              </div>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Summary · Category breakdown · Full expense list
-            </p>
-            <button
-              onClick={handlePDF}
-              disabled={pdfLoading}
-              className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
-            >
-              {pdfLoading ? 'Generating…' : 'Download PDF'}
-            </button>
-          </div>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', margin: 0 }}>Choose format</p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {FORMATS.map((fmt) => {
+            const selected = selectedFormat === fmt.key;
+            return (
+              <SurfaceCard
+                key={fmt.key}
+                onClick={() => setSelectedFormat(fmt.key)}
+                style={{
+                  padding: 16,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  cursor: 'pointer',
+                  border: selected ? '2px solid #00C2B2' : '2px solid transparent',
+                  background: selected ? '#E6FAF9' : undefined,
+                  transition: 'border 0.15s, background 0.15s',
+                }}
+              >
+                <span style={{ fontSize: 28 }}>{fmt.icon}</span>
+                <div>
+                  <p style={{ fontWeight: 800, color: '#0A0D14', fontSize: 15, margin: 0 }}>{fmt.label}</p>
+                  <p style={{ fontSize: 12, color: '#B0B8C4', margin: '2px 0 0' }}>{fmt.desc}</p>
+                </div>
+                <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{fmt.columns}</p>
+              </SurfaceCard>
+            );
+          })}
         </div>
 
+        {/* PDF building notice */}
         {pdfLoading && (
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-2xl px-4 py-3 text-center">
-            <p className="text-sm text-indigo-700 dark:text-indigo-300 font-medium">
+          <SurfaceCard style={{ padding: '12px 16px', textAlign: 'center' }}>
+            <p style={{ fontSize: 14, color: '#009E90', fontWeight: 600, margin: 0 }}>
               ⏳ Fetching all expenses and building your PDF…
             </p>
-            <p className="text-xs text-indigo-500 mt-1">This may take a few seconds for large date ranges.</p>
-          </div>
+            <p style={{ fontSize: 12, color: '#B0B8C4', marginTop: 4, marginBottom: 0 }}>
+              This may take a few seconds for large date ranges.
+            </p>
+          </SurfaceCard>
         )}
 
-        {error && (
-          <p className="text-sm text-red-500 text-center bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-3">{error}</p>
+        {/* Success state */}
+        {success && !isLoading && (
+          <SurfaceCard style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22, color: '#059669' }}>✓</span>
+            <p style={{ fontSize: 14, color: '#374151', margin: 0 }}>{success}</p>
+          </SurfaceCard>
         )}
+
+        {/* Error state */}
+        {error && (
+          <p style={{ fontSize: 13, color: '#DC2626', textAlign: 'center', background: '#FEF2F2', borderRadius: 12, padding: '12px 16px', margin: 0 }}>
+            {error}
+          </p>
+        )}
+
+        {/* Export button */}
+        <button
+          onClick={handleExport}
+          disabled={isLoading}
+          style={{
+            width: '100%',
+            padding: '14px 0',
+            background: isLoading ? '#B0B8C4' : 'linear-gradient(135deg, #00C2B2, #009E90)',
+            color: '#fff',
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 15,
+            border: 'none',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            transition: 'background 0.15s',
+          }}
+        >
+          {csvLoading ? 'Exporting…' : pdfLoading ? 'Generating…' : `Download ${selectedFormat.toUpperCase()}`}
+        </button>
+
       </div>
-      <BottomNav />
     </div>
   );
 }

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import Toggle from '../../components/ui/Toggle';
 import VerifyIdentitySheet from '../../components/VerifyIdentitySheet';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
 import {
@@ -33,31 +35,41 @@ function RepaySheet({ delegationId, expenses, onClose, onSubmit, isPending }) {
   const total = expenses.filter((e) => selected.has(e.id)).reduce((s, e) => s + Number(e.amount), 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4 max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">Select expenses to repay</h2>
-        <div className="flex-1 overflow-y-auto flex flex-col gap-2">
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 99, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>Select expenses to repay</h2>
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {expenses.map((e) => (
             <button
               key={e.id}
               onClick={() => toggle(e.id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-colors ${
-                selected.has(e.id)
-                  ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
-              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 12px',
+                borderRadius: 12,
+                border: selected.has(e.id) ? '1.5px solid #00C2B2' : '1.5px solid #E5E7EB',
+                background: selected.has(e.id) ? '#E6FAF9' : '#fff',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
             >
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                selected.has(e.id) ? 'border-primary-500 bg-primary-500' : 'border-gray-300 dark:border-gray-500'
-              }`}>
-                {selected.has(e.id) && <span className="text-white text-xs">✓</span>}
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%',
+                border: selected.has(e.id) ? '2px solid #00C2B2' : '2px solid #D1D5DB',
+                background: selected.has(e.id) ? '#00C2B2' : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                {selected.has(e.id) && <span style={{ color: '#fff', fontSize: 11 }}>✓</span>}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{e.title || 'Expense'}</p>
-                <p className="text-xs text-gray-400">{fmtDate(e.expenseDate)}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, color: '#0A0D14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title || 'Expense'}</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{fmtDate(e.expenseDate)}</p>
               </div>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white shrink-0">{fmt(e.amount)}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', flexShrink: 0 }}>{fmt(e.amount)}</span>
             </button>
           ))}
         </div>
@@ -66,12 +78,23 @@ function RepaySheet({ delegationId, expenses, onClose, onSubmit, isPending }) {
           placeholder="Note (optional)"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+          style={{ minHeight: 44, padding: '0 12px', borderRadius: 12, border: '1.5px solid #E5E7EB', background: '#fff', fontSize: 13, color: '#0A0D14', outline: 'none' }}
         />
         <button
           disabled={selected.size === 0 || isPending}
           onClick={() => onSubmit({ delegationId, expenseIds: [...selected], note })}
-          className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
+          style={{
+            width: '100%',
+            padding: '12px 0',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 14,
+            border: 'none',
+            cursor: selected.size === 0 || isPending ? 'not-allowed' : 'pointer',
+            opacity: selected.size === 0 || isPending ? 0.5 : 1,
+          }}
         >
           {isPending ? 'Sending…' : `Mark ${fmt(total)} as paid`}
         </button>
@@ -80,44 +103,44 @@ function RepaySheet({ delegationId, expenses, onClose, onSubmit, isPending }) {
   );
 }
 
-// ─── Owner expenses + repayment review ───────────────────────────────────────
+// ─── Owner expenses + repayment review ────────────────────────────────────────
 function OwnerExpensesSheet({ delegationId, personName, onClose, onApprove, onReject, repayments, approveIsPending, rejectIsPending }) {
   const { t } = useTranslation();
   const { data: expenses = [], isLoading } = useDelegationExpenses(delegationId);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4 max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">{personName}'s charges on your card</h2>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 99, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{personName}'s charges on your card</h2>
         {repayments.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">Pending payment claims</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#D97706', margin: 0 }}>Pending payment claims</p>
             {repayments.map((r) => (
-              <div key={r.id} className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2.5 flex items-center gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{fmt(r.amount)}</p>
-                  <p className="text-xs text-amber-600">{fmtDate(r.createdAt)}</p>
+              <div key={r.id} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#92400E', margin: 0 }}>{fmt(r.amount)}</p>
+                  <p style={{ fontSize: 11, color: '#D97706', margin: 0 }}>{fmtDate(r.createdAt)}</p>
                 </div>
-                <button onClick={() => onApprove({ delegationId, repaymentId: r.id })} disabled={approveIsPending} className="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-lg">Approve</button>
-                <button onClick={() => onReject({ delegationId, repaymentId: r.id })} disabled={rejectIsPending} className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg">Reject</button>
+                <button onClick={() => onApprove({ delegationId, repaymentId: r.id })} disabled={approveIsPending} style={{ padding: '6px 12px', background: '#22C55E', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 8, border: 'none', cursor: 'pointer' }}>Approve</button>
+                <button onClick={() => onReject({ delegationId, repaymentId: r.id })} disabled={rejectIsPending} style={{ padding: '6px 12px', background: '#EF4444', color: '#fff', fontSize: 11, fontWeight: 600, borderRadius: 8, border: 'none', cursor: 'pointer' }}>Reject</button>
               </div>
             ))}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto flex flex-col gap-1">
-          {isLoading && <p className="text-sm text-gray-400 text-center py-4">{t('common.loading')}</p>}
-          {!isLoading && expenses.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No expenses yet</p>}
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {isLoading && <p style={{ fontSize: 13, color: '#B0B8C4', textAlign: 'center', padding: '16px 0' }}>{t('common.loading')}</p>}
+          {!isLoading && expenses.length === 0 && <p style={{ fontSize: 13, color: '#B0B8C4', textAlign: 'center', padding: '16px 0' }}>No expenses yet</p>}
           {expenses.map((e) => (
-            <div key={e.id} className="flex items-center gap-3 px-1 py-2 border-b border-gray-100 dark:border-gray-700">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{e.title || 'Expense'}</p>
-                <p className="text-xs text-gray-400">{fmtDate(e.expenseDate)}</p>
+            <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 4px', borderBottom: '1px solid #F0F2F7' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title || 'Expense'}</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{fmtDate(e.expenseDate)}</p>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(e.amount)}</p>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', margin: 0 }}>{fmt(e.amount)}</p>
                 {e.willRepay && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${e.isRepaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                  <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 6px', borderRadius: 99, background: e.isRepaid ? '#D1FAE5' : '#FEF3C7', color: e.isRepaid ? '#059669' : '#D97706' }}>
                     {e.isRepaid ? 'Repaid' : 'To repay'}
                   </span>
                 )}
@@ -130,12 +153,12 @@ function OwnerExpensesSheet({ delegationId, personName, onClose, onApprove, onRe
   );
 }
 
-// ─── Link owner's own card ────────────────────────────────────────────────────
+// ─── Link owner's own card ─────────────────────────────────────────────────────
 function LinkMyCardSheet({ delegation, onClose }) {
   const { data: myTypes = [] } = usePaymentTypes();
   const linkOwnerCard = useLinkOwnerCard();
   const creditCards = myTypes.filter((t) => t.cardType === 'CREDIT_CARD');
-  const [verifyFor, setVerifyFor] = useState(null); // ownerPaymentTypeId pending verify
+  const [verifyFor, setVerifyFor] = useState(null);
 
   const handleSelect = (ptId) => setVerifyFor(ptId);
 
@@ -149,41 +172,47 @@ function LinkMyCardSheet({ delegation, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 99, margin: '0 auto' }} />
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Link your card</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>Link your card</h2>
+          <p style={{ fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 0 }}>
             Select your credit card entry for this physical card so you can see a combined bill
           </p>
         </div>
         {creditCards.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">
+          <p style={{ fontSize: 13, color: '#B0B8C4', textAlign: 'center', padding: '16px 0' }}>
             No credit cards in your Payment Types. Add one first.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {creditCards.map((t) => (
               <button
                 key={t.id}
                 onClick={() => handleSelect(t.id)}
                 disabled={linkOwnerCard.isPending}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-left active:bg-gray-50 dark:active:bg-gray-600 disabled:opacity-50"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px', borderRadius: 12,
+                  border: '1.5px solid #E5E7EB', background: '#fff',
+                  textAlign: 'left', cursor: 'pointer',
+                  opacity: linkOwnerCard.isPending ? 0.5 : 1,
+                }}
               >
-                <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-lg shrink-0">
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#E6FAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
                   {t.icon || '🏦'}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t.name}</p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: '#374151', margin: 0 }}>{t.name}</p>
                   {(t.cardLastFour || t.cardHolderName) && (
-                    <p className="text-xs text-gray-400 font-mono">
+                    <p style={{ fontSize: 11, color: '#B0B8C4', fontFamily: 'monospace', margin: 0 }}>
                       {t.cardLastFour ? `•••• ${t.cardLastFour}` : ''}
                       {t.cardHolderName ? `  ${t.cardHolderName}` : ''}
                     </p>
                   )}
                 </div>
-                <span className="text-primary-500 text-sm">Select →</span>
+                <span style={{ color: '#00C2B2', fontSize: 13, fontWeight: 600 }}>Select →</span>
               </button>
             ))}
           </div>
@@ -201,8 +230,9 @@ function LinkMyCardSheet({ delegation, onClose }) {
   );
 }
 
-// ─── Combined bill sheet ──────────────────────────────────────────────────────
+// ─── Combined bill sheet ───────────────────────────────────────────────────────
 function CombinedBillSheet({ delegationId, onClose }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useCombinedBill(delegationId);
 
   if (!data && !isLoading) return null;
@@ -212,41 +242,41 @@ function CombinedBillSheet({ delegationId, onClose }) {
     : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 99, margin: '0 auto' }} />
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Combined Bill</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>Combined Bill</h2>
           {data?.card && (
-            <p className="text-xs text-gray-400 font-mono mt-0.5">
+            <p style={{ fontSize: 11, color: '#B0B8C4', fontFamily: 'monospace', marginTop: 2, marginBottom: 0 }}>
               {data.card.cardLastFour ? `•••• ${data.card.cardLastFour}` : data.card.name}
               {data.card.cardHolderName ? `  ·  ${data.card.cardHolderName}` : ''}
             </p>
           )}
-          {cycleLabel && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Cycle: {cycleLabel}</p>}
+          {cycleLabel && <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 2, marginBottom: 0 }}>Cycle: {cycleLabel}</p>}
         </div>
 
-        {isLoading && <p className="text-sm text-gray-400 text-center py-8">{t('common.loading')}</p>}
+        {isLoading && <p style={{ fontSize: 13, color: '#B0B8C4', textAlign: 'center', padding: '32px 0' }}>{t('common.loading')}</p>}
 
         {data && (
           <>
             {/* Summary */}
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl p-4 flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-indigo-600 dark:text-indigo-400">{data.owner.name}'s charges</span>
-                <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{fmt(data.summary.ownerTotal)}</span>
+            <div style={{ background: '#E6FAF9', borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#009E90' }}>{data.owner.name}'s charges</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#009E90' }}>{fmt(data.summary.ownerTotal)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-indigo-600 dark:text-indigo-400">{data.requester.name}'s charges</span>
-                <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{fmt(data.summary.requesterTotal)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: '#009E90' }}>{data.requester.name}'s charges</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#009E90' }}>{fmt(data.summary.requesterTotal)}</span>
               </div>
-              <div className="h-px bg-indigo-200 dark:bg-indigo-800" />
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-bold text-indigo-800 dark:text-indigo-200">Combined total</span>
-                <span className="text-base font-bold text-indigo-800 dark:text-indigo-200">{fmt(data.summary.combinedTotal)}</span>
+              <div style={{ height: 1, background: '#B2EBE8' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14' }}>Combined total</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14' }}>{fmt(data.summary.combinedTotal)}</span>
               </div>
               {data.summary.willRepayTotal > 0 && (
-                <p className="text-xs text-orange-600 dark:text-orange-400">
+                <p style={{ fontSize: 11, color: '#D97706', margin: 0 }}>
                   {data.requester.name} will repay {fmt(data.summary.willRepayTotal)}
                 </p>
               )}
@@ -254,18 +284,18 @@ function CombinedBillSheet({ delegationId, onClose }) {
 
             {/* Owner's expenses */}
             {data.ownerExpenses.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                   {data.owner.name}'s expenses
                 </p>
                 {data.ownerExpenses.map((e) => (
-                  <div key={e.id} className="flex items-center gap-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-lg">{e.category?.icon || '💳'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{e.title || 'Expense'}</p>
-                      <p className="text-xs text-gray-400">{fmtDate(e.expenseDate)}</p>
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', borderBottom: '1px solid #F0F2F7' }}>
+                    <span style={{ fontSize: 18 }}>{e.category?.icon || '💳'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title || 'Expense'}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{fmtDate(e.expenseDate)}</p>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white shrink-0">{fmt(e.amount)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', flexShrink: 0 }}>{fmt(e.amount)}</span>
                   </div>
                 ))}
               </div>
@@ -273,21 +303,21 @@ function CombinedBillSheet({ delegationId, onClose }) {
 
             {/* Requester's expenses */}
             {data.requesterExpenses.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                   {data.requester.name}'s expenses
                 </p>
                 {data.requesterExpenses.map((e) => (
-                  <div key={e.id} className="flex items-center gap-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
-                    <span className="text-lg">{e.category?.icon || '💳'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{e.title || 'Expense'}</p>
-                      <p className="text-xs text-gray-400">{fmtDate(e.expenseDate)}</p>
+                  <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', borderBottom: '1px solid #F0F2F7' }}>
+                    <span style={{ fontSize: 18 }}>{e.category?.icon || '💳'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title || 'Expense'}</p>
+                      <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{fmtDate(e.expenseDate)}</p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmt(e.amount)}</p>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', margin: 0 }}>{fmt(e.amount)}</p>
                       {e.willRepay && (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${e.isRepaid ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
+                        <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 6px', borderRadius: 99, background: e.isRepaid ? '#D1FAE5' : '#FEF3C7', color: e.isRepaid ? '#059669' : '#D97706' }}>
                           {e.isRepaid ? 'Repaid' : 'To repay'}
                         </span>
                       )}
@@ -298,7 +328,7 @@ function CombinedBillSheet({ delegationId, onClose }) {
             )}
 
             {!data.hasOwnerCard && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+              <p style={{ fontSize: 11, color: '#D97706', textAlign: 'center' }}>
                 Link your card entry to see your own expenses here
               </p>
             )}
@@ -309,7 +339,22 @@ function CombinedBillSheet({ delegationId, onClose }) {
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+// ─── Person avatar ─────────────────────────────────────────────────────────────
+function PersonAvatar({ name }) {
+  const initials = (name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <div style={{
+      width: 40, height: 40, borderRadius: '50%',
+      background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      flexShrink: 0, color: '#fff', fontWeight: 700, fontSize: 15,
+    }}>
+      {initials}
+    </div>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
 export default function CardDelegationsPage() {
   const { t } = useTranslation();
   const { data, isLoading } = useCardDelegations();
@@ -321,11 +366,11 @@ export default function CardDelegationsPage() {
   const approveRepayment    = useApproveRepayment();
   const rejectRepayment     = useRejectRepayment();
 
-  const [repaySheet, setRepaySheet]         = useState(null); // { delegationId, expenses }
-  const [ownerSheet, setOwnerSheet]         = useState(null); // { delegationId, personName, repayments }
-  const [linkCardSheet, setLinkCardSheet]   = useState(null); // delegation object
-  const [billSheet, setBillSheet]           = useState(null); // delegationId
-  const [verifySheet, setVerifySheet]       = useState(null); // { action: fn }
+  const [repaySheet, setRepaySheet]       = useState(null);
+  const [ownerSheet, setOwnerSheet]       = useState(null);
+  const [linkCardSheet, setLinkCardSheet] = useState(null);
+  const [billSheet, setBillSheet]         = useState(null);
+  const [verifySheet, setVerifySheet]     = useState(null);
 
   const outgoing = data?.outgoing || [];
   const incoming = data?.incoming || [];
@@ -338,77 +383,88 @@ export default function CardDelegationsPage() {
   const requireVerify = (actionFn) => setVerifySheet({ actionFn });
 
   const statusBadge = (status) => {
-    if (status === 'PENDING') return <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">{t('balance.pending')}</span>;
-    if (status === 'ACTIVE')  return <span className="text-[10px] font-semibold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Active</span>;
-    return <span className="text-[10px] font-semibold bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Revoked</span>;
+    if (status === 'PENDING') return <Badge variant="neutral">{t('balance.pending')}</Badge>;
+    if (status === 'ACTIVE')  return <Badge variant="active">Active</Badge>;
+    return <Badge variant="neutral">Revoked</Badge>;
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('settings.shared_cards')} showBack />
-      <div className="flex-1 pb-8 overflow-auto">
+
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
 
         {/* ── Cards I use (outgoing) ── */}
-        <div className="px-4 pt-4">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+        <div style={{ padding: '16px 16px 0' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, marginTop: 0 }}>
             Cards I use (Dad / others pay)
           </p>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl divide-y divide-gray-100 dark:divide-gray-700">
-            {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">{t('common.loading')}</p>}
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+            {isLoading && <p style={{ padding: '24px 16px', fontSize: 13, color: '#B0B8C4', textAlign: 'center' }}>{t('common.loading')}</p>}
             {!isLoading && outgoing.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">
+              <p style={{ padding: '24px 16px', fontSize: 13, color: '#B0B8C4', textAlign: 'center' }}>
                 No delegations yet — go to Payment Types to link a credit card
               </p>
             )}
-            {outgoing.map((d) => {
+            {outgoing.map((d, idx) => {
               const balItem         = balance?.iOwe?.find((b) => b.delegationId === d.id);
               const outstanding     = balItem?.outstanding || 0;
               const pendingApproval = balItem?.pendingApproval || 0;
               const pendingExpenses = balItem?.expenses || [];
 
               return (
-                <div key={d.id} className="px-4 py-3 flex flex-col gap-2">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-lg shrink-0">
-                      {d.paymentType.icon || '🏦'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{d.paymentType.name}</p>
+                <div
+                  key={d.id}
+                  style={{
+                    padding: '14px 16px',
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                    borderBottom: idx < outgoing.length - 1 ? '1px solid #F0F2F7' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                    <PersonAvatar name={d.owner.name || d.owner.email} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{d.paymentType.name}</p>
                         {statusBadge(d.status)}
                       </div>
                       {(d.paymentType.cardLastFour || d.paymentType.cardHolderName) && (
-                        <p className="text-xs text-gray-400 font-mono mt-0.5">
+                        <p style={{ fontSize: 11, color: '#B0B8C4', fontFamily: 'monospace', margin: '2px 0 0' }}>
                           {d.paymentType.cardLastFour ? `•••• ${d.paymentType.cardLastFour}` : ''}
                           {d.paymentType.cardHolderName ? `  ${d.paymentType.cardHolderName}` : ''}
                         </p>
                       )}
-                      <p className="text-xs text-gray-400 mt-0.5">Owner: {d.owner.name || d.owner.email}</p>
+                      <p style={{ fontSize: 12, color: '#374151', margin: '2px 0 0' }}>Owner: {d.owner.name || d.owner.email}</p>
                     </div>
                     {d.status !== 'REVOKED' && (
-                      <button onClick={() => revokeDelegation.mutate(d.id)} className="text-xs text-red-500 px-2 py-1">Revoke</button>
+                      <button
+                        onClick={() => revokeDelegation.mutate(d.id)}
+                        style={{ fontSize: 12, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px' }}
+                      >
+                        Revoke
+                      </button>
                     )}
                   </div>
 
                   {d.status === 'ACTIVE' && (
-                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2">
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{t('balance.you_owe')}</p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(outstanding)}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#F8FFFE', borderRadius: 12, padding: '10px 12px', border: '1px solid #E6FAF9' }}>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{t('balance.you_owe')}</p>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{fmt(outstanding)}</p>
                         {pendingApproval > 0 && (
-                          <p className="text-xs text-amber-600">{fmt(pendingApproval)} pending owner confirmation</p>
+                          <p style={{ fontSize: 11, color: '#D97706', margin: 0 }}>{fmt(pendingApproval)} pending owner confirmation</p>
                         )}
                       </div>
                       <button
                         onClick={() => setBillSheet(d.id)}
-                        className="px-3 py-1.5 border border-indigo-300 dark:border-indigo-700 text-xs font-semibold rounded-lg text-indigo-600 dark:text-indigo-400"
+                        style={{ padding: '6px 12px', border: '1.5px solid #00C2B2', fontSize: 11, fontWeight: 600, borderRadius: 8, color: '#009E90', background: '#E6FAF9', cursor: 'pointer' }}
                       >
                         Combined bill
                       </button>
                       {outstanding > 0 && pendingExpenses.length > 0 && (
                         <button
                           onClick={() => setRepaySheet({ delegationId: d.id, expenses: pendingExpenses })}
-                          className="px-3 py-1.5 bg-primary-500 text-white text-xs font-semibold rounded-lg"
+                          style={{ padding: '6px 12px', background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer' }}
                         >
                           Mark paid
                         </button>
@@ -418,57 +474,62 @@ export default function CardDelegationsPage() {
                 </div>
               );
             })}
-          </div>
+          </SurfaceCard>
         </div>
 
         {/* ── Cards I own (incoming) ── */}
-        <div className="px-4 pt-6">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+        <div style={{ padding: '24px 16px 0' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, marginTop: 0 }}>
             My cards others use
           </p>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl divide-y divide-gray-100 dark:divide-gray-700">
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
             {!isLoading && incoming.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">No one is using your cards</p>
+              <p style={{ padding: '24px 16px', fontSize: 13, color: '#B0B8C4', textAlign: 'center' }}>No one is using your cards</p>
             )}
-            {incoming.map((d) => {
-              const balItem         = balance?.owedToMe?.find((b) => b.delegationId === d.id);
-              const outstanding     = balItem?.outstanding || 0;
+            {incoming.map((d, idx) => {
+              const balItem           = balance?.owedToMe?.find((b) => b.delegationId === d.id);
+              const outstanding       = balItem?.outstanding || 0;
               const pendingRepayments = balItem?.repayments || [];
 
               return (
-                <div key={d.id} className="px-4 py-3 flex flex-col gap-2">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-lg shrink-0">
-                      {d.paymentType.icon || '💳'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{d.paymentType.name}</p>
+                <div
+                  key={d.id}
+                  style={{
+                    padding: '14px 16px',
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                    borderBottom: idx < incoming.length - 1 ? '1px solid #F0F2F7' : 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                    <PersonAvatar name={d.requestedBy.name || d.requestedBy.email} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{d.paymentType.name}</p>
                         {statusBadge(d.status)}
                       </div>
                       {(d.paymentType.cardLastFour || d.paymentType.cardHolderName) && (
-                        <p className="text-xs text-gray-400 font-mono mt-0.5">
+                        <p style={{ fontSize: 11, color: '#B0B8C4', fontFamily: 'monospace', margin: '2px 0 0' }}>
                           {d.paymentType.cardLastFour ? `•••• ${d.paymentType.cardLastFour}` : ''}
                           {d.paymentType.cardHolderName ? `  ${d.paymentType.cardHolderName}` : ''}
                         </p>
                       )}
-                      <p className="text-xs text-gray-400 mt-0.5">Used by: {d.requestedBy.name || d.requestedBy.email}</p>
+                      <p style={{ fontSize: 12, color: '#374151', margin: '2px 0 0' }}>Used by: {d.requestedBy.name || d.requestedBy.email}</p>
                     </div>
                   </div>
 
                   {d.status === 'PENDING' && (
-                    <div className="flex gap-2">
+                    <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={() => requireVerify((token) => approveDelegation.mutateAsync({ id: d.id, _actionToken: token }))}
                         disabled={approveDelegation.isPending}
-                        className="flex-1 py-2 bg-green-500 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                        style={{ flex: 1, padding: '10px 0', background: '#22C55E', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', opacity: approveDelegation.isPending ? 0.5 : 1 }}
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => rejectDelegation.mutate(d.id)}
                         disabled={rejectDelegation.isPending}
-                        className="flex-1 py-2 bg-red-500 text-white text-sm font-semibold rounded-xl disabled:opacity-50"
+                        style={{ flex: 1, padding: '10px 0', background: '#EF4444', color: '#fff', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', opacity: rejectDelegation.isPending ? 0.5 : 1 }}
                       >
                         Reject
                       </button>
@@ -477,23 +538,23 @@ export default function CardDelegationsPage() {
 
                   {d.status === 'ACTIVE' && (
                     <>
-                      <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2">
-                        <div className="flex-1">
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{t('balance.owes_you')}</p>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(outstanding)}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#F8FFFE', borderRadius: 12, padding: '10px 12px', border: '1px solid #E6FAF9' }}>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{t('balance.owes_you')}</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{fmt(outstanding)}</p>
                           {pendingRepayments.length > 0 && (
-                            <p className="text-xs text-amber-600">{pendingRepayments.length} payment claim(s) to review</p>
+                            <p style={{ fontSize: 11, color: '#D97706', margin: 0 }}>{pendingRepayments.length} payment claim(s) to review</p>
                           )}
                         </div>
                         <button
                           onClick={() => setBillSheet(d.id)}
-                          className="px-3 py-1.5 border border-indigo-300 dark:border-indigo-700 text-xs font-semibold rounded-lg text-indigo-600 dark:text-indigo-400"
+                          style={{ padding: '6px 12px', border: '1.5px solid #00C2B2', fontSize: 11, fontWeight: 600, borderRadius: 8, color: '#009E90', background: '#E6FAF9', cursor: 'pointer' }}
                         >
                           Combined bill
                         </button>
                         <button
                           onClick={() => setOwnerSheet({ delegationId: d.id, personName: d.requestedBy.name || 'Card user', repayments: pendingRepayments })}
-                          className="px-3 py-1.5 border border-gray-300 dark:border-gray-500 text-xs font-semibold rounded-lg text-gray-700 dark:text-gray-300"
+                          style={{ padding: '6px 12px', border: '1.5px solid #E5E7EB', fontSize: 11, fontWeight: 600, borderRadius: 8, color: '#374151', background: '#fff', cursor: 'pointer' }}
                         >
                           View charges
                         </button>
@@ -501,23 +562,26 @@ export default function CardDelegationsPage() {
 
                       {/* Link my card / show linked */}
                       {d.ownerPaymentType ? (
-                        <div className="flex items-center gap-2 px-1">
-                          <span className="text-xs text-green-600 dark:text-green-400">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px' }}>
+                          <span style={{ fontSize: 12, color: '#059669' }}>
                             🔗 Your card linked: {d.ownerPaymentType.name}
                             {d.ownerPaymentType.cardLastFour ? ` (•••• ${d.ownerPaymentType.cardLastFour})` : ''}
                           </span>
-                          <button onClick={() => setLinkCardSheet(d)} className="text-xs text-gray-400 underline">Change</button>
+                          <button onClick={() => setLinkCardSheet(d)} style={{ fontSize: 12, color: '#B0B8C4', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}>Change</button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setLinkCardSheet(d)}
-                          className="text-xs text-indigo-600 dark:text-indigo-400 text-left px-1"
+                          style={{ fontSize: 12, color: '#009E90', fontWeight: 600, background: 'none', border: 'none', textAlign: 'left', padding: '0 4px', cursor: 'pointer' }}
                         >
                           + Link your card to this delegation (for combined bill)
                         </button>
                       )}
 
-                      <button onClick={() => revokeDelegation.mutate(d.id)} className="text-xs text-red-500 text-left px-1">
+                      <button
+                        onClick={() => revokeDelegation.mutate(d.id)}
+                        style={{ fontSize: 12, color: '#EF4444', background: 'none', border: 'none', textAlign: 'left', padding: '0 4px', cursor: 'pointer' }}
+                      >
                         Revoke access
                       </button>
                     </>
@@ -525,11 +589,9 @@ export default function CardDelegationsPage() {
                 </div>
               );
             })}
-          </div>
+          </SurfaceCard>
         </div>
       </div>
-
-      <BottomNav />
 
       {repaySheet && (
         <RepaySheet

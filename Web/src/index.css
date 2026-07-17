@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --shadow-card: 0 2px 14px rgba(0,0,0,0.05);
+  --shadow-md:   0 4px 20px rgba(0,0,0,0.08);
+  --shadow-icon: 0 2px 10px rgba(0,0,0,0.08);
+  --teal-glow:   0 4px 20px rgba(0,194,178,0.5);
+}
+
 @layer base {
   html {
     font-size: 16px;
@@ -9,7 +16,11 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-900 dark:text-white;
+    background-color: #F0F2F7;
+    color: #0A0D14;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -20,6 +31,13 @@
   input,
   select,
   textarea {
-    font-size: 16px; /* prevents iOS auto-zoom on focus */
+    font-size: 16px;
+  }
+}
+
+@layer utilities {
+  /* Bottom clearance for fixed pill nav (64px nav + 12px gap + safe area) */
+  .pb-nav {
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
   }
 }

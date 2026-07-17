@@ -1,4 +1,4 @@
-const cron = require('node-cron');
+// Scheduled via pg-boss in jobs/index.js
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -37,7 +37,4 @@ async function refreshAllUsers() {
   console.log(`[exchange-rates] refreshed ${Object.keys(map).length} currencies for ${users.length} users (${date})`);
 }
 
-// Every day at 9:00 AM
-cron.schedule('0 9 * * *', () => {
-  refreshAllUsers().catch((e) => console.error('[exchange-rates] cron failed:', e.message));
-});
+module.exports = { refreshAllUsers };

@@ -2,12 +2,39 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJobs, useUpdateJob } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import ProgressBar from '../../components/ui/ProgressBar';
 
 const fmt = n => `₹${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-IN')}`;
-const STATUS_COLORS = { QUOTED:'bg-gray-100 text-gray-500', IN_PROGRESS:'bg-blue-100 text-blue-600',
-  PRINTED:'bg-purple-100 text-purple-600', DELIVERED:'bg-green-100 text-green-600', CANCELLED:'bg-red-100 text-red-400' };
-const STATUSES = ['QUOTED','IN_PROGRESS','PRINTED','DELIVERED','CANCELLED'];
+
+const STATUSES = ['QUOTED', 'IN_PROGRESS', 'PRINTED', 'DELIVERED', 'CANCELLED'];
+
+const STATUS_LABEL = {
+  QUOTED: 'Quoted',
+  IN_PROGRESS: 'In Progress',
+  PRINTED: 'Printed',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+};
+
+// Map job statuses to Badge variants
+const STATUS_VARIANT = {
+  QUOTED: 'awaiting',
+  IN_PROGRESS: 'active',
+  PRINTED: 'purple',
+  DELIVERED: 'success',
+  CANCELLED: 'danger',
+};
+
+// Rough progress % per status for the progress bar
+const STATUS_PCT = {
+  QUOTED: 15,
+  IN_PROGRESS: 50,
+  PRINTED: 80,
+  DELIVERED: 100,
+  CANCELLED: 0,
+};
 
 export default function JobsPage() {
   const navigate = useNavigate();
@@ -15,57 +42,135 @@ export default function JobsPage() {
   const { data: jobs = [], isLoading } = useJobs(filter ? { status: filter } : {});
   const updateJob = useUpdateJob();
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <TopBar title="Jobs" onBack={() => navigate('/business')} />
+  // Stats counts from loaded jobs (all statuses, so use unfiltered if possible)
+  const pending   = jobs.filter(j => j.status === 'QUOTED').length;
+  const active    = jobs.filter(j => j.status === 'IN_PROGRESS').length;
+  const completed = jobs.filter(j => j.status === 'DELIVERED').length;
 
-      <div className="px-4 pt-4">
-        {/* Status filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+  return (
+    <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar title="Jobs" showBack onBack={() => navigate('/business')} />
+
+      <div style={{ padding: '16px 16px 0' }}>
+
+        {/* Stats strip */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+          {[
+            { label: 'Quoted', value: pending, variant: 'awaiting' },
+            { label: 'Active', value: active, variant: 'active' },
+            { label: 'Done', value: completed, variant: 'success' },
+          ].map(({ label, value, variant }) => (
+            <div key={label} style={{
+              flex: 1,
+              background: '#fff',
+              borderRadius: 14,
+              padding: '10px 12px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+              textAlign: 'center',
+            }}>
+              <p style={{ fontSize: 22, fontWeight: 800, color: '#0A0D14', lineHeight: 1.2 }}>{value}</p>
+              <p style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Filter pill bar */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 12 }}>
           {['', ...STATUSES].map(s => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${filter === s ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
-              {s || 'All'}
+            <button
+              key={s}
+              onClick={() => setFilter(s)}
+              style={{
+                flexShrink: 0,
+                padding: '7px 14px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                background: filter === s
+                  ? 'linear-gradient(135deg, #00C2B2, #00D896)'
+                  : '#E9ECF0',
+                color: filter === s ? '#fff' : '#6B7280',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              {s ? STATUS_LABEL[s] : 'All'}
             </button>
           ))}
         </div>
 
-        <button onClick={() => navigate('/business/jobs/new')}
-          className="w-full mt-3 py-3 rounded-xl bg-primary-600 text-white font-bold text-sm shadow">
-          🖨️ New Job
-        </button>
-
-        <div className="mt-3 space-y-2">
-          {isLoading && <p className="text-center text-gray-400 py-10">Loading…</p>}
-          {!isLoading && jobs.length === 0 && <p className="text-center text-gray-400 py-10">No jobs found</p>}
+        {/* Job list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {isLoading && (
+            <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0' }}>Loading…</p>
+          )}
+          {!isLoading && jobs.length === 0 && (
+            <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0' }}>No jobs found</p>
+          )}
           {jobs.map(job => (
-            <div key={job.id} onClick={() => navigate(`/business/jobs/${job.id}`)}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-transform">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white truncate">{job.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {job.customer?.name || '—'} · {job.location?.name} · {new Date(job.orderDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}
+            <SurfaceCard
+              key={job.id}
+              onClick={() => navigate(`/business/jobs/${job.id}`)}
+              style={{ padding: 16 }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontWeight: 800, color: '#0A0D14', fontSize: 15, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {job.title}
+                  </p>
+                  <p style={{ fontSize: 12, color: '#374151', marginBottom: 0 }}>
+                    {job.customer?.name || '—'} · {job.location?.name} · {new Date(job.orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   </p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="font-bold text-gray-900 dark:text-white">{fmt(job.actualPrice ?? job.suggestedPrice)}</p>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ fontWeight: 800, color: '#00C2B2', fontSize: 15 }}>
+                    {fmt(job.actualPrice ?? job.suggestedPrice)}
+                  </p>
                   {job.profit !== null && (
-                    <p className={`text-xs font-semibold ${Number(job.profit) >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: Number(job.profit) >= 0 ? '#059669' : '#E11D48' }}>
                       {Number(job.profit) >= 0 ? '+' : ''}{fmt(job.profit)} profit
                     </p>
                   )}
                 </div>
               </div>
-              <div className="flex items-center justify-between mt-2">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[job.status]}`}>{job.status}</span>
-                <p className="text-xs text-gray-400">True cost: {fmt(job.trueCost)}</p>
+
+              {/* Progress bar */}
+              <ProgressBar pct={STATUS_PCT[job.status] ?? 0} style={{ marginTop: 10, marginBottom: 8 }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Badge variant={STATUS_VARIANT[job.status] || 'neutral'} label={STATUS_LABEL[job.status] || job.status} />
+                <p style={{ fontSize: 11, color: '#9CA3AF' }}>True cost: {fmt(job.trueCost)}</p>
               </div>
-            </div>
+            </SurfaceCard>
           ))}
         </div>
       </div>
-      <BottomNav />
+
+      {/* FAB */}
+      <button
+        onClick={() => navigate('/business/jobs/new')}
+        style={{
+          position: 'fixed',
+          bottom: 'calc(88px + env(safe-area-inset-bottom))',
+          right: 20,
+          background: 'linear-gradient(135deg, #00C2B2, #00D896)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 999,
+          padding: '14px 22px',
+          fontSize: 14,
+          fontWeight: 700,
+          boxShadow: '0 4px 16px rgba(0,194,178,0.35)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          zIndex: 40,
+        }}
+      >
+        🖨️ New Job
+      </button>
     </div>
   );
 }

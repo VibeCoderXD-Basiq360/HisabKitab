@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+﻿import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,6 @@ import { usePaymentTypes } from '../../hooks/usePaymentTypes';
 import { usePeople } from '../../hooks/usePeople';
 import { useCardDelegations } from '../../hooks/useCardDelegation';
 import { useComments, useAddComment, useDeleteComment, useExpenseTags } from '../../hooks/useComments';
-import { useCreateTemplate } from '../../hooks/useTemplates';
 import { useSharedTabs } from '../../hooks/useSharedTabs';
 import { useAccounts } from '../../hooks/useAccounts';
 import { useOCR } from '../../hooks/useOCR';
@@ -20,6 +19,10 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import TagInput from '../../components/ui/TagInput';
 import { format as dfFormat } from 'date-fns';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import CategoryChip from '../../components/ui/CategoryChip';
+import Toggle from '../../components/ui/Toggle';
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -92,7 +95,79 @@ const EMPTY = {
   personalShare: '',
   tabId: '',
   accountId: '',
-  items: [], // [{id, name, amount}]
+  items: [],
+};
+
+// â”€â”€â”€ Shared style constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const S = {
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#B0B8C4',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    marginBottom: 8,
+  },
+  input: {
+    background: '#F0F2F7',
+    borderRadius: 10,
+    padding: '10px 12px',
+    border: 'none',
+    outline: 'none',
+    fontSize: 14,
+    color: '#0A0D14',
+    fontFamily: 'inherit',
+    width: '100%',
+    boxSizing: 'border-box',
+  },
+  select: {
+    background: '#F0F2F7',
+    borderRadius: 10,
+    padding: '10px 12px',
+    border: 'none',
+    outline: 'none',
+    fontSize: 14,
+    color: '#0A0D14',
+    fontFamily: 'inherit',
+    width: '100%',
+    boxSizing: 'border-box',
+    minHeight: 44,
+    appearance: 'none',
+    WebkitAppearance: 'none',
+  },
+  freqBtn: (active) => ({
+    flex: 1,
+    padding: '8px 4px',
+    borderRadius: 10,
+    border: `1.5px solid ${active ? '#00C2B2' : '#E9ECF0'}`,
+    background: active ? '#E6FAF9' : '#fff',
+    color: active ? '#009E90' : '#374151',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  }),
+  toggleRow: (active, activeColor = '#E6FAF9', activeBorder = '#00C2B2') => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 14px',
+    borderRadius: 12,
+    border: `1.5px solid ${active ? activeBorder : '#E9ECF0'}`,
+    background: active ? activeColor : '#fff',
+    cursor: 'pointer',
+  }),
+  personChip: (selected) => ({
+    padding: '8px 14px',
+    borderRadius: 20,
+    border: `1.5px solid ${selected ? '#00C2B2' : '#E9ECF0'}`,
+    background: selected ? '#E6FAF9' : '#fff',
+    color: selected ? '#009E90' : '#374151',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  }),
 };
 
 export default function AddEditExpensePage() {
@@ -100,6 +175,7 @@ export default function AddEditExpensePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isEdit = !!id;
+  const isNew = !id;
   const { t } = useTranslation();
 
   const { data: existing } = useExpense(id);
@@ -122,21 +198,7 @@ export default function AddEditExpensePage() {
   const deleteComment = useDeleteComment(id);
   const [commentText, setCommentText] = useState('');
 
-  const [form, setForm] = useState(() => {
-    const tmpl = location.state?.template;
-    if (!tmpl) return EMPTY;
-    return {
-      ...EMPTY,
-      title: tmpl.title || '',
-      amount: tmpl.amount != null ? String(Number(tmpl.amount)) : '',
-      categoryId: tmpl.categoryId || '',
-      paymentTypeId: tmpl.paymentTypeId || '',
-      note: tmpl.note || '',
-    };
-  });
-  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
-  const [templateEmoji, setTemplateEmoji] = useState('');
-  const createTemplate = useCreateTemplate();
+  const [form, setForm] = useState(EMPTY);
   const { scan, isScanning, error: ocrError, clearError: clearOcrError } = useOCR();
   const { isOnline, enqueue } = useOfflineQueue();
   const [ocrToast, setOcrToast] = useState('');
@@ -148,6 +210,8 @@ export default function AddEditExpensePage() {
   const [receiptUrl, setReceiptUrl] = useState('');
   const [receiptPreview, setReceiptPreview] = useState('');
 
+  const [showAllCats, setShowAllCats] = useState(false);
+
   useEffect(() => {
     if (!receiptFile) { setReceiptPreview(''); return; }
     const url = URL.createObjectURL(receiptFile);
@@ -155,7 +219,7 @@ export default function AddEditExpensePage() {
     return () => URL.revokeObjectURL(url);
   }, [receiptFile]);
 
-  // Duplicate detection — scan all cached expense lists, no extra network call
+  // Duplicate detection â€” scan all cached expense lists, no extra network call
   const possibleDuplicate = useMemo(() => {
     if (isEdit || !form.amount || !form.categoryId || dismissedDuplicate) return null;
     const amt = Number(form.amount);
@@ -184,14 +248,10 @@ export default function AddEditExpensePage() {
     rec.interimResults = false;
     rec.onresult = (e) => {
       const text = e.results[0][0].transcript.toLowerCase();
-      // Extract amount — digits or simple number words
       const amountMatch = text.match(/(\d+[\d,]*(?:\.\d+)?)/);
       const amount = amountMatch ? amountMatch[1].replace(/,/g, '') : '';
-      // Match category by name
       const matchedCat = categories.find((c) => text.includes(c.name.toLowerCase()));
-      // Match payment type by name
       const matchedPt = paymentTypes.find((p) => text.includes(p.name.toLowerCase()));
-      // Title: remove amount + matched names, clean up
       let title = text
         .replace(/(\d+[\d,]*(?:\.\d+)?)/g, '')
         .replace(matchedCat?.name.toLowerCase() || '__NOMATCH__', '')
@@ -207,6 +267,7 @@ export default function AddEditExpensePage() {
         ...(matchedCat && { categoryId: matchedCat.id }),
         ...(matchedPt && { paymentTypeId: matchedPt.id }),
       }));
+      if (amount && isNew) setAmountStr(amount);
       setListening(false);
     };
     rec.onerror = () => setListening(false);
@@ -226,7 +287,6 @@ export default function AddEditExpensePage() {
     const result = await scan(receiptFile);
     if (!result) return;
 
-    // Map categoryHint to actual category id (fuzzy match on name)
     const HINT_KEYWORDS = {
       food:          ['food', 'restaurant', 'dining', 'cafe', 'grocery', 'meal'],
       transport:     ['transport', 'travel', 'uber', 'ola', 'cab', 'taxi', 'auto', 'fuel', 'petrol'],
@@ -255,8 +315,10 @@ export default function AddEditExpensePage() {
       ...(result.note   && !f.note   ? { note: result.note }                      : {}),
     }));
 
+    if (result.amount && isNew) setAmountStr(String(result.amount));
+
     const filled = [result.title, result.amount, result.date, matchedCatId].filter(Boolean).length;
-    setOcrToast(filled > 0 ? `✓ Filled ${filled} field${filled > 1 ? 's' : ''} from receipt` : 'Receipt scanned — no data extracted');
+    setOcrToast(filled > 0 ? `âœ“ Filled ${filled} field${filled > 1 ? 's' : ''} from receipt` : 'Receipt scanned â€” no data extracted');
     setTimeout(() => setOcrToast(''), 3000);
   }
 
@@ -264,7 +326,7 @@ export default function AddEditExpensePage() {
   useEffect(() => {
     if (!isEdit && accounts.length > 0) {
       setForm((f) => {
-        if (f.accountId) return f; // already set (e.g. by payment type link)
+        if (f.accountId) return f;
         const defaultAcc = accounts.find((a) => a.type === 'SAVINGS' || a.type === 'CURRENT') || accounts.find((a) => a.type !== 'CREDIT_CARD');
         return defaultAcc ? { ...f, accountId: defaultAcc.id } : f;
       });
@@ -346,7 +408,6 @@ export default function AddEditExpensePage() {
     if (isEdit) {
       await updateExpense.mutateAsync({ id, ...payload });
     } else if (!isOnline) {
-      // Offline — queue the expense for later sync
       enqueue(payload);
       navigate(-1);
       return;
@@ -369,403 +430,256 @@ export default function AddEditExpensePage() {
 
   const busy = createExpense.isPending || updateExpense.isPending;
 
+  // â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title={isEdit ? t('expense.edit_title') : t('expense.add_title')} showBack />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh', background: '#F0F2F7' }}>
+      <TopBar
+        title={isNew ? t('expense.add_title') : t('expense.edit_title')}
+        showBack
+        actions={isNew ? [
+          {
+            icon: (
+              <button
+                type="button"
+                onClick={() => document.getElementById('receipt-upload-main').click()}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, padding: 4, color: '#374151' }}
+                title="Attach receipt"
+              >📷</button>
+            ),
+          },
+          {
+            icon: (
+              <button
+                type="button"
+                onClick={listening ? stopVoice : startVoice}
+                style={{
+                  background: listening ? 'rgba(225,29,72,0.1)' : 'rgba(0,194,178,0.1)',
+                  border: 'none', borderRadius: 8, cursor: 'pointer',
+                  fontSize: 18, padding: '4px 6px',
+                  color: listening ? '#E11D48' : '#009E90',
+                }}
+                title={listening ? 'Stop' : 'Voice fill'}
+              >🎤</button>
+            ),
+          },
+        ] : []}
+      />
+      <input
+        id="receipt-upload-main"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])}
+      />
 
-      {isEdit && (existing?.tabEntry?.tab || existing?.tabSettlement?.tab) && (() => {
-        const tab = existing.tabEntry?.tab || existing.tabSettlement?.tab;
-        const isSettlement = !!existing.tabSettlement?.tab;
-        return (
-          <div className="px-4 pt-3">
-            <div className="flex items-start gap-3 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-700 rounded-2xl p-3">
-              <span className="text-lg shrink-0">🤝</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-teal-800 dark:text-teal-300">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px 80px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+        {/* Tab-linked banner */}
+        {(existing?.tabEntry?.tab || existing?.tabSettlement?.tab) && (() => {
+          const tab = existing.tabEntry?.tab || existing.tabSettlement?.tab;
+          const isSettlement = !!existing.tabSettlement?.tab;
+          return (
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#E6FAF9', border: '1.5px solid #00C2B2', borderRadius: 12, padding: '10px 14px' }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>ðŸ¤</span>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#009E90', margin: 0 }}>
                   {isSettlement
                     ? `Settlement reimbursement from "${tab.name}"`
                     : `Auto-logged from "${tab.name}" tab`}
                 </p>
-                <p className="text-xs text-teal-600 dark:text-teal-400 mt-0.5">
+                <p style={{ fontSize: 11, color: '#00C2B2', margin: '3px 0 0' }}>
                   {isSettlement
-                    ? 'This reimbursement was created when a settlement was recorded. Remove the settlement from the tab to delete it.'
-                    : 'This expense was created automatically. To remove it, delete the entry from the tab.'}
+                    ? 'Remove the settlement from the tab to delete it.'
+                    : 'To remove it, delete the entry from the tab.'}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/tabs/${tab.id}`)}
-                  className="mt-1.5 text-xs font-semibold text-teal-700 dark:text-teal-300 underline underline-offset-2"
-                >
-                  Go to tab →
+                <button type="button" onClick={() => navigate(`/tabs/${tab.id}`)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#009E90', textDecoration: 'underline', padding: 0, marginTop: 4, fontFamily: 'inherit' }}>
+                  Go to tab â†’
                 </button>
               </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {!isEdit && (
-        <div className="px-4 pt-3">
-          <button
-            type="button"
-            onClick={listening ? stopVoice : startVoice}
-            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl text-sm font-medium transition-colors ${
-              listening
-                ? 'bg-red-500 text-white animate-pulse'
-                : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700'
-            }`}
-          >
-            🎤 {listening ? t('expense.voice_listen') : t('expense.voice_fill')}
-          </button>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="flex-1 overflow-auto p-4 flex flex-col gap-4 pb-10">
-        {/* Amount — computed from items if itemized, manual otherwise */}
-        {form.items.length > 0 ? (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.amount')}</label>
-            <div className="min-h-[48px] px-4 flex items-center rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
-              <span className="text-base font-bold text-gray-900 dark:text-white">
-                ₹{form.items.reduce((s, i) => s + Number(i.amount || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-              </span>
-              <span className="ml-2 text-xs text-gray-400">auto from {form.items.length} items</span>
-            </div>
-          </div>
-        ) : (
-          <Input
-            label={t('expense.amount')}
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            value={form.amount}
-            onChange={field('amount')}
-            required={form.items.length === 0}
-          />
-        )}
-
-        {/* Itemized breakdown */}
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (form.items.length > 0) {
-                if (window.confirm('Remove all items and switch to manual amount?'))
-                  setForm((f) => ({ ...f, items: [] }));
-              } else {
-                setForm((f) => ({
-                  ...f,
-                  items: [{ id: `new-${Date.now()}`, name: '', amount: '' }],
-                }));
-              }
-            }}
-            className={`flex items-center justify-between min-h-[44px] px-4 rounded-xl border transition-colors ${
-              form.items.length > 0
-                ? 'border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20'
-                : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-base">🧾</span>
-              <span className={`text-sm font-medium ${form.items.length > 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-300'}`}>
-                {form.items.length > 0 ? `Itemized (${form.items.length} items)` : 'Add itemized breakdown'}
-              </span>
-            </div>
-            {form.items.length > 0 && <span className="text-xs text-indigo-400">tap to remove</span>}
-          </button>
-
-          {form.items.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-              {form.items.map((item, idx) => (
-                <div key={item.id} className={`flex items-center gap-2 px-3 py-2 ${idx > 0 ? 'border-t border-gray-100 dark:border-gray-700' : ''}`}>
-                  <span className="text-xs text-gray-300 dark:text-gray-600 w-4 shrink-0">{idx + 1}</span>
-                  <input
-                    value={item.name}
-                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it) }))}
-                    placeholder="Item name"
-                    className="flex-1 text-sm text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-300 dark:placeholder-gray-600"
-                  />
-                  <span className="text-xs text-gray-300 dark:text-gray-600">₹</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={item.amount}
-                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, amount: e.target.value } : it) }))}
-                    placeholder="0"
-                    className="w-20 text-sm text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-300 text-right"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))}
-                    className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-400 text-sm shrink-0"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, items: [...f.items, { id: `new-${Date.now()}-${f.items.length}`, name: '', amount: '' }] }))}
-                className="w-full text-xs text-primary-500 font-semibold py-2.5 border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                + Add item
-              </button>
-            </div>
-          )}
-        </div>
-
-        {form.currency !== 'INR' && (
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.currency')}</label>
-            <div className="flex flex-wrap gap-2">
-              {CURRENCIES.map((c) => (
-                <button
-                  type="button"
-                  key={c}
-                  onClick={() => setForm((f) => ({ ...f, currency: c }))}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    form.currency === c
-                      ? 'bg-primary-500 text-white border-primary-500'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {form.currency === 'INR' && (
-          <button
-            type="button"
-            onClick={() => setForm((f) => ({ ...f, currency: 'USD' }))}
-            className="text-xs text-indigo-500 dark:text-indigo-400 text-left -mt-2"
-          >
-            + {t('expense.currency_hint')}
-          </button>
-        )}
-
-        <Input
-          label={t('expense.title_label')}
-          value={form.title}
-          onChange={field('title')}
-          placeholder={t('expense.title_placeholder')}
-        />
-
-        <Input label={t('expense.date')} type="date" value={form.expenseDate} onChange={field('expenseDate')} required />
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.category')}</label>
-          <select
-            value={form.categoryId}
-            onChange={field('categoryId')}
-            className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">{t('expense.no_category')}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.payment_type')} *</label>
-          <select
-            value={form.paymentTypeId}
-            onChange={(e) => {
-              const ptId = e.target.value;
-              const pt = paymentTypes.find((p) => p.id === ptId);
-              setForm((f) => ({
-                ...f,
-                paymentTypeId: ptId,
-                accountId: pt?.linkedAccountId || '',
-              }));
-            }}
-            required
-            className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-          >
-            <option value="">{t('expense.select')}</option>
-            {paymentTypes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {accounts.length > 0 && (() => {
-          const linkedPt = paymentTypes.find((p) => p.id === form.paymentTypeId);
-          const isAutoLinked = linkedPt?.linkedAccountId && form.accountId === linkedPt.linkedAccountId;
-          const linkedAcct = isAutoLinked ? accounts.find((a) => a.id === form.accountId) : null;
-          return isAutoLinked ? (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-primary-50 dark:bg-primary-900/20 rounded-xl border border-primary-100 dark:border-primary-800">
-              <span className="text-primary-600 dark:text-primary-400 text-sm">🔗</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-primary-700 dark:text-primary-300">Auto-linked to {linkedAcct?.name}</p>
-                <p className="text-xs text-primary-500 dark:text-primary-400">Balance: ₹{Number(linkedAcct?.balance || 0).toLocaleString('en-IN')}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, accountId: '' }))}
-                className="text-xs text-primary-500 dark:text-primary-400 underline shrink-0"
-              >
-                Remove
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🏦 Deduct from Account <span className="text-xs font-normal text-gray-400">(optional)</span></label>
-              <select
-                value={form.accountId}
-                onChange={field('accountId')}
-                className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-              >
-                <option value="">No account</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name} — ₹{Number(a.balance).toLocaleString('en-IN')}</option>
-                ))}
-              </select>
             </div>
           );
         })()}
 
-        <Input label={t('expense.note')} value={form.note} onChange={field('note')} placeholder={t('expense.note_placeholder')} />
+        {/* Amount */}
+        <SurfaceCard style={{ padding: '16px 18px' }}>
+          <p style={S.sectionLabel}>Amount</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span style={{ fontSize: 28, fontWeight: 800, color: '#B0B8C4' }}>â‚¹</span>
+            {form.items.length > 0 ? (
+              <div>
+                <span style={{ fontSize: 36, fontWeight: 800, color: '#0A0D14', letterSpacing: '-1px' }}>
+                  {form.items.reduce((s, i) => s + Number(i.amount || 0), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </span>
+                <span style={{ fontSize: 12, color: '#B0B8C4', marginLeft: 8 }}>auto from {form.items.length} items</span>
+              </div>
+            ) : (
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                value={form.amount}
+                onChange={field('amount')}
+                required={form.items.length === 0}
+                style={{ fontSize: 36, fontWeight: 800, color: '#0A0D14', background: 'transparent', border: 'none', outline: 'none', fontFamily: 'inherit', letterSpacing: '-1px', width: '100%' }}
+              />
+            )}
+          </div>
+          {/* Currency selector */}
+          {form.currency !== 'INR' ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+              {CURRENCIES.map((c) => (
+                <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, currency: c }))}
+                  style={{ ...S.personChip(form.currency === c), padding: '5px 10px', fontSize: 11, borderRadius: 8 }}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button type="button" onClick={() => setForm((f) => ({ ...f, currency: 'USD' }))}
+              style={{ background: 'none', border: 'none', color: '#6366F1', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '6px 0 0', fontFamily: 'inherit' }}>
+              + {t('expense.currency_hint')}
+            </button>
+          )}
+        </SurfaceCard>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.tags')}</label>
-          <TagInput
-            tags={form.tags}
-            onChange={(tags) => setForm((f) => ({ ...f, tags }))}
-            suggestions={allTags}
-          />
-        </div>
+        {/* Title, Date, Note */}
+        <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <p style={S.sectionLabel}>Title</p>
+            <input placeholder={t('expense.title_placeholder')} value={form.title} onChange={field('title')} style={S.input} />
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <p style={S.sectionLabel}>Date</p>
+              <input type="date" value={form.expenseDate} onChange={field('expenseDate')} required style={S.input} />
+            </div>
+          </div>
+          <div>
+            <p style={S.sectionLabel}>Note</p>
+            <input placeholder={t('expense.note_placeholder')} value={form.note} onChange={field('note')} style={S.input} />
+          </div>
+        </SurfaceCard>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.receipt')}</label>
-            {receiptFile && !isEdit && (
-              <button
-                type="button"
-                onClick={handleScanReceipt}
-                disabled={isScanning}
-                className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-3 py-1.5 rounded-lg disabled:opacity-60 transition-colors"
-              >
-                {isScanning ? (
-                  <>
-                    <span className="inline-block w-3 h-3 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
-                    Scanning…
-                  </>
-                ) : (
-                  <>🔍 Scan & Fill</>
-                )}
+        {/* Category */}
+        <SurfaceCard style={{ padding: '14px 16px' }}>
+          <p style={S.sectionLabel}>{t('expense.category')}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {categories.slice(0, showAllCats ? undefined : 10).map((cat) => (
+              <CategoryChip
+                key={cat.id}
+                emoji={cat.icon || ''}
+                label={cat.name}
+                active={form.categoryId === cat.id}
+                bg={cat.color ? cat.color + '22' : '#F3F4F6'}
+                onClick={() => {
+                  setDismissedDuplicate(false);
+                  setForm((f) => ({ ...f, categoryId: f.categoryId === cat.id ? '' : cat.id }));
+                }}
+              />
+            ))}
+            {!showAllCats && categories.length > 10 && (
+              <button onClick={() => setShowAllCats(true)}
+                style={{ width: 64, padding: '10px 4px 8px', borderRadius: 15, background: '#F3F4F6', border: '2.5px solid transparent', cursor: 'pointer', fontSize: 9, fontWeight: 800, color: '#374151', textTransform: 'uppercase', fontFamily: 'inherit' }}>
+                More
               </button>
             )}
           </div>
-          {receiptPreview || receiptUrl ? (
-            <div className="relative">
-              <img
-                src={receiptPreview || receiptUrl}
-                alt={t('expense.receipt')}
-                className="w-full max-h-52 object-cover rounded-xl border border-gray-200 dark:border-gray-600"
-              />
-              <button
-                type="button"
-                onClick={() => { setReceiptFile(null); setReceiptUrl(''); }}
-                className="absolute top-2 right-2 bg-black/50 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm leading-none"
-              >
-                ✕
-              </button>
-              <label className="absolute bottom-2 right-2 bg-black/50 text-white rounded-lg px-2 py-1 text-xs cursor-pointer">
-                {t('expense.replace')}
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
-              </label>
-            </div>
-          ) : (
-            <label className="flex items-center justify-center gap-2 min-h-[48px] rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:border-primary-300 hover:text-primary-600 transition-colors">
-              <span className="text-xl">📷</span>
-              {t('expense.attach_receipt')}
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
-            </label>
-          )}
-          {ocrError && (
-            <p className="text-xs text-red-500 flex items-center gap-1">
-              ⚠ {ocrError}
-              <button type="button" onClick={clearOcrError} className="underline">Dismiss</button>
-            </p>
-          )}
-        </div>
+          {/* Fallback select for categories not shown */}
+          <select value={form.categoryId} onChange={field('categoryId')} style={{ ...S.select, marginTop: 4 }}>
+            <option value="">{t('expense.no_category')}</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </SurfaceCard>
 
+        {/* Payment type + Account */}
+        <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div>
+            <p style={S.sectionLabel}>{t('expense.payment_type')}</p>
+            <select value={form.paymentTypeId} onChange={(e) => {
+              const ptId = e.target.value;
+              const pt = paymentTypes.find((p) => p.id === ptId);
+              setForm((f) => ({ ...f, paymentTypeId: ptId, accountId: pt?.linkedAccountId || '' }));
+            }} required style={S.select}>
+              <option value="">{t('expense.select')}</option>
+              {paymentTypes.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          {accounts.length > 0 && (() => {
+            const linkedPt = paymentTypes.find((p) => p.id === form.paymentTypeId);
+            const isAutoLinked = linkedPt?.linkedAccountId && form.accountId === linkedPt.linkedAccountId;
+            const linkedAcct = isAutoLinked ? accounts.find((a) => a.id === form.accountId) : null;
+            return isAutoLinked ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: '#E6FAF9', borderRadius: 10 }}>
+                <span style={{ fontSize: 14 }}>ðŸ”—</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#009E90', margin: 0 }}>Auto-linked to {linkedAcct?.name}</p>
+                  <p style={{ fontSize: 11, color: '#00C2B2', margin: 0 }}>Balance: â‚¹{Number(linkedAcct?.balance || 0).toLocaleString('en-IN')}</p>
+                </div>
+                <button type="button" onClick={() => setForm((f) => ({ ...f, accountId: '' }))}
+                  style={{ fontSize: 11, color: '#009E90', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'inherit' }}>Remove</button>
+              </div>
+            ) : (
+              <div>
+                <p style={S.sectionLabel}>Deduct from Account <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400 }}>(optional)</span></p>
+                <select value={form.accountId} onChange={field('accountId')} style={S.select}>
+                  <option value="">No account</option>
+                  {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} â€” â‚¹{Number(a.balance).toLocaleString('en-IN')}</option>)}
+                </select>
+              </div>
+            );
+          })()}
+        </SurfaceCard>
+
+        {/* Tags */}
+        <SurfaceCard style={{ padding: '14px 16px' }}>
+          <p style={S.sectionLabel}>{t('expense.tags')}</p>
+          <TagInput tags={form.tags} onChange={(tags) => setForm((f) => ({ ...f, tags }))} suggestions={allTags} />
+        </SurfaceCard>
+
+        {/* People / split */}
         {people.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.for')}</label>
-            <div className="flex gap-2">
+          <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={S.sectionLabel}>{t('expense.for')}</p>
+            <div style={{ display: 'flex', gap: 8 }}>
               {['self', 'other'].map((mode) => (
-                <button
-                  type="button"
-                  key={mode}
+                <button key={mode} type="button"
                   onClick={() => setForm((f) => ({ ...f, forMode: mode, paidForPersonId: '', peopleIds: [] }))}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
-                    form.forMode === mode
-                      ? 'bg-primary-500 text-white border-primary-500'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                  }`}
-                >
+                  style={{ ...S.personChip(form.forMode === mode), flex: 1, borderRadius: 10 }}>
                   {mode === 'self' ? t('expense.myself') : t('expense.someone_else')}
                 </button>
               ))}
             </div>
-
             {form.forMode === 'other' && (
               <>
-                <select
-                  value={form.paidForPersonId}
-                  onChange={field('paidForPersonId')}
-                  required={form.forMode === 'other'}
-                  className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-                >
+                <select value={form.paidForPersonId} onChange={field('paidForPersonId')} required style={S.select}>
                   <option value="">{t('expense.select_person')}</option>
-                  {people.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                  {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
                 {form.paidForPersonId && Number(form.amount) > 0 && (
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-700 rounded-xl px-4 py-3 flex items-center gap-3">
-                    <span className="text-lg">🧾</span>
+                  <div style={{ background: '#FFFBEB', border: '1px solid #F59E0B', borderRadius: 10, padding: '8px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span>ðŸ§¾</span>
                     <div>
-                      <p className="text-sm font-semibold text-amber-700">
+                      <p style={{ fontSize: 12, fontWeight: 700, color: '#92400E', margin: 0 }}>
                         {t('expense.owes_you', { name: people.find((p) => p.id === form.paidForPersonId)?.name, amount: Number(form.amount).toFixed(2) })}
                       </p>
-                      <p className="text-xs text-amber-500">{t('expense.owes_full')}</p>
+                      <p style={{ fontSize: 11, color: '#B45309', margin: 0 }}>{t('expense.owes_full')}</p>
                     </div>
                   </div>
                 )}
               </>
             )}
-
             {form.forMode === 'self' && (
               <>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mt-1">{t('expense.split_with')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {people.map((p) => {
-                    const selected = form.peopleIds.includes(p.id);
-                    return (
-                      <button
-                        type="button"
-                        key={p.id}
-                        onClick={() => togglePerson(p.id)}
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                          selected
-                            ? 'bg-primary-500 text-white border-primary-500'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                        }`}
-                      >
-                        {p.name}
-                      </button>
-                    );
-                  })}
+                <p style={S.sectionLabel}>{t('expense.split_with')}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {people.map((p) => (
+                    <button key={p.id} type="button" onClick={() => togglePerson(p.id)} style={S.personChip(form.peopleIds.includes(p.id))}>
+                      {p.name}
+                    </button>
+                  ))}
                 </div>
                 {form.peopleIds.length > 0 && Number(form.amount) > 0 && (() => {
                   const total = Number(form.amount);
@@ -776,31 +690,27 @@ export default function AddEditExpensePage() {
                   const theirShare = isCustom ? (total - ps) / n : total / n;
                   return (
                     <>
-                      <div className="flex items-center gap-2">
-                        <label className="text-xs text-gray-500 shrink-0">{t('expense.my_share', 'My share (optional)')}</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: '#B0B8C4', flexShrink: 0 }}>{t('expense.my_share', 'My share')}</span>
+                        <input type="number" min="0" step="0.01"
                           placeholder={`${(total / n).toFixed(2)}`}
                           value={form.personalShare}
                           onChange={(e) => setForm((f) => ({ ...f, personalShare: e.target.value }))}
-                          className="flex-1 text-sm border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-                        />
+                          style={{ ...S.input, flex: 1 }} />
                       </div>
-                      <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-700 rounded-xl px-4 py-3 flex items-center gap-3">
-                        <span className="text-lg">⚖️</span>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-primary-700">
+                      <div style={{ background: '#E6FAF9', borderRadius: 10, padding: '8px 12px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span>âš–ï¸</span>
+                        <div>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: '#009E90', margin: 0 }}>
                             {isCustom
-                              ? `You: ₹${myShare.toFixed(2)} · Each of them: ₹${theirShare.toFixed(2)}`
+                              ? `You: â‚¹${myShare.toFixed(2)} Â· Each: â‚¹${theirShare.toFixed(2)}`
                               : t('expense.split_each', { amount: (total / n).toFixed(2) })}
                           </p>
-                          <p className="text-xs text-primary-500">
+                          <p style={{ fontSize: 11, color: '#00C2B2', margin: 0 }}>
                             {form.peopleIds.length === 1
                               ? t('expense.split_with_one', { n: form.peopleIds.length })
                               : t('expense.split_with_many', { n: form.peopleIds.length })}
-                            {isCustom && ' · custom split'}
+                            {isCustom && ' Â· custom'}
                           </p>
                         </div>
                       </div>
@@ -809,419 +719,299 @@ export default function AddEditExpensePage() {
                 })()}
               </>
             )}
-          </div>
+          </SurfaceCard>
         )}
 
-        {/* Link to Shared Tab — shown only when there's a split person and active tabs exist */}
-        {!isEdit && activeTabs.length > 0 && ((form.forMode === 'other' && form.paidForPersonId) || (form.forMode === 'self' && form.peopleIds.length > 0)) && (
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">🤝 Link to Shared Tab <span className="text-xs font-normal text-gray-400">(optional)</span></label>
-            <select
-              value={form.tabId}
-              onChange={(e) => setForm((f) => ({ ...f, tabId: e.target.value }))}
-              className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-            >
-              <option value="">Don't link to a tab</option>
-              {activeTabs.map((tab) => (
-                <option key={tab.id} value={tab.id}>{tab.name}</option>
-              ))}
-            </select>
-            {form.tabId && (
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-700 rounded-xl px-4 py-3 flex items-center gap-3">
-                <span className="text-lg">🤝</span>
-                <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                  This expense will appear in the tab and update the shared balance automatically.
-                </p>
-              </div>
+        {/* Receipt */}
+        <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ ...S.sectionLabel, marginBottom: 0 }}>{t('expense.receipt')}</p>
+            {receiptFile && (
+              <button type="button" onClick={handleScanReceipt} disabled={isScanning}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#E6FAF9', border: 'none', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 800, color: '#009E90', fontFamily: 'inherit' }}>
+                {isScanning ? (
+                  <><span style={{ width: 10, height: 10, border: '2px solid #00C2B2', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />Scanningâ€¦</>
+                ) : 'ðŸ” Scan & Fill'}
+              </button>
             )}
           </div>
+          {receiptPreview || receiptUrl ? (
+            <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden' }}>
+              <img src={receiptPreview || receiptUrl} alt={t('expense.receipt')} style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
+              <button type="button" onClick={() => { setReceiptFile(null); setReceiptUrl(''); }}
+                style={{ position: 'absolute', top: 8, right: 8, background: '#E11D48', color: '#fff', border: 'none', borderRadius: 20, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12 }}>âœ•</button>
+              <label style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: 11, cursor: 'pointer' }}>
+                {t('expense.replace')}
+                <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
+              </label>
+            </div>
+          ) : (
+            <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 12, border: '2px dashed #E9ECF0', fontSize: 13, color: '#B0B8C4', cursor: 'pointer' }}>
+              <span style={{ fontSize: 20 }}>ðŸ“·</span>
+              {t('expense.attach_receipt')}
+              <input type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && setReceiptFile(e.target.files[0])} />
+            </label>
+          )}
+          {ocrError && (
+            <p style={{ fontSize: 11, color: '#E11D48', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+              âš  {ocrError}
+              <button type="button" onClick={clearOcrError} style={{ background: 'none', border: 'none', color: '#E11D48', cursor: 'pointer', textDecoration: 'underline', fontSize: 11, fontFamily: 'inherit' }}>Dismiss</button>
+            </p>
+          )}
+        </SurfaceCard>
+
+        {/* Itemized */}
+        <SurfaceCard style={{ padding: '14px 16px' }}>
+          <button type="button"
+            onClick={() => {
+              if (form.items.length > 0) {
+                if (window.confirm('Remove all items and switch to manual amount?')) setForm((f) => ({ ...f, items: [] }));
+              } else {
+                setForm((f) => ({ ...f, items: [{ id: `new-${Date.now()}`, name: '', amount: '' }] }));
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', width: '100%' }}>
+            <span style={{ fontSize: 18 }}>ðŸ§¾</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: form.items.length > 0 ? '#6366F1' : '#374151', flex: 1, textAlign: 'left' }}>
+              {form.items.length > 0 ? `Itemized (${form.items.length} items)` : 'Add itemized breakdown'}
+            </span>
+            {form.items.length > 0 && <span style={{ fontSize: 11, color: '#B0B8C4' }}>tap to remove</span>}
+          </button>
+          {form.items.length > 0 && (
+            <div style={{ marginTop: 10, background: '#F0F2F7', borderRadius: 10, overflow: 'hidden' }}>
+              {form.items.map((item, idx) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: idx < form.items.length - 1 ? '1px solid #E9ECF0' : 'none' }}>
+                  <span style={{ fontSize: 11, color: '#B0B8C4', width: 16, flexShrink: 0 }}>{idx + 1}</span>
+                  <input value={item.name}
+                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, name: e.target.value } : it) }))}
+                    placeholder="Item name"
+                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: '#0A0D14', fontFamily: 'inherit' }} />
+                  <span style={{ fontSize: 12, color: '#B0B8C4' }}>â‚¹</span>
+                  <input type="number" inputMode="decimal" value={item.amount}
+                    onChange={(e) => setForm((f) => ({ ...f, items: f.items.map((it, i) => i === idx ? { ...it, amount: e.target.value } : it) }))}
+                    placeholder="0"
+                    style={{ width: 72, background: 'transparent', border: 'none', outline: 'none', fontSize: 13, color: '#0A0D14', fontFamily: 'inherit', textAlign: 'right' }} />
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, items: f.items.filter((_, i) => i !== idx) }))}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B0B8C4', fontSize: 14, padding: 0, flexShrink: 0 }}>âœ•</button>
+                </div>
+              ))}
+              <button type="button"
+                onClick={() => setForm((f) => ({ ...f, items: [...f.items, { id: `new-${Date.now()}-${f.items.length}`, name: '', amount: '' }] }))}
+                style={{ width: '100%', padding: 8, fontSize: 12, color: '#00C2B2', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderTop: '1px solid #E9ECF0' }}>
+                + Add item
+              </button>
+            </div>
+          )}
+        </SurfaceCard>
+
+        {/* Delegated card + willRepay */}
+        {activeDelegation && (
+          <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ background: '#EEF2FF', border: '1.5px solid #6366F1', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 10 }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>ðŸ¦</span>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#4338CA', margin: 0 }}>
+                  {t('expense.delegated_card', { name: activeDelegation.owner?.name || 'Card owner' })}
+                </p>
+                <p style={{ fontSize: 11, color: '#6366F1', margin: 0 }}>{t('expense.delegated_info')}</p>
+              </div>
+            </div>
+            <div style={S.toggleRow(form.willRepay, '#FFF7ED', '#F97316')} onClick={() => setForm((f) => ({ ...f, willRepay: !f.willRepay }))}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>ðŸ’¸</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{t('expense.will_repay')}</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{t('expense.will_repay_info', { name: activeDelegation.owner?.name || 'the owner' })}</p>
+                </div>
+              </div>
+              <Toggle value={form.willRepay} onChange={(v) => setForm((f) => ({ ...f, willRepay: v }))} />
+            </div>
+          </SurfaceCard>
         )}
 
-        {!isEdit && (
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={() => setForm((f) => {
-                const isOn = !f.isRecurring;
-                return {
-                  ...f,
-                  isRecurring: isOn,
-                  recurringStartAt: isOn ? defaultRecurringStart(f.expenseDate, f.frequency) : '',
-                };
-              })}
-              className="flex items-center justify-between min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🔁</span>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{t('expense.make_recurring')}</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('expense.recurring_desc')}</p>
+        {/* Reimbursement */}
+        <SurfaceCard style={{ padding: '14px 16px' }}>
+          <div style={S.toggleRow(form.isReimbursement, '#F0FDF4', '#10B981')} onClick={() => setForm((f) => ({ ...f, isReimbursement: !f.isReimbursement }))}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18 }}>â†©ï¸</span>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{t('expense.reimbursement')}</p>
+                <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{t('expense.reimbursement_info')}</p>
+              </div>
+            </div>
+            <Toggle value={form.isReimbursement} onChange={(v) => setForm((f) => ({ ...f, isReimbursement: v }))} />
+          </div>
+        </SurfaceCard>
+
+        {/* Offline banner */}
+        {!isOnline && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#F3F4F6', border: '1.5px solid #E9ECF0', borderRadius: 12, padding: '10px 14px' }}>
+            <span>ðŸ“µ</span>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#374151', margin: 0 }}>You're offline</p>
+              <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>Changes will be saved locally and synced when you reconnect.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Duplicate warning */}
+        {possibleDuplicate && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: '#FFFBEB', border: '1.5px solid #F59E0B', borderRadius: 12, padding: '10px 14px' }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>âš ï¸</span>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#92400E', margin: 0 }}>Possible duplicate</p>
+              <p style={{ fontSize: 11, color: '#B45309', margin: '2px 0 0' }}>
+                "{possibleDuplicate.title}" Â· â‚¹{Number(possibleDuplicate.amount).toLocaleString('en-IN')} was added{' '}
+                {new Date(possibleDuplicate.expenseDate).toDateString() === new Date(form.expenseDate).toDateString() ? 'today' : 'yesterday'}.
+              </p>
+            </div>
+            <button type="button" onClick={() => setDismissedDuplicate(true)}
+              style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#F59E0B', padding: 0, flexShrink: 0 }}>âœ•</button>
+          </div>
+        )}
+
+        {/* Recurring — ADD mode only */}
+        {isNew && (
+          <SurfaceCard style={{ padding: '14px 16px' }}>
+            <div style={S.toggleRow(form.isRecurring)} onClick={() => setForm((f) => {
+              const isOn = !f.isRecurring;
+              return { ...f, isRecurring: isOn, recurringStartAt: isOn ? defaultRecurringStart(f.expenseDate, f.frequency) : '' };
+            })}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>&#x1F501;</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{t('expense.make_recurring')}</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{t('expense.recurring_desc')}</p>
                 </div>
               </div>
-              <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.isRecurring ? 'bg-primary-500' : 'bg-gray-200'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isRecurring ? 'translate-x-4' : 'translate-x-0'}`} />
-              </div>
-            </button>
-
+              <Toggle value={form.isRecurring} onChange={(v) => setForm((f) => ({ ...f, isRecurring: v, recurringStartAt: v ? defaultRecurringStart(f.expenseDate, f.frequency) : '' }))} />
+            </div>
             {form.isRecurring && (
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex gap-2">
-                    {FREQ_OPTIONS_ROW1.map((opt) => (
-                      <button
-                        type="button"
-                        key={opt.value}
-                        onClick={() => setForm((f) => ({
-                          ...f,
-                          frequency: opt.value,
-                          recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays),
-                        }))}
-                        className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
-                          form.frequency === opt.value
-                            ? 'bg-primary-500 text-white border-primary-500'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                        }`}
-                      >
-                        {t(opt.tKey)}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    {FREQ_OPTIONS_ROW2.map((opt) => (
-                      <button
-                        type="button"
-                        key={opt.value}
-                        onClick={() => setForm((f) => ({
-                          ...f,
-                          frequency: opt.value,
-                          recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays),
-                        }))}
-                        className={`flex-1 py-2 rounded-xl text-xs font-medium border transition-colors ${
-                          form.frequency === opt.value
-                            ? 'bg-primary-500 text-white border-primary-500'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                        }`}
-                      >
-                        {t(opt.tKey)}
-                      </button>
-                    ))}
-                  </div>
+              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {FREQ_OPTIONS_ROW1.map((opt) => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setForm((f) => ({ ...f, frequency: opt.value, recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays) }))}
+                      style={S.freqBtn(form.frequency === opt.value)}>
+                      {t(opt.tKey)}
+                    </button>
+                  ))}
                 </div>
-
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {FREQ_OPTIONS_ROW2.map((opt) => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setForm((f) => ({ ...f, frequency: opt.value, recurringStartAt: defaultRecurringStart(f.expenseDate, opt.value, f.customDays) }))}
+                      style={S.freqBtn(form.frequency === opt.value)}>
+                      {t(opt.tKey)}
+                    </button>
+                  ))}
+                </div>
                 {form.frequency === 'CUSTOM_DAYS' && (
-                  <div className="flex flex-col gap-1">
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('expense.repeat_on')}</p>
-                    <div className="flex gap-1.5 flex-wrap">
+                  <div>
+                    <p style={{ ...S.sectionLabel, marginBottom: 6 }}>{t('expense.repeat_on')}</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {DAY_OPTIONS.map((d) => {
                         const active = form.customDays.includes(d.value);
                         return (
-                          <button
-                            type="button"
-                            key={d.value}
+                          <button key={d.value} type="button"
                             onClick={() => setForm((f) => {
-                              const next = active
-                                ? f.customDays.filter((x) => x !== d.value)
-                                : [...f.customDays, d.value];
-                              return {
-                                ...f,
-                                customDays: next,
-                                recurringStartAt: defaultRecurringStart(f.expenseDate, 'CUSTOM_DAYS', next),
-                              };
+                              const next = active ? f.customDays.filter((x) => x !== d.value) : [...f.customDays, d.value];
+                              return { ...f, customDays: next, recurringStartAt: defaultRecurringStart(f.expenseDate, 'CUSTOM_DAYS', next) };
                             })}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                              active
-                                ? 'bg-primary-500 text-white border-primary-500'
-                                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                            }`}
-                          >
+                            style={{ ...S.personChip(active), padding: '6px 10px', fontSize: 12, borderRadius: 8 }}>
                             {d.label}
                           </button>
                         );
                       })}
                     </div>
-                    {form.customDays.length === 0 && (
-                      <p className="text-xs text-red-400">{t('expense.select_day')}</p>
-                    )}
+                    {form.customDays.length === 0 && <p style={{ fontSize: 11, color: '#E11D48', marginTop: 4 }}>{t('expense.select_day')}</p>}
                   </div>
                 )}
-
-
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 flex flex-col gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('expense.first_on')}</label>
-                    <input
-                      type="datetime-local"
-                      value={form.recurringStartAt}
-                      onChange={field('recurringStartAt')}
-                      className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
-                    />
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('expense.first_on')}</p>
+                <div style={{ background: '#F0F2F7', borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div>
+                    <label style={{ ...S.sectionLabel, display: 'block' }}>{t('expense.first_on')}</label>
+                    <input type="datetime-local" value={form.recurringStartAt} onChange={field('recurringStartAt')} style={S.input} />
                   </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400">{t('expense.end_date')}</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="date"
-                        value={form.recurringEndDate}
-                        onChange={field('recurringEndDate')}
-                        className="flex-1 min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
-                      />
+                  <div>
+                    <label style={{ ...S.sectionLabel, display: 'block' }}>{t('expense.end_date')}</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input type="date" value={form.recurringEndDate} onChange={field('recurringEndDate')} style={{ ...S.input, flex: 1 }} />
                       {form.recurringEndDate && (
-                        <button
-                          type="button"
-                          onClick={() => setForm((f) => ({ ...f, recurringEndDate: '' }))}
-                          className="text-gray-400 dark:text-gray-500 text-lg px-2"
-                        >
-                          ✕
-                        </button>
+                        <button type="button" onClick={() => setForm((f) => ({ ...f, recurringEndDate: '' }))}
+                          style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: '#B0B8C4' }}>&#x2715;</button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('expense.end_date_hint')}</p>
+                    <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 4 }}>{t('expense.end_date_hint')}</p>
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </SurfaceCard>
         )}
 
+
+        {/* Comments — EDIT mode only */}
         {isEdit && (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('expense.comments')}</p>
+          <SurfaceCard style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <p style={S.sectionLabel}>{t('expense.comments')}</p>
             {comments.length > 0 && (
-              <div className="flex flex-col gap-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {comments.map((c) => (
-                  <div key={c.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-xl px-3 py-2.5 flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-400">{c.userName}</p>
-                      <p className="text-sm text-gray-800 dark:text-gray-200 mt-0.5">{c.text}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                        {dfFormat(new Date(c.createdAt), 'd MMM, h:mm a')}
-                      </p>
+                  <div key={c.id} style={{ background: '#F0F2F7', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 11, fontWeight: 700, color: '#374151', margin: 0 }}>{c.userName}</p>
+                      <p style={{ fontSize: 13, color: '#0A0D14', margin: '2px 0' }}>{c.text}</p>
+                      <p style={{ fontSize: 10, color: '#B0B8C4', margin: 0 }}>{dfFormat(new Date(c.createdAt), 'd MMM, h:mm a')}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteComment.mutate(c.id)}
-                      className="text-gray-300 dark:text-gray-600 active:text-red-400 text-sm shrink-0 mt-0.5"
-                    >
-                      ✕
-                    </button>
+                    <button type="button" onClick={() => deleteComment.mutate(c.id)}
+                      style={{ background: 'none', border: 'none', color: '#B0B8C4', fontSize: 14, cursor: 'pointer', padding: 0, flexShrink: 0, marginTop: 2 }}>&#x2715;</button>
                   </div>
                 ))}
               </div>
             )}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (commentText.trim()) {
-                      addComment.mutate(commentText, { onSuccess: () => setCommentText('') });
-                    }
+                    if (commentText.trim()) addComment.mutate(commentText, { onSuccess: () => setCommentText('') });
                   }
                 }}
                 placeholder={t('expense.comment_placeholder')}
-                className="flex-1 min-h-[40px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-200 outline-none focus:border-primary-400"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (commentText.trim()) {
-                    addComment.mutate(commentText, { onSuccess: () => setCommentText('') });
-                  }
-                }}
+                style={{ ...S.input, flex: 1 }} />
+              <button type="button"
+                onClick={() => { if (commentText.trim()) addComment.mutate(commentText, { onSuccess: () => setCommentText('') }); }}
                 disabled={!commentText.trim() || addComment.isPending}
-                className="px-3 py-2 rounded-xl bg-primary-500 text-white text-sm font-medium disabled:opacity-40"
-              >
+                style={{ height: 44, padding: '0 16px', borderRadius: 10, background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', opacity: (!commentText.trim() || addComment.isPending) ? 0.4 : 1 }}>
                 {t('expense.post')}
               </button>
             </div>
-          </div>
+          </SurfaceCard>
         )}
 
-        {/* Delegated card banner + willRepay toggle */}
-        {activeDelegation && !isEdit && (
-          <div className="flex flex-col gap-2">
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3 flex items-start gap-3">
-              <span className="text-xl shrink-0">🏦</span>
-              <div>
-                <p className="text-sm font-semibold text-indigo-800 dark:text-indigo-300">
-                  {t('expense.delegated_card', { name: activeDelegation.owner?.name || 'Card owner' })}
-                </p>
-                <p className="text-xs text-indigo-600 dark:text-indigo-400">
-                  {t('expense.delegated_info')}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setForm((f) => ({ ...f, willRepay: !f.willRepay }))}
-              className={`flex items-center justify-between min-h-[48px] px-4 rounded-xl border transition-colors ${
-                form.willRepay
-                  ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-700'
-                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-lg">💸</span>
-                <div className="text-left">
-                  <p className={`text-sm font-medium ${form.willRepay ? 'text-orange-700 dark:text-orange-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                    {t('expense.will_repay')}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('expense.will_repay_info', { name: activeDelegation.owner?.name || 'the owner' })}</p>
-                </div>
-              </div>
-              <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.willRepay ? 'bg-orange-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
-                <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.willRepay ? 'translate-x-4' : 'translate-x-0'}`} />
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* Reimbursement toggle */}
-        <button
-          type="button"
-          onClick={() => setForm((f) => ({ ...f, isReimbursement: !f.isReimbursement }))}
-          className={`flex items-center justify-between min-h-[48px] px-4 rounded-xl border transition-colors ${
-            form.isReimbursement
-              ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-700'
-              : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-lg">↩️</span>
-            <div className="text-left">
-              <p className={`text-sm font-medium ${form.isReimbursement ? 'text-emerald-700 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                {t('expense.reimbursement')}
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500">{t('expense.reimbursement_info')}</p>
-            </div>
-          </div>
-          <div className={`w-10 h-6 rounded-full transition-colors flex items-center px-1 ${form.isReimbursement ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-gray-600'}`}>
-            <div className={`w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isReimbursement ? 'translate-x-4' : 'translate-x-0'}`} />
-          </div>
-        </button>
-
-        {/* Offline banner */}
-        {!isOnline && !isEdit && (
-          <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-2xl px-4 py-3">
-            <span className="text-lg">📵</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">You're offline</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Expense will be saved locally and synced when you reconnect.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Duplicate warning banner */}
-        {possibleDuplicate && (
-          <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-3">
-            <span className="text-lg shrink-0">⚠️</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Possible duplicate</p>
-              <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                "{possibleDuplicate.title}" · ₹{Number(possibleDuplicate.amount).toLocaleString('en-IN')} was added{' '}
-                {new Date(possibleDuplicate.expenseDate).toDateString() === new Date(form.expenseDate).toDateString()
-                  ? 'today'
-                  : 'yesterday'}.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDismissedDuplicate(true)}
-              className="text-amber-500 hover:text-amber-700 text-lg leading-none shrink-0"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div className="flex gap-3 mt-2">
-          <Button type="submit" disabled={busy} className="flex-1">
-            {busy ? t('common.saving') : isEdit ? t('expense.save_changes') : t('expense.add_expense')}
-          </Button>
+        {/* Submit buttons */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button type="button" onClick={handleSubmit} disabled={busy}
+            style={{ flex: 1, height: 52, borderRadius: 14, background: busy ? '#E9ECF0' : 'linear-gradient(135deg,#00C2B2,#009E90)', color: busy ? '#B0B8C4' : '#fff', border: 'none', fontSize: 15, fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.3px', fontFamily: 'inherit' }}>
+            {busy ? t('common.saving') : isNew ? t('expense.add_title') : t('expense.save_changes')}
+          </button>
           {isEdit && (
-            <Button
-              type="button"
-              variant="danger"
-              onClick={handleDelete}
-              disabled={deleteExpense.isPending}
-            >
+            <button type="button" onClick={handleDelete} disabled={deleteExpense.isPending}
+              style={{ height: 52, padding: '0 18px', borderRadius: 14, background: '#FFF1F3', color: '#E11D48', border: '1.5px solid #FCA5A5', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', opacity: deleteExpense.isPending ? 0.6 : 1 }}>
               {t('common.delete')}
-            </Button>
+            </button>
           )}
         </div>
+      </div>
 
-        {/* Save as template — new expenses only */}
-        {!isEdit && form.title && (
-          <button
-            type="button"
-            onClick={() => setShowSaveTemplate(true)}
-            className="w-full py-2 text-xs text-gray-400 hover:text-primary-500 transition-colors"
-          >
-            ⚡ Save as quick-add template
-          </button>
-        )}
-      </form>
-
-      {/* Save as template sheet */}
-      {showSaveTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowSaveTemplate(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm space-y-4">
-            <h3 className="font-bold text-gray-900 dark:text-white">⚡ Save as Template</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              <strong>{form.title}</strong>{form.amount ? ` · ₹${Number(form.amount).toLocaleString('en-IN')}` : ''}
-            </p>
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Emoji (optional)</label>
-              <input
-                className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="e.g. ⛽ 🍕 🚌"
-                value={templateEmoji}
-                onChange={(e) => setTemplateEmoji(e.target.value)}
-                maxLength={4}
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowSaveTemplate(false)}
-                className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  await createTemplate.mutateAsync({
-                    title: form.title,
-                    emoji: templateEmoji || null,
-                    amount: form.amount ? Number(form.amount) : null,
-                    categoryId: form.categoryId || null,
-                    paymentTypeId: form.paymentTypeId || null,
-                    note: form.note || null,
-                  });
-                  setShowSaveTemplate(false);
-                  setTemplateEmoji('');
-                }}
-                disabled={createTemplate.isPending}
-                className="flex-1 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60"
-              >
-                {createTemplate.isPending ? 'Saving…' : 'Save Template'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* OCR success toast */}
+      {/* OCR toast */}
       {ocrToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none">
+        <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', zIndex: 50, background: '#0A0D14', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 20, boxShadow: '0 4px 16px rgba(0,0,0,0.18)', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
           {ocrToast}
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import api from '../../lib/api';
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -22,12 +22,20 @@ function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const { label, balance, delta } = payload[0].payload;
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl px-3 py-2 shadow-lg text-xs max-w-[180px]">
-      <p className="font-semibold text-gray-800 dark:text-gray-100 mb-0.5 leading-snug">{label}</p>
-      <p className={`font-bold text-sm ${delta >= 0 ? 'text-red-500' : 'text-green-600'}`}>
+    <div style={{
+      background: '#FFFFFF',
+      border: '1px solid #E5E7EB',
+      borderRadius: 12,
+      padding: '10px 14px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+      fontSize: 12,
+      maxWidth: 180,
+    }}>
+      <p style={{ fontWeight: 700, color: '#0A0D14', margin: '0 0 4px', lineHeight: 1.3 }}>{label}</p>
+      <p style={{ fontWeight: 700, fontSize: 14, color: delta >= 0 ? '#E11D48' : '#059669', margin: 0 }}>
         {delta >= 0 ? '+' : ''}{fmt(delta)}
       </p>
-      <p className="text-gray-400 mt-0.5">Balance: {fmt(balance)}</p>
+      <p style={{ color: '#B0B8C4', margin: '4px 0 0' }}>Balance: {fmt(balance)}</p>
     </div>
   );
 }
@@ -53,83 +61,102 @@ export default function BalanceHistoryPage() {
   const currentBalance = rawTimeline.length > 0 ? rawTimeline[rawTimeline.length - 1].balance : 0;
   const maxAbs = Math.max(...chartData.map((p) => Math.abs(p.balance)), 100);
 
-  const lineColor = currentBalance > 50 ? '#ef4444' : currentBalance < -50 ? '#22c55e' : '#6366f1';
+  // Teal for balanced, red for you-owe, green for they-owe
+  const lineColor = currentBalance > 50 ? '#E11D48' : currentBalance < -50 ? '#059669' : '#00C2B2';
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={person ? `${person.name} · Balance` : 'Balance History'} showBack />
 
-      <div className="flex-1 pb-8 px-4">
+      <div style={{ flex: 1, padding: '16px', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Loading skeleton */}
         {isLoading && (
-          <div className="flex flex-col gap-4 pt-6 animate-pulse">
-            <div className="h-32 bg-white dark:bg-gray-800 rounded-2xl" />
-            <div className="h-48 bg-white dark:bg-gray-800 rounded-2xl" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ height: 100, background: '#FFFFFF', borderRadius: 20, opacity: 0.6 }} />
+            <div style={{ height: 220, background: '#FFFFFF', borderRadius: 20, opacity: 0.6 }} />
           </div>
         )}
 
+        {/* Empty state */}
         {!isLoading && rawTimeline.length === 0 && (
-          <div className="flex flex-col items-center justify-center pt-24 text-center px-8">
-            <p className="text-4xl mb-3">📈</p>
-            <p className="text-base font-medium text-gray-700 dark:text-gray-300">No history yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+          <SurfaceCard style={{ padding: '56px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
+            <span style={{ fontSize: 44 }}>📈</span>
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#0A0D14', margin: 0 }}>No history yet</p>
+            <p style={{ fontSize: 13, color: '#B0B8C4', margin: 0 }}>
               Add expenses with {person?.name || 'this person'} to see balance over time.
             </p>
-          </div>
+          </SurfaceCard>
         )}
 
         {!isLoading && rawTimeline.length > 0 && (
-          <div className="flex flex-col gap-4 pt-4">
-            {/* Current balance summary */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between">
+          <>
+            {/* Current balance summary card */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0A0D14 0%, #1a2340 100%)',
+              borderRadius: 20,
+              padding: '20px 20px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
               <div>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Current balance</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">with {person?.name}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Current balance</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '3px 0 0' }}>with {person?.name}</p>
               </div>
-              <div className="text-right">
+              <div style={{ textAlign: 'right' }}>
                 {currentBalance > 0 ? (
                   <>
-                    <p className="text-2xl font-bold text-red-500">{fmt(currentBalance)}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{person?.name} {t('balance.owes_you')}</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, color: '#E11D48', margin: 0, letterSpacing: '-0.5px' }}>
+                      {fmt(currentBalance)}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0' }}>
+                      {person?.name} {t('balance.owes_you')}
+                    </p>
                   </>
                 ) : currentBalance < 0 ? (
                   <>
-                    <p className="text-2xl font-bold text-green-600">{fmt(Math.abs(currentBalance))}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.you_owe')} {person?.name}</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, color: '#059669', margin: 0, letterSpacing: '-0.5px' }}>
+                      {fmt(Math.abs(currentBalance))}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0' }}>
+                      {t('balance.you_owe')} {person?.name}
+                    </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-gray-400">₹0</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">all settled</p>
+                    <p style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.45)', margin: 0 }}>₹0</p>
+                    <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0' }}>all settled</p>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Chart */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl px-2 pt-5 pb-3">
-              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-3 mb-3">
+            {/* Chart card */}
+            <SurfaceCard style={{ padding: '16px 8px 12px' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '0 8px', margin: '0 0 12px' }}>
                 Balance over time
               </p>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" strokeOpacity={0.5} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F0F2F7" strokeOpacity={0.8} />
                   <XAxis
                     dataKey="date"
                     tickFormatter={(d) => format(new Date(d), 'd MMM')}
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tick={{ fontSize: 10, fill: '#B0B8C4' }}
                     axisLine={false}
                     tickLine={false}
                     interval="preserveStartEnd"
                   />
                   <YAxis
                     tickFormatter={(v) => `₹${Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
-                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tick={{ fontSize: 10, fill: '#B0B8C4' }}
                     axisLine={false}
                     tickLine={false}
                     domain={[-maxAbs * 1.1, maxAbs * 1.1]}
                     width={40}
                   />
-                  <ReferenceLine y={0} stroke="#d1d5db" strokeDasharray="4 4" />
+                  <ReferenceLine y={0} stroke="#E5E7EB" strokeDasharray="4 4" />
                   <Tooltip content={<CustomTooltip />} />
                   <Line
                     type="stepAfter"
@@ -141,43 +168,84 @@ export default function BalanceHistoryPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
-              <p className="text-[10px] text-gray-300 dark:text-gray-600 text-center mt-1">
+              <p style={{ fontSize: 10, color: '#B0B8C4', textAlign: 'center', margin: '6px 0 0' }}>
                 Positive = {person?.name} {t('balance.owes_you')} · Negative = {t('balance.you_owe')} {person?.name}
               </p>
-            </div>
+            </SurfaceCard>
 
             {/* Event timeline */}
             <div>
-              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px 4px' }}>
                 All events
               </p>
-              <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-50 dark:divide-gray-700">
-                {[...rawTimeline].reverse().map((event, idx) => (
-                  <div key={idx} className="flex items-center gap-3 px-4 py-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${event.delta >= 0 ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'}`}>
-                      {event.delta >= 0 ? '📤' : '✅'}
+              <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+                {[...rawTimeline].reverse().map((event, idx) => {
+                  const isCredit = event.delta < 0; // they paid → balance moves down (you're less owed)
+                  const isLast = idx === rawTimeline.length - 1;
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '14px 16px',
+                        borderBottom: isLast ? 'none' : '1px solid #F0F2F7',
+                      }}
+                    >
+                      {/* Direction icon */}
+                      <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 13,
+                        background: event.delta >= 0 ? '#FEE2E2' : '#D1FAE5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 18,
+                        flexShrink: 0,
+                      }}>
+                        {event.delta >= 0 ? '📤' : '✅'}
+                      </div>
+
+                      {/* Label + date */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: '#0A0D14',
+                          margin: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {event.label}
+                        </p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', margin: '3px 0 0' }}>
+                          {format(new Date(event.date), 'd MMM yyyy')}
+                        </p>
+                      </div>
+
+                      {/* Delta + running balance */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <p style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: event.delta >= 0 ? '#E11D48' : '#059669',
+                          margin: 0,
+                        }}>
+                          {event.delta >= 0 ? '+' : ''}{fmt(event.delta)}
+                        </p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', margin: '3px 0 0' }}>{fmt(event.balance)}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 dark:text-gray-200 truncate">{event.label}</p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {format(new Date(event.date), 'd MMM yyyy')}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-sm font-semibold ${event.delta >= 0 ? 'text-red-500' : 'text-green-600'}`}>
-                        {event.delta >= 0 ? '+' : ''}{fmt(event.delta)}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">{fmt(event.balance)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  );
+                })}
+              </SurfaceCard>
             </div>
-          </div>
+          </>
         )}
       </div>
-
-      <BottomNav />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useState } from 'react';
 export default function TagInput({ tags = [], onChange, suggestions = [] }) {
   const [input, setInput] = useState('');
   const [showSugg, setShowSugg] = useState(false);
+  const [focused, setFocused] = useState(false);
 
   const filtered = input.trim()
     ? suggestions.filter((s) => s.toLowerCase().includes(input.toLowerCase()) && !tags.includes(s))
@@ -32,18 +33,42 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
   return (
     <div className="flex flex-col gap-1.5">
       <div
-        className="min-h-[48px] px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 flex flex-wrap gap-1.5 items-center focus-within:border-primary-400"
+        className="flex flex-wrap gap-1.5 items-center"
+        style={{
+          minHeight: 48,
+          padding: '8px 12px',
+          borderRadius: 10,
+          background: '#F0F2F7',
+          border: `1.5px solid ${focused ? '#00C2B2' : '#E9ECF0'}`,
+          transition: 'border-color 0.15s',
+        }}
       >
         {tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300"
+            className="inline-flex items-center gap-1"
+            style={{
+              background: '#E6FAF9',
+              color: '#009E90',
+              borderRadius: 20,
+              padding: '3px 10px 3px 8px',
+              fontSize: 12,
+              fontWeight: 500,
+            }}
           >
             #{tag}
             <button
               type="button"
               onClick={() => remove(tag)}
-              className="text-primary-400 hover:text-primary-600 leading-none"
+              style={{
+                color: '#B0B8C4',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                lineHeight: 1,
+                padding: 0,
+                fontSize: 14,
+              }}
             >
               ×
             </button>
@@ -54,10 +79,18 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
           value={input}
           onChange={(e) => { setInput(e.target.value); setShowSugg(true); }}
           onKeyDown={handleKey}
-          onFocus={() => setShowSugg(true)}
-          onBlur={() => setTimeout(() => setShowSugg(false), 150)}
+          onFocus={() => { setFocused(true); setShowSugg(true); }}
+          onBlur={() => { setFocused(false); setTimeout(() => setShowSugg(false), 150); }}
           placeholder={tags.length === 0 ? 'Add tags…' : ''}
-          className="flex-1 min-w-[80px] text-sm text-gray-800 dark:text-gray-200 bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500"
+          style={{
+            flex: 1,
+            minWidth: 80,
+            fontSize: 14,
+            color: '#0A0D14',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+          }}
         />
       </div>
       {showSugg && filtered.length > 0 && (
@@ -67,14 +100,22 @@ export default function TagInput({ tags = [], onChange, suggestions = [] }) {
               key={s}
               type="button"
               onMouseDown={(e) => { e.preventDefault(); add(s); }}
-              className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 active:bg-primary-100"
+              style={{
+                padding: '2px 8px',
+                borderRadius: 99,
+                fontSize: 12,
+                background: '#E9ECF0',
+                color: '#374151',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
               #{s}
             </button>
           ))}
         </div>
       )}
-      <p className="text-xs text-gray-400 dark:text-gray-500">Press Enter or comma to add a tag</p>
+      <p style={{ fontSize: 12, color: '#B0B8C4' }}>Press Enter or comma to add a tag</p>
     </div>
   );
 }

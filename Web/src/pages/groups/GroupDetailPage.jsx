@@ -5,7 +5,9 @@ import html2canvas from 'html2canvas';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import TransactionRow from '../../components/ui/TransactionRow';
 import {
   useGroup,
   useAddGroupExpense,
@@ -41,17 +43,50 @@ function MemberAvatarsRow({ members, max = 5 }) {
   const visible = members.slice(0, max);
   const overflow = members.length - visible.length;
   return (
-    <div className="flex items-center -space-x-2">
+    <div style={{ display: 'flex', alignItems: 'center' }}>
       {visible.map((m, i) => (
         <div
           key={m.id || i}
-          className="w-8 h-8 rounded-full bg-primary-100 border-2 border-white flex items-center justify-center text-xs font-semibold text-primary-700 flex-shrink-0"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+            border: '2px solid #fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#fff',
+            flexShrink: 0,
+            marginLeft: i === 0 ? 0 : -8,
+            zIndex: visible.length - i,
+            position: 'relative',
+          }}
         >
           {initials(m.name)}
         </div>
       ))}
       {overflow > 0 && (
-        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-600 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-semibold text-gray-500 dark:text-gray-300 flex-shrink-0">
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: '#0A1628',
+            border: '2px solid #fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#fff',
+            flexShrink: 0,
+            marginLeft: -8,
+            position: 'relative',
+          }}
+        >
           +{overflow}
         </div>
       )}
@@ -74,84 +109,94 @@ function ExpensesTab({ group, currentUser }) {
 
   if (allExpenses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <span className="text-5xl">💸</span>
-        <p className="text-base font-semibold text-gray-700">No expenses yet</p>
-        <p className="text-sm text-gray-400">Add the first one!</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '96px 16px', gap: 12 }}>
+        <span style={{ fontSize: 48 }}>💸</span>
+        <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', margin: 0 }}>No expenses yet</p>
+        <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>Add the first one!</p>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Search */}
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">🔍</span>
+      <div style={{ position: 'relative' }}>
+        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontSize: 14, pointerEvents: 'none' }}>🔍</span>
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search expenses…"
-          className="w-full bg-gray-100 dark:bg-gray-700 rounded-xl pl-8 pr-4 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-100"
+          style={{
+            width: '100%',
+            background: '#F0F2F7',
+            borderRadius: 14,
+            paddingLeft: 32,
+            paddingRight: 16,
+            paddingTop: 10,
+            paddingBottom: 10,
+            fontSize: 14,
+            color: '#374151',
+            border: 'none',
+            outline: 'none',
+            boxSizing: 'border-box',
+          }}
         />
       </div>
 
       {expenses.length === 0 && (
-        <p className="text-center text-sm text-gray-400 py-8">No results for "{search}"</p>
+        <p style={{ textAlign: 'center', fontSize: 14, color: '#9CA3AF', padding: '32px 0' }}>No results for "{search}"</p>
       )}
 
-      {[...expenses]
-        .sort((a, b) => new Date(b.expenseDate || b.createdAt) - new Date(a.expenseDate || a.createdAt))
-        .map((exp) => {
-          const myShare = myMember
-            ? exp.shares?.find((s) => s.memberId === myMember.id)
-            : null;
-          const isAddedByMe = exp.addedBy?.userId === currentUser?.uid;
-          const isPaidByMe = exp.paidBy?.userId === currentUser?.uid;
-          return (
-            <div key={exp.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center text-base font-bold text-primary-600 flex-shrink-0">
-                {exp.title?.[0]?.toUpperCase() || '💸'}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{exp.title}</p>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(exp.amount, exp.currency)}</p>
+      <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+        {[...expenses]
+          .sort((a, b) => new Date(b.expenseDate || b.createdAt) - new Date(a.expenseDate || a.createdAt))
+          .map((exp, idx, arr) => {
+            const myShare = myMember
+              ? exp.shares?.find((s) => s.memberId === myMember.id)
+              : null;
+            const isAddedByMe = exp.addedBy?.userId === currentUser?.uid;
+            const isPaidByMe = exp.paidBy?.userId === currentUser?.uid;
+            const subtitle = [
+              `Paid by ${exp.paidBy?.name || 'Someone'} · ${fmtDate(exp.expenseDate || exp.createdAt)}`,
+              myShare && !isPaidByMe ? `Your share: ${fmt(myShare.amount, exp.currency)}` : null,
+              exp.note || null,
+            ].filter(Boolean).join(' · ');
+
+            return (
+              <TransactionRow
+                key={exp.id}
+                icon={exp.title?.[0]?.toUpperCase() || '💸'}
+                iconBg="linear-gradient(135deg, #E6FAF9 0%, #B2F0EB 100%)"
+                title={exp.title}
+                subtitle={subtitle}
+                amount={fmt(exp.amount, exp.currency)}
+                isIncome={isPaidByMe}
+                isLast={idx === arr.length - 1}
+                rightSlot={
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', letterSpacing: '-0.3px' }}>
+                      {fmt(exp.amount, exp.currency)}
+                    </span>
                     {exp.currency && exp.currency !== 'INR' && (exp.rateAtTime != null || rateMap[exp.currency]) && (
-                      <p className="text-[10px] text-gray-400">
+                      <span style={{ fontSize: 10, color: '#B0B8C4' }}>
                         ≈ {fmt(Number(exp.amount) * (exp.rateAtTime != null ? Number(exp.rateAtTime) : rateMap[exp.currency]), 'INR')}
-                      </p>
+                      </span>
                     )}
+                    {isPaidByMe && <Badge variant="active" label="You paid" />}
+                    {isAddedByMe && !isPaidByMe && <Badge variant="neutral" label="Added by you" />}
+                    <button
+                      onClick={() => deleteExpense.mutate(exp.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 0, color: '#D1D5DB' }}
+                    >
+                      🗑
+                    </button>
                   </div>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  Paid by {exp.paidBy?.name || 'Someone'} · {fmtDate(exp.expenseDate || exp.createdAt)}
-                </p>
-                {exp.note && (
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">{exp.note}</p>
-                )}
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {myShare && !isPaidByMe && (
-                    <span className="text-xs text-gray-400">Your share: {fmt(myShare.amount, exp.currency)}</span>
-                  )}
-                  {isPaidByMe && (
-                    <span className="text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-300 px-1.5 py-0.5 rounded-full">You paid</span>
-                  )}
-                  {isAddedByMe && !isPaidByMe && (
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">Added by you</span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => deleteExpense.mutate(exp.id)}
-                className="w-8 h-8 flex items-center justify-center text-gray-300 dark:text-gray-600 active:text-red-400 flex-shrink-0"
-              >
-                🗑
-              </button>
-            </div>
-          );
-        })}
+                }
+              />
+            );
+          })}
+      </SurfaceCard>
     </div>
   );
 }
@@ -217,7 +262,22 @@ function ShareBillButton({ group }) {
         type="button"
         onClick={handleShare}
         disabled={sharing || balances.length === 0}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-semibold text-sm border border-indigo-100 dark:border-indigo-700 active:bg-indigo-100 dark:active:bg-indigo-900/40 disabled:opacity-40"
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          padding: '13px 16px',
+          borderRadius: 14,
+          background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: 14,
+          border: 'none',
+          cursor: 'pointer',
+          opacity: (sharing || balances.length === 0) ? 0.4 : 1,
+        }}
       >
         {sharing ? '⏳ Generating image…' : '📸 Share bill as image'}
       </button>
@@ -265,69 +325,76 @@ function BalancesTab({ group, currentUser }) {
   const hasMixedCurrency = new Set((group.groupExpenses || []).map(e => e.currency || 'INR')).size > 1;
 
   return (
-    <div className="px-4 py-3 space-y-3">
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
       {hasMixedCurrency && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl px-4 py-2.5">
-          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">⚠️ Mixed currencies — balances are summed as-is without conversion</p>
-        </div>
+        <SurfaceCard style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+          <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500, margin: 0 }}>⚠️ Mixed currencies — balances are summed as-is without conversion</p>
+        </SurfaceCard>
       )}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center justify-between">
-        <p className="text-sm text-gray-500">Total group spend</p>
-        <p className="text-base font-bold text-gray-900 dark:text-white">{fmt(totalSpend, gc)}</p>
-      </div>
+
+      <SurfaceCard>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Total group spend</p>
+          <p style={{ fontSize: 16, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{fmt(totalSpend, gc)}</p>
+        </div>
+      </SurfaceCard>
 
       {balances.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-2">
-          <span className="text-4xl">⚖️</span>
-          <p className="text-sm text-gray-400">No balance data yet</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', gap: 8 }}>
+          <span style={{ fontSize: 40 }}>⚖️</span>
+          <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>No balance data yet</p>
         </div>
       ) : (
-        balances.map((b) => {
-          const n = Number(b.net || 0);
-          const isMe = b.userId === currentUser?.uid;
-          const bg =
-            n > 0 ? 'bg-green-100' : n < 0 ? 'bg-red-100' : 'bg-gray-100';
-          const textColor =
-            n > 0 ? 'text-green-700' : n < 0 ? 'text-red-600' : 'text-gray-500';
-          return (
-            <div
-              key={b.memberId}
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-3"
-            >
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${bg} ${textColor}`}
-              >
-                {initials(b.name)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{b.name}</p>
-                  {isMe && (
-                    <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-                      You
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
+        <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+          {balances.map((b, idx) => {
+            const n = Number(b.net || 0);
+            const isMe = b.userId === currentUser?.uid;
+            const amtColor = n > 0 ? '#059669' : n < 0 ? '#E11D48' : '#9CA3AF';
+            const avatarBg = n > 0
+              ? 'linear-gradient(135deg, #D1FAE5 0%, #6EE7B7 100%)'
+              : n < 0
+                ? 'linear-gradient(135deg, #FEE2E2 0%, #FCA5A5 100%)'
+                : '#F0F2F7';
+            const avatarColor = n > 0 ? '#065F46' : n < 0 ? '#991B1B' : '#6B7280';
+
+            const rightSlot = (
+              <div style={{ textAlign: 'right' }}>
                 {n > 0 ? (
                   <>
-                    <p className="text-sm font-semibold text-green-600">Gets back {fmt(n, gc)}</p>
-                    {gcRate && <p className="text-[10px] text-gray-400">≈ {fmt(n * gcRate, 'INR')}</p>}
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#059669', margin: 0 }}>Gets back {fmt(n, gc)}</p>
+                    {gcRate && <p style={{ fontSize: 10, color: '#B0B8C4', margin: '2px 0 0' }}>≈ {fmt(n * gcRate, 'INR')}</p>}
                   </>
                 ) : n < 0 ? (
                   <>
-                    <p className="text-sm font-semibold text-red-500">Owes {fmt(Math.abs(n), gc)}</p>
-                    {gcRate && <p className="text-[10px] text-gray-400">≈ {fmt(Math.abs(n) * gcRate, 'INR')}</p>}
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#E11D48', margin: 0 }}>Owes {fmt(Math.abs(n), gc)}</p>
+                    {gcRate && <p style={{ fontSize: 10, color: '#B0B8C4', margin: '2px 0 0' }}>≈ {fmt(Math.abs(n) * gcRate, 'INR')}</p>}
                   </>
                 ) : (
-                  <span className="text-sm text-gray-400">{t('balance.settled')}</span>
+                  <span style={{ fontSize: 13, color: '#9CA3AF' }}>{t('balance.settled')}</span>
                 )}
               </div>
-            </div>
-          );
-        })
+            );
+
+            return (
+              <TransactionRow
+                key={b.memberId}
+                icon={initials(b.name)}
+                iconBg={avatarBg}
+                title={
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#0A0D14' }}>{b.name}</span>
+                    {isMe && <Badge variant="active" label="You" />}
+                  </span>
+                }
+                subtitle={null}
+                isLast={idx === balances.length - 1}
+                rightSlot={rightSlot}
+              />
+            );
+          })}
+        </SurfaceCard>
       )}
+
       <ShareBillButton group={group} />
     </div>
   );
@@ -360,36 +427,57 @@ function SettleUpTab({ group }) {
 
   if (plan.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3">
-        <span className="text-5xl">🎉</span>
-        <p className="text-base font-semibold text-gray-700">All settled up!</p>
-        <p className="text-sm text-gray-400">No payments needed.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '96px 16px', gap: 12 }}>
+        <span style={{ fontSize: 48 }}>🎉</span>
+        <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', margin: 0 }}>All settled up!</p>
+        <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>No payments needed.</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="px-4 py-3 space-y-3">
-        {plan.map((tx, i) => (
-          <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4 flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">{tx.fromName}</span>
-                <span className="text-gray-400 text-sm">→</span>
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">{tx.toName}</span>
-              </div>
-              <p className="text-base font-bold text-primary-600 mt-0.5">{fmt(tx.amount, gc)}</p>
-              {gcRate && <p className="text-[10px] text-gray-400 mt-0.5">≈ {fmt(tx.amount * gcRate, 'INR')}</p>}
-            </div>
-            <button
-              onClick={() => setConfirmTx(tx)}
-              className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold active:bg-primary-700 flex-shrink-0"
+      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+          {plan.map((tx, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '13px 16px',
+                borderBottom: i === plan.length - 1 ? 'none' : '1px solid #F0F2F7',
+                gap: 12,
+              }}
             >
-              Settle
-            </button>
-          </div>
-        ))}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>{tx.fromName}</span>
+                  <span style={{ color: '#9CA3AF', fontSize: 14 }}>→</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>{tx.toName}</span>
+                </div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#009E90', margin: '2px 0 0' }}>{fmt(tx.amount, gc)}</p>
+                {gcRate && <p style={{ fontSize: 10, color: '#B0B8C4', margin: '2px 0 0' }}>≈ {fmt(tx.amount * gcRate, 'INR')}</p>}
+              </div>
+              <button
+                onClick={() => setConfirmTx(tx)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#E6FAF9',
+                  color: '#009E90',
+                  borderRadius: 8,
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                Settle
+              </button>
+            </div>
+          ))}
+        </SurfaceCard>
       </div>
 
       {/* Confirmation bottom sheet */}
@@ -397,30 +485,45 @@ function SettleUpTab({ group }) {
         <div className="fixed inset-0 z-50 flex items-end" onClick={() => setConfirmTx(null)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl p-6 z-10"
+            className="relative w-full bg-white rounded-t-3xl p-6 z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-5" />
-            <p className="text-base font-semibold text-gray-900 dark:text-white text-center mb-2">
+            <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 9999, margin: '0 auto 20px' }} />
+            <p style={{ fontSize: 16, fontWeight: 600, color: '#0A0D14', textAlign: 'center', marginBottom: 8 }}>
               Record settlement?
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+            <p style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 }}>
               Record that{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-200">{confirmTx.fromName}</span> paid{' '}
-              <span className="font-semibold text-gray-800 dark:text-gray-200">{confirmTx.toName}</span>{' '}
-              <span className="font-semibold text-primary-600">{fmt(confirmTx.amount, gc)}</span>?
+              <span style={{ fontWeight: 600, color: '#374151' }}>{confirmTx.fromName}</span> paid{' '}
+              <span style={{ fontWeight: 600, color: '#374151' }}>{confirmTx.toName}</span>{' '}
+              <span style={{ fontWeight: 600, color: '#009E90' }}>{fmt(confirmTx.amount, gc)}</span>?
             </p>
-            <div className="flex gap-3">
+            <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={() => setConfirmTx(null)}
-                className="flex-1 py-3 rounded-2xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm"
+                style={{ flex: 1, padding: '13px 16px', borderRadius: 16, background: '#F0F2F7', color: '#374151', fontWeight: 600, fontSize: 14, border: 'none', cursor: 'pointer' }}
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirm}
                 disabled={recordSettlement.isPending}
-                className="flex-1 py-3 rounded-2xl bg-primary-600 text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  flex: 1,
+                  padding: '13px 16px',
+                  borderRadius: 16,
+                  background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  border: 'none',
+                  cursor: 'pointer',
+                  opacity: recordSettlement.isPending ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
               >
                 {recordSettlement.isPending ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -493,46 +596,64 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
     );
   }
 
+  const sheetInputStyle = {
+    width: '100%',
+    background: '#F0F2F7',
+    borderRadius: 14,
+    padding: '12px 16px',
+    fontSize: 14,
+    color: '#0A0D14',
+    border: 'none',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    display: 'block',
+    marginBottom: 6,
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="relative w-full bg-white dark:bg-gray-800 rounded-t-3xl z-10 max-h-[92vh] overflow-y-auto"
+        style={{ position: 'relative', width: '100%', background: '#fff', borderRadius: '24px 24px 0 0', zIndex: 10, maxHeight: '92vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white dark:bg-gray-800 pt-4 px-5 pb-3 border-b border-gray-100 dark:border-gray-700">
-          <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-4" />
-          <div className="flex items-center justify-between">
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{t('home.add_expense')}</p>
-            <button onClick={onClose} className="text-gray-400 text-lg px-1">
+        <div style={{ position: 'sticky', top: 0, background: '#fff', padding: '16px 20px 12px', borderBottom: '1px solid #F0F2F7' }}>
+          <div style={{ width: 40, height: 4, background: '#E5E7EB', borderRadius: 9999, margin: '0 auto 16px' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#0A0D14', margin: 0 }}>{t('home.add_expense')}</p>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, color: '#9CA3AF', cursor: 'pointer', padding: '0 4px' }}>
               ✕
             </button>
           </div>
         </div>
 
-        <div className="px-5 py-4 flex flex-col gap-4">
+        <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Title */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
-              Title
-            </label>
+            <label style={labelStyle}>Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Dinner at Taj"
-              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              style={sheetInputStyle}
             />
           </div>
 
           {/* Amount + Currency */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
-              Amount
-            </label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">
+            <label style={labelStyle}>Amount</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ position: 'relative', flex: 1 }}>
+                <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontWeight: 600, fontSize: 14 }}>
                   {sym}
                 </span>
                 <input
@@ -541,13 +662,13 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="0"
                   min="0"
-                  className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl pl-8 pr-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                  style={{ ...sheetInputStyle, paddingLeft: 32 }}
                 />
               </div>
               <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="bg-gray-50 dark:bg-gray-700 rounded-2xl px-3 py-3 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 font-medium"
+                style={{ ...sheetInputStyle, width: 'auto', paddingLeft: 12, paddingRight: 12 }}
               >
                 {['INR','THB','USD','EUR','GBP','AED','SGD','JPY','MYR','CAD','AUD'].map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -558,34 +679,41 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Date */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
-              Date
-            </label>
+            <label style={labelStyle}>Date</label>
             <input
               type="date"
               value={expenseDate}
               onChange={(e) => setExpenseDate(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              style={sheetInputStyle}
             />
           </div>
 
           {/* Paid by */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-2">
-              Paid by
-            </label>
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            <label style={labelStyle}>Paid by</label>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
               {members.map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setPaidByMemberId(m.id)}
-                  className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                    paidByMemberId === m.id
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                  }`}
+                  style={{
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 14px',
+                    borderRadius: 99,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: paidByMemberId === m.id
+                      ? 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)'
+                      : '#F0F2F7',
+                    color: paidByMemberId === m.id ? '#fff' : '#374151',
+                  }}
                 >
-                  <span className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center text-xs font-bold">
+                  <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700 }}>
                     {initials(m.name)[0]}
                   </span>
                   {m.name.split(' ')[0]}
@@ -596,17 +724,24 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Split */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-2">
-              Split
-            </label>
-            <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1 mb-3">
+            <label style={labelStyle}>Split</label>
+            <div style={{ display: 'flex', gap: 4, background: '#F0F2F7', borderRadius: 12, padding: 4, marginBottom: 12 }}>
               {[['equal', 'Equal'], ['amount', 'By ₹'], ['percent', 'By %']].map(([mode, label]) => (
                 <button
                   key={mode}
                   onClick={() => { setSplitMode(mode); setCustomSplits({}); }}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                    splitMode === mode ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-gray-500'
-                  }`}
+                  style={{
+                    flex: 1,
+                    padding: '6px 8px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: splitMode === mode ? '#fff' : 'transparent',
+                    color: splitMode === mode ? '#009E90' : '#6B7280',
+                    boxShadow: splitMode === mode ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+                  }}
                 >
                   {label}
                 </button>
@@ -614,18 +749,18 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
             </div>
 
             {splitMode === 'equal' && numAmount > 0 && (
-              <p className="text-sm text-gray-500 bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
+              <p style={{ fontSize: 13, color: '#6B7280', background: '#F0F2F7', borderRadius: 12, padding: '10px 14px' }}>
                 {fmt(equalShare, currency)} per person ({members.length} members)
               </p>
             )}
 
             {(splitMode === 'amount' || splitMode === 'percent') && (
-              <div className="space-y-2">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {members.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3">
-                    <span className="text-sm text-gray-700 dark:text-gray-300 w-20 truncate">{m.name.split(' ')[0]}</span>
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 13, color: '#374151', width: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name.split(' ')[0]}</span>
+                    <div style={{ position: 'relative', flex: 1 }}>
+                      <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', fontSize: 13 }}>
                         {splitMode === 'percent' ? '%' : sym}
                       </span>
                       <input
@@ -633,21 +768,24 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
                         value={customSplits[m.id] || ''}
                         onChange={(e) => setCustomSplits((prev) => ({ ...prev, [m.id]: e.target.value }))}
                         placeholder="0"
-                        className="w-full bg-gray-50 dark:bg-gray-700 rounded-xl pl-7 pr-3 py-2 text-sm text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200"
+                        style={{ ...sheetInputStyle, paddingLeft: 28, padding: '8px 12px 8px 28px' }}
                       />
                     </div>
                     {splitMode === 'percent' && customSplits[m.id] && numAmount > 0 && (
-                      <span className="text-xs text-gray-400 w-16 text-right shrink-0">
+                      <span style={{ fontSize: 11, color: '#9CA3AF', width: 64, textAlign: 'right', flexShrink: 0 }}>
                         {fmt((parseFloat(customSplits[m.id]) / 100) * numAmount, currency)}
                       </span>
                     )}
                   </div>
                 ))}
-                <div className={`text-xs text-right px-1 ${
-                  splitMode === 'percent'
-                    ? percentOk ? 'text-green-500' : 'text-red-400'
-                    : amountOk ? 'text-green-500' : 'text-red-400'
-                }`}>
+                <div style={{
+                  fontSize: 12,
+                  textAlign: 'right',
+                  color: splitMode === 'percent'
+                    ? percentOk ? '#059669' : '#E11D48'
+                    : amountOk ? '#059669' : '#E11D48',
+                  paddingRight: 4,
+                }}>
                   {splitMode === 'percent'
                     ? `Total: ${totalCustom.toFixed(1)}% ${percentOk ? '✓' : '(must equal 100%)'}`
                     : `Total: ${fmt(totalCustom, currency)} ${amountOk ? '✓' : `(must equal ${fmt(numAmount, currency)})`}`}
@@ -658,22 +796,35 @@ function AddExpenseSheet({ group, currentUser, onClose }) {
 
           {/* Note */}
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide block mb-1.5">
-              Note (optional)
-            </label>
+            <label style={labelStyle}>Note (optional)</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="Add a note…"
-              className="w-full bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+              style={sheetInputStyle}
             />
           </div>
 
           <button
             onClick={handleSubmit}
             disabled={!title.trim() || numAmount <= 0 || addExpense.isPending || (splitMode === 'percent' && !percentOk) || (splitMode === 'amount' && !amountOk)}
-            className="w-full py-3.5 bg-primary-600 text-white rounded-2xl font-semibold text-base disabled:opacity-40 active:bg-primary-700 flex items-center justify-center gap-2"
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 15,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              opacity: (!title.trim() || numAmount <= 0 || addExpense.isPending || (splitMode === 'percent' && !percentOk) || (splitMode === 'amount' && !amountOk)) ? 0.4 : 1,
+            }}
           >
             {addExpense.isPending ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -703,71 +854,93 @@ export default function GroupDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <TopBar title="Group" showBack />
-        <div className="flex items-center justify-center flex-1">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
           <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
-        <BottomNav />
       </div>
     );
   }
 
   if (!group) {
     return (
-      <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <TopBar title="Group" showBack />
-        <div className="flex flex-col items-center justify-center flex-1 gap-3">
-          <span className="text-4xl">😕</span>
-          <p className="text-gray-500 text-sm">Group not found</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 12 }}>
+          <span style={{ fontSize: 40 }}>😕</span>
+          <p style={{ fontSize: 14, color: '#9CA3AF' }}>Group not found</p>
         </div>
-        <BottomNav />
       </div>
     );
   }
 
+  const totalSpend = (group.groupExpenses || []).reduce((s, e) => s + Number(e.amount || 0), 0);
+  const gc = groupCurrencyOf(group);
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={group.name} showBack />
 
-      {/* Group header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-2xl bg-primary-50 flex items-center justify-center text-xl flex-shrink-0">
-          {group.icon || TYPE_ICON[group.type] || '👥'}
+      {/* Group header — dark navy gradient card */}
+      <div style={{ margin: '12px 16px 0', borderRadius: 22, padding: 20, background: 'linear-gradient(135deg, #0A1628 0%, #1A3A5C 100%)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {group.name}
+            </p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>
+              {(group.members?.length || 0) === 1
+                ? t('groups.member_one', { n: 1 })
+                : t('groups.member_other', { n: group.members?.length || 0 })}
+            </p>
+          </div>
+          <span style={{ fontSize: 28 }}>{group.icon || TYPE_ICON[group.type] || '👥'}</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{group.name}</p>
-          <p className="text-xs text-gray-400">
-            {(group.members?.length || 0) === 1
-              ? t('groups.member_one', { n: 1 })
-              : t('groups.member_other', { n: group.members?.length || 0 })}
-          </p>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>Total spend</p>
+            <p style={{ fontSize: 28, fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.5px' }}>{fmt(totalSpend, gc)}</p>
+          </div>
+          <MemberAvatarsRow members={group.members || []} max={5} />
         </div>
-        <MemberAvatarsRow members={group.members || []} max={5} />
       </div>
 
       {/* Sticky tabs */}
-      <div className="sticky top-[56px] z-10 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex">
+      <div style={{
+        position: 'sticky',
+        top: 56,
+        zIndex: 10,
+        background: '#F0F2F7',
+        borderBottom: '1px solid #E5E7EB',
+      }}>
+        <div style={{ display: 'flex' }}>
           {TABS.map((tab, i) => (
             <button
               key={tab}
               onClick={() => setActiveTab(i)}
-              className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
-                activeTab === i ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500'
-              }`}
+              style={{
+                flex: 1,
+                padding: '12px 0',
+                fontSize: 14,
+                fontWeight: 700,
+                color: activeTab === i ? '#009E90' : '#9CA3AF',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: activeTab === i ? '2px solid #009E90' : '2px solid transparent',
+                cursor: 'pointer',
+                transition: 'color 0.15s, border-color 0.15s',
+              }}
             >
               {tab}
-              {activeTab === i && (
-                <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-primary-500 rounded-full" />
-              )}
             </button>
           ))}
         </div>
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-auto pb-36">
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
         {activeTab === 0 && (
           <ExpensesTab group={group} currentUser={user} />
         )}
@@ -783,7 +956,25 @@ export default function GroupDetailPage() {
       {activeTab === 0 && (
         <button
           onClick={() => setShowAddExpense(true)}
-          className="fixed bottom-28 right-4 z-20 w-14 h-14 bg-primary-600 text-white rounded-2xl shadow-lg flex items-center justify-center text-3xl font-light active:bg-primary-700 active:scale-95 transition-all"
+          style={{
+            position: 'fixed',
+            bottom: 112,
+            right: 16,
+            zIndex: 20,
+            width: 56,
+            height: 56,
+            background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+            color: '#fff',
+            borderRadius: 18,
+            boxShadow: '0 4px 16px rgba(0,158,144,0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 28,
+            fontWeight: 300,
+            border: 'none',
+            cursor: 'pointer',
+          }}
           aria-label="Add expense"
         >
           +
@@ -798,8 +989,6 @@ export default function GroupDetailPage() {
           onClose={() => setShowAddExpense(false)}
         />
       )}
-
-      <BottomNav />
     </div>
   );
 }

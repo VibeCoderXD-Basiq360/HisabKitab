@@ -1,9 +1,8 @@
-const cron = require('node-cron');
+// Scheduled via pg-boss in jobs/index.js
 const prisma = require('../lib/prisma');
 const notify = require('../lib/notify');
 
-// Daily at 9am — send FCM for subscriptions due in ≤3 days
-cron.schedule('0 9 * * *', async () => {
+async function processSubscriptionReminders() {
   try {
     const now = new Date();
     const in3days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
@@ -13,6 +12,7 @@ cron.schedule('0 9 * * *', async () => {
       include: { user: { select: { id: true, fcmToken: true } } },
     });
 
+    let sent = 0;
     for (const sub of dueSoon) {
       const daysLeft = Math.ceil((new Date(sub.nextDueDate) - now) / (1000 * 60 * 60 * 24));
       await notify(sub.userId, sub.user.fcmToken, {
@@ -21,8 +21,14 @@ cron.schedule('0 9 * * *', async () => {
         type:  'subscription_due',
         data:  { subscriptionId: sub.id },
       });
+      sent++;
     }
+
+    console.log(`[subscriptionReminder] Done — ${sent} reminder(s) sent`);
   } catch (err) {
     console.error('[subscriptionReminder]', err.message);
+    throw err; // let pg-boss retry
   }
-});
+}
+
+module.exports = { processSubscriptionReminders };

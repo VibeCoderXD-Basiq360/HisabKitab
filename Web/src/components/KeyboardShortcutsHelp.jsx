@@ -33,13 +33,30 @@ export default function KeyboardShortcutsHelp() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+      <div
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ background: 'rgba(10,13,20,0.55)' }}
+        onClick={() => setOpen(false)}
+      />
+      <div
+        className="relative shadow-2xl p-6 w-full max-w-sm"
+        style={{ background: '#fff', borderRadius: 20 }}
+      >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 600, color: '#0A0D14' }}>Keyboard Shortcuts</h2>
           <button
             onClick={() => setOpen(false)}
-            className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 flex items-center justify-center text-sm"
+            className="flex items-center justify-center"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: '50%',
+              background: '#E9ECF0',
+              color: '#B0B8C4',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+            }}
           >
             ✕
           </button>
@@ -47,15 +64,38 @@ export default function KeyboardShortcutsHelp() {
         <div className="flex flex-col gap-2">
           {SHORTCUTS.map(({ key, description }) => (
             <div key={key} className="flex items-center justify-between gap-3">
-              <span className="text-sm text-gray-600 dark:text-gray-300">{description}</span>
-              <kbd className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-mono text-xs font-semibold border border-gray-200 dark:border-gray-600">
+              <span style={{ fontSize: 14, color: '#374151' }}>{description}</span>
+              <kbd
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: '#E9ECF0',
+                  color: '#374151',
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  border: '1px solid #E9ECF0',
+                }}
+              >
                 {key}
               </kbd>
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 text-center">
-          Press <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 font-mono text-[10px]">Esc</kbd> to close
+        <p className="text-center mt-4" style={{ fontSize: 12, color: '#B0B8C4' }}>
+          Press{' '}
+          <kbd
+            style={{
+              padding: '1px 6px',
+              borderRadius: 4,
+              background: '#E9ECF0',
+              fontFamily: 'monospace',
+              fontSize: 10,
+            }}
+          >
+            Esc
+          </kbd>{' '}
+          to close
         </p>
       </div>
     </div>

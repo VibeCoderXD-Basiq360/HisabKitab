@@ -3,20 +3,27 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useJob, useUpdateJob } from '../../hooks/useBusiness';
 import { useAccounts } from '../../hooks/useAccounts';
 import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const fmt = n => `₹${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-IN')}`;
-const STATUS_COLORS = { QUOTED:'bg-gray-100 text-gray-600', IN_PROGRESS:'bg-blue-100 text-blue-700',
-  PRINTED:'bg-purple-100 text-purple-700', DELIVERED:'bg-green-100 text-green-700', CANCELLED:'bg-red-100 text-red-600' };
+
+const STATUS_BADGE = {
+  QUOTED:      { variant: 'neutral',   label: 'Quoted' },
+  IN_PROGRESS: { variant: 'requested', label: 'In Progress' },
+  PRINTED:     { variant: 'purple',    label: 'Printed' },
+  DELIVERED:   { variant: 'active',    label: 'Delivered' },
+  CANCELLED:   { variant: 'danger',    label: 'Cancelled' },
+};
 const STATUSES = ['QUOTED','IN_PROGRESS','PRINTED','DELIVERED','CANCELLED'];
 
-function Row({ label, value, accent }) {
-  return (
-    <div className="flex justify-between items-baseline py-1.5 border-b border-gray-50 dark:border-gray-700 last:border-0">
-      <span className="text-sm text-gray-400">{label}</span>
-      <span className={`text-sm font-semibold ${accent || 'text-gray-900 dark:text-white'}`}>{value}</span>
-    </div>
-  );
-}
+const STATUS_BTN_STYLE = {
+  QUOTED:      { background: '#F3F4F6', color: '#6B7280' },
+  IN_PROGRESS: { background: '#EEF2FF', color: '#6366F1' },
+  PRINTED:     { background: '#F5F3FF', color: '#7C3AED' },
+  DELIVERED:   { background: '#F0FDF4', color: '#059669' },
+  CANCELLED:   { background: '#FFF1F3', color: '#E11D48' },
+};
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -28,8 +35,16 @@ export default function JobDetailPage() {
   const [creditAccountId, setCreditAccountId] = useState('');
   const [saving, setSaving] = useState(false);
 
-  if (isLoading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center"><p className="text-gray-400">Loading…</p></div>;
-  if (!job) return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-400">Not found</p></div>;
+  if (isLoading) return (
+    <div style={{ minHeight:'100vh', background:'#F0F2F7', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <p style={{ color:'#B0B8C4' }}>Loading…</p>
+    </div>
+  );
+  if (!job) return (
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <p style={{ color:'#B0B8C4' }}>Not found</p>
+    </div>
+  );
 
   const n = v => Number(v) || 0;
   const ap = n(job.actualPrice);
@@ -51,129 +66,214 @@ export default function JobDetailPage() {
     setSaving(false);
   }
 
+  const statusInfo = STATUS_BADGE[job.status] || { variant: 'neutral', label: job.status };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-10">
+    <div style={{ minHeight:'100vh', background:'#F0F2F7', paddingBottom:'calc(100px + env(safe-area-inset-bottom))' }}>
       <TopBar title={job.title} onBack={() => navigate('/business/jobs')} />
 
-      <div className="px-4 pt-4 space-y-4">
-        {/* Header card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${STATUS_COLORS[job.status]}`}>{job.status}</span>
-            <p className="text-xs text-gray-400">{job.location?.name} · {new Date(job.orderDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</p>
-          </div>
-          {job.customer && <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">👤 {job.customer.name}{job.customer.phone && ` · ${job.customer.phone}`}</p>}
-          {job.description && <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">{job.description}</p>}
+      <div style={{ padding:'16px 16px 0', display:'flex', flexDirection:'column', gap:14 }}>
 
-          {/* Price summary */}
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
-              <p className="text-xs text-gray-400 mb-1">True cost</p>
-              <p className="font-bold text-sm text-gray-900 dark:text-white">{fmt(job.trueCost)}</p>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
-              <p className="text-xs text-gray-400 mb-1">Suggested</p>
-              <p className="font-bold text-sm text-primary-600 dark:text-primary-400">{fmt(job.suggestedPrice)}</p>
-            </div>
-            <div className={`rounded-xl p-3 text-center ${ap > 0 ? (profit >= 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20') : 'bg-gray-50 dark:bg-gray-700'}`}>
-              <p className="text-xs text-gray-400 mb-1">Charged</p>
-              <p className={`font-bold text-sm ${ap > 0 ? (profit >= 0 ? 'text-green-700' : 'text-red-600') : 'text-gray-400'}`}>{ap > 0 ? fmt(ap) : '—'}</p>
-            </div>
+        {/* Hero card — dark navy gradient */}
+        <div style={{
+          background:'linear-gradient(135deg,#0D1B2A 0%,#1B2E45 60%,#0D2137 100%)',
+          borderRadius:22,
+          padding:'22px 20px 20px',
+          boxShadow:'0 6px 28px rgba(13,27,42,0.25)',
+        }}>
+          {/* Status + date row */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <Badge variant={statusInfo.variant} label={statusInfo.label} style={{ fontSize:10 }} />
+            <span style={{ fontSize:12, color:'rgba(255,255,255,0.45)' }}>
+              {job.location?.name && `${job.location.name} · `}
+              {new Date(job.orderDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}
+            </span>
+          </div>
+
+          {/* Title */}
+          <p style={{ fontSize:20, fontWeight:800, color:'#fff', marginBottom:4, lineHeight:1.2 }}>{job.title}</p>
+
+          {/* Customer */}
+          {job.customer && (
+            <p style={{ fontSize:13, color:'rgba(255,255,255,0.55)', marginBottom:10 }}>
+              👤 {job.customer.name}{job.customer.phone && ` · ${job.customer.phone}`}
+            </p>
+          )}
+          {job.description && (
+            <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', marginBottom:14 }}>{job.description}</p>
+          )}
+
+          {/* Price grid */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom: ap > 0 ? 12 : 0 }}>
+            {[
+              { label:'True Cost', value:fmt(job.trueCost), color:'rgba(255,255,255,0.7)' },
+              { label:'Suggested', value:fmt(job.suggestedPrice), color:'#00C2B2' },
+              { label:'Charged', value: ap > 0 ? fmt(ap) : '—', color: ap > 0 ? (profit >= 0 ? '#059669' : '#E11D48') : 'rgba(255,255,255,0.35)' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background:'rgba(255,255,255,0.07)', borderRadius:12, padding:'10px 8px', textAlign:'center' }}>
+                <p style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>{label}</p>
+                <p style={{ fontSize:13, fontWeight:700, color }}>{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Job value hero */}
+          <div style={{ textAlign:'center', marginBottom:4 }}>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:2 }}>Job Value</p>
+            <p style={{ fontSize:28, fontWeight:800, color:'#fff', lineHeight:1 }}>{fmt(job.suggestedPrice)}</p>
           </div>
 
           {ap > 0 && (
-            <div className="mt-3 flex justify-between text-sm bg-gray-50 dark:bg-gray-700 rounded-xl p-3">
-              <span className="text-gray-400">Profit</span>
-              <span className={`font-bold ${profit >= 0 ? 'text-green-600' : 'text-red-500'}`}>{profit >= 0 ? '+' : ''}{fmt(profit)} ({Math.round(margin)}%)</span>
+            <div style={{ display:'flex', justifyContent:'space-between', background:'rgba(255,255,255,0.06)', borderRadius:12, padding:'10px 14px', marginTop:12 }}>
+              <span style={{ fontSize:13, color:'rgba(255,255,255,0.5)' }}>Profit</span>
+              <span style={{ fontSize:13, fontWeight:700, color: profit >= 0 ? '#059669' : '#E11D48' }}>
+                {profit >= 0 ? '+' : ''}{fmt(profit)} ({Math.round(margin)}%)
+              </span>
             </div>
           )}
         </div>
 
-        {/* Update actual price */}
+        {/* Record Payment */}
         {job.status !== 'CANCELLED' && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Record Payment Received</p>
-            <div className="flex gap-2 mb-3">
-              <input className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-                type="number" placeholder={`₹${Math.round(n(job.suggestedPrice))}`}
-                value={actualInput} onChange={e => setActualInput(e.target.value)} />
-              <button onClick={saveActual} disabled={!actualInput || saving}
-                className="px-4 py-2.5 rounded-xl bg-primary-600 text-white font-semibold text-sm disabled:opacity-60">
+          <SurfaceCard>
+            <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>
+              Record Payment Received
+            </p>
+            <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+              <input
+                style={{ flex:1, padding:'11px 14px', background:'#F0F2F7', border:'none', borderRadius:10, fontSize:16, fontWeight:700, color:'#0A0D14', outline:'none' }}
+                type="number"
+                placeholder={`₹${Math.round(n(job.suggestedPrice))}`}
+                value={actualInput}
+                onChange={e => setActualInput(e.target.value)}
+              />
+              <button
+                onClick={saveActual}
+                disabled={!actualInput || saving}
+                style={{
+                  padding:'11px 20px', borderRadius:10, border:'none',
+                  background: (!actualInput || saving) ? '#E5E7EB' : 'linear-gradient(135deg,#00C2B2,#009E91)',
+                  color: (!actualInput || saving) ? '#9CA3AF' : '#fff',
+                  fontWeight:700, fontSize:14, cursor: (!actualInput || saving) ? 'not-allowed' : 'pointer',
+                }}
+              >
                 {saving ? '…' : 'Save'}
               </button>
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Credit to account (money received into)</label>
+              <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:6 }}>Credit to account (money received into)</label>
               <select
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm"
+                style={{ width:'100%', padding:'11px 14px', background:'#F0F2F7', border:'none', borderRadius:10, fontSize:13, color:'#0A0D14', outline:'none' }}
                 value={creditAccountId || job.creditAccountId || ''}
-                onChange={e => setCreditAccountId(e.target.value)}>
+                onChange={e => setCreditAccountId(e.target.value)}
+              >
                 <option value="">-- No account tracking --</option>
                 {accounts.filter(a => a.type !== 'CREDIT_CARD').map(a => (
                   <option key={a.id} value={a.id}>{a.icon || ''} {a.name} ({a.type})</option>
                 ))}
               </select>
               {(creditAccountId || job.creditAccountId) && !job.creditRecorded && (
-                <p className="text-xs text-green-600 mt-1">✓ Income will be credited to this account when you save the price.</p>
+                <p style={{ fontSize:11, color:'#059669', marginTop:6 }}>✓ Income will be credited to this account when you save.</p>
               )}
               {job.creditRecorded && (
-                <p className="text-xs text-gray-400 mt-1">✓ Income already recorded in account.</p>
+                <p style={{ fontSize:11, color:'#B0B8C4', marginTop:6 }}>✓ Income already recorded in account.</p>
               )}
             </div>
-          </div>
+          </SurfaceCard>
         )}
 
-        {/* Status flow */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Update Status</p>
-          <div className="grid grid-cols-3 gap-2">
-            {STATUSES.filter(s => s !== job.status && s !== 'CANCELLED').map(s => (
-              <button key={s} onClick={() => changeStatus(s)} disabled={updateJob.isPending}
-                className={`py-2 rounded-xl text-xs font-semibold border transition-colors ${STATUS_COLORS[s]} border-current/20 disabled:opacity-60`}>
-                {s.replace('_', ' ')}
-              </button>
-            ))}
+        {/* Update Status */}
+        <SurfaceCard>
+          <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12 }}>
+            Update Status
+          </p>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+            {STATUSES.filter(s => s !== job.status && s !== 'CANCELLED').map(s => {
+              const st = STATUS_BTN_STYLE[s] || {};
+              return (
+                <button
+                  key={s}
+                  onClick={() => changeStatus(s)}
+                  disabled={updateJob.isPending}
+                  style={{
+                    padding:'9px 4px', borderRadius:10, border:'none',
+                    background: st.background, color: st.color,
+                    fontSize:11, fontWeight:700, cursor:'pointer', opacity: updateJob.isPending ? 0.6 : 1,
+                  }}
+                >
+                  {s.replace('_', ' ')}
+                </button>
+              );
+            })}
             {job.status !== 'CANCELLED' && (
-              <button onClick={() => changeStatus('CANCELLED')} disabled={updateJob.isPending}
-                className="py-2 rounded-xl text-xs font-semibold bg-red-50 text-red-500 border border-red-200 disabled:opacity-60">
+              <button
+                onClick={() => changeStatus('CANCELLED')}
+                disabled={updateJob.isPending}
+                style={{ padding:'9px 4px', borderRadius:10, border:'none', background:'#FFF1F3', color:'#E11D48', fontSize:11, fontWeight:700, cursor:'pointer', opacity: updateJob.isPending ? 0.6 : 1 }}
+              >
                 Cancel
               </button>
             )}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* Cost breakdown */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cost Breakdown</p>
-          {[['Material', job.materialCost], ['Electricity', job.electricityCost], ['Depreciation', job.depreciationCost],
-            ['Labour', job.labourCost], ['Packaging', job.packagingCost], ['Add-ons', job.addOnsCost],
-            ['Failure markup', job.failureMarkup], ['Delivery', job.deliveryCost]].map(([label, val]) =>
-            n(val) > 0.01 && <Row key={label} label={label} value={fmt(val)} />)}
-        </div>
-
-        {/* Items */}
-        {job.items?.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Job Items</p>
-            {job.items.map(i => (
-              <div key={i.id} className="flex justify-between py-1.5 border-b border-gray-50 dark:border-gray-700 last:border-0">
-                <div><p className="text-sm font-medium text-gray-900 dark:text-white">{i.name}</p>
-                  <p className="text-xs text-gray-400">{i.type} · ×{Number(i.quantity)}</p></div>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{fmt(i.totalCost)}</p>
+        {/* Cost Breakdown */}
+        <SurfaceCard>
+          <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>
+            Cost Breakdown
+          </p>
+          <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+            {[
+              ['Material', job.materialCost], ['Electricity', job.electricityCost],
+              ['Depreciation', job.depreciationCost], ['Labour', job.labourCost],
+              ['Packaging', job.packagingCost], ['Add-ons', job.addOnsCost],
+              ['Failure markup', job.failureMarkup], ['Delivery', job.deliveryCost],
+            ].map(([label, val]) => n(val) > 0.01 && (
+              <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', padding:'8px 0', borderBottom:'1px solid #F0F2F7' }}>
+                <span style={{ fontSize:13, color:'#B0B8C4' }}>{label}</span>
+                <span style={{ fontSize:13, fontWeight:600, color:'#0A0D14' }}>{fmt(val)}</span>
               </div>
             ))}
           </div>
+        </SurfaceCard>
+
+        {/* Job Items */}
+        {job.items?.length > 0 && (
+          <SurfaceCard>
+            <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>
+              Job Items
+            </p>
+            {job.items.map(i => (
+              <div key={i.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', padding:'8px 0', borderBottom:'1px solid #F0F2F7' }}>
+                <div>
+                  <p style={{ fontSize:13, fontWeight:600, color:'#0A0D14' }}>{i.name}</p>
+                  <p style={{ fontSize:11, color:'#B0B8C4', marginTop:2 }}>{i.type} · ×{Number(i.quantity)}</p>
+                </div>
+                <p style={{ fontSize:13, fontWeight:600, color:'#374151' }}>{fmt(i.totalCost)}</p>
+              </div>
+            ))}
+          </SurfaceCard>
         )}
 
-        {/* Machine snapshot */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Snapshot</p>
-          <Row label="Filament cost" value={`₹${n(job.filamentCostPerKg).toFixed(0)}/kg`} />
-          <Row label="Grams used" value={`${n(job.gramsUsed).toFixed(1)}g`} />
-          <Row label="Print time" value={`${n(job.printTimeHr).toFixed(1)}h`} />
-          <Row label="Failure rate" value={`${n(job.failureRatePct)}%`} />
-          <Row label="Target margin" value={`${n(job.targetMarginPct)}%`} />
-        </div>
+        {/* Machine Snapshot */}
+        <SurfaceCard>
+          <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10 }}>
+            Snapshot
+          </p>
+          {[
+            ['Filament cost', `₹${n(job.filamentCostPerKg).toFixed(0)}/kg`],
+            ['Grams used', `${n(job.gramsUsed).toFixed(1)}g`],
+            ['Print time', `${n(job.printTimeHr).toFixed(1)}h`],
+            ['Failure rate', `${n(job.failureRatePct)}%`],
+            ['Target margin', `${n(job.targetMarginPct)}%`],
+          ].map(([label, value]) => (
+            <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', padding:'8px 0', borderBottom:'1px solid #F0F2F7' }}>
+              <span style={{ fontSize:13, color:'#B0B8C4' }}>{label}</span>
+              <span style={{ fontSize:13, fontWeight:600, color:'#0A0D14' }}>{value}</span>
+            </div>
+          ))}
+        </SurfaceCard>
+
       </div>
     </div>
   );

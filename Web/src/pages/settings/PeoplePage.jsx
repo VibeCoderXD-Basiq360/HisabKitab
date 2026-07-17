@@ -8,8 +8,7 @@ import {
   useRejectContactRequest,
 } from '../../hooks/useContacts';
 import TopBar from '../../components/TopBar';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 
 export default function PeoplePage() {
   const { t } = useTranslation();
@@ -70,93 +69,151 @@ export default function PeoplePage() {
   const linked = people.filter((p) => p.linkedUserId);
   const manual = people.filter((p) => !p.linkedUserId);
 
+  const inputStyle = {
+    background: '#F0F2F7',
+    border: 'none',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontSize: 14,
+    color: '#0A0D14',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  };
+
+  const sectionLabelStyle = {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#B0B8C4',
+    textTransform: 'uppercase',
+    letterSpacing: '0.07em',
+    margin: 0,
+    padding: '0 4px 8px',
+  };
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('people.title')} showBack />
 
       {/* Tab switcher */}
-      <div className="flex gap-2 px-4 pt-3 pb-1">
+      <div style={{ display: 'flex', gap: 8, padding: '12px 16px 4px' }}>
         <button
           onClick={() => setTab('contacts')}
-          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            tab === 'contacts'
-              ? 'bg-primary-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 0',
+            borderRadius: 12,
+            border: 'none',
+            background: tab === 'contacts' ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#fff',
+            color: tab === 'contacts' ? '#fff' : '#B0B8C4',
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: 'pointer',
+            boxShadow: tab === 'contacts' ? '0 2px 8px rgba(0,194,178,0.18)' : 'none',
+            transition: 'all 0.2s',
+          }}
         >
           {t('people.tab_contacts')}
         </button>
         <button
           onClick={() => setTab('requests')}
-          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors relative ${
-            tab === 'requests'
-              ? 'bg-primary-600 text-white'
-              : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-          }`}
+          style={{
+            flex: 1,
+            padding: '10px 0',
+            borderRadius: 12,
+            border: 'none',
+            background: tab === 'requests' ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#fff',
+            color: tab === 'requests' ? '#fff' : '#B0B8C4',
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: 'pointer',
+            boxShadow: tab === 'requests' ? '0 2px 8px rgba(0,194,178,0.18)' : 'none',
+            transition: 'all 0.2s',
+            position: 'relative',
+          }}
         >
           {t('people.tab_requests')}
           {pendingCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center font-bold">
+            <span style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              width: 20,
+              height: 20,
+              borderRadius: '50%',
+              background: '#FF4D4F',
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
               {pendingCount}
             </span>
           )}
         </button>
       </div>
 
-      <div className="flex-1 p-4 flex flex-col gap-4">
+      <div style={{ flex: 1, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
 
         {/* ── CONTACTS TAB ── */}
         {tab === 'contacts' && (
           <>
             {/* Add/edit form */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            <SurfaceCard style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={sectionLabelStyle}>
                 {editId ? t('people.edit_person') : t('people.add_manually')}
               </p>
-              <Input
-                label={editId ? t('people.edit_name') : t('people.name')}
-                placeholder={t('people.name_placeholder')}
+              <input
+                style={inputStyle}
+                placeholder={editId ? t('people.edit_name') : t('people.name_placeholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               />
-              <Input
-                label={t('people.email_optional')}
+              <input
+                style={inputStyle}
                 type="email"
                 placeholder={t('people.email_placeholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              <div className="flex gap-2">
+              <div style={{ display: 'flex', gap: 8 }}>
                 {editId && (
-                  <Button variant="ghost" onClick={cancel} className="shrink-0">
+                  <button
+                    onClick={cancel}
+                    style={{ flex: 1, padding: '11px 14px', borderRadius: 12, border: '1.5px solid #E9ECF0', background: '#fff', color: '#B0B8C4', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
                     {t('common.cancel')}
-                  </Button>
+                  </button>
                 )}
-                <Button onClick={handleSave} disabled={!name.trim()} className="flex-1">
+                <button
+                  onClick={handleSave}
+                  disabled={!name.trim()}
+                  style={{ flex: 1, padding: '11px 14px', borderRadius: 12, border: 'none', background: name.trim() ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#E9ECF0', color: name.trim() ? '#fff' : '#B0B8C4', fontWeight: 800, fontSize: 14, cursor: name.trim() ? 'pointer' : 'default', transition: 'all 0.2s' }}
+                >
                   {editId ? t('people.save_changes') : t('people.add_person')}
-                </Button>
+                </button>
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* Connected contacts */}
             {linked.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-                  {t('people.connected')}
-                </p>
-                <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+                <p style={sectionLabelStyle}>{t('people.connected')}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {linked.map((p) => (
-                    <div key={p.id} className="flex items-center px-4 py-3 gap-3">
-                      <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-sm font-bold text-green-600 dark:text-green-400 shrink-0">
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#00C2B2,#009E90)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {p.name[0].toUpperCase()}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
-                        {p.email && <p className="text-xs text-gray-400 truncate">{p.email}</p>}
-                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">● {t('people.linked')}</p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#0A0D14', fontSize: 15 }}>{p.name}</p>
+                        {p.email && <p style={{ margin: 0, fontSize: 12, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</p>}
+                        <p style={{ margin: 0, fontSize: 12, color: '#00C2B2', fontWeight: 600 }}>● {t('people.linked')}</p>
                       </div>
-                      <button onClick={() => remove.mutate(p.id)} className="text-xs text-red-500 px-2 py-1 shrink-0">
+                      <button onClick={() => remove.mutate(p.id)} style={{ background: 'none', border: 'none', padding: '6px 8px', cursor: 'pointer', color: '#FF4D4F', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
                         {t('common.delete')}
                       </button>
                     </div>
@@ -169,21 +226,22 @@ export default function PeoplePage() {
             {manual.length > 0 && (
               <div>
                 {linked.length > 0 && (
-                  <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-                    {t('people.manual')}
-                  </p>
+                  <p style={sectionLabelStyle}>{t('people.manual')}</p>
                 )}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {manual.map((p) => (
-                    <div key={p.id} className="flex items-center px-4 py-3 gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{p.name}</p>
-                        {p.email && <p className="text-xs text-gray-400 truncate">{p.email}</p>}
+                    <div key={p.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#00C2B2,#009E90)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                        {p.name[0].toUpperCase()}
                       </div>
-                      <button onClick={() => startEdit(p)} className="text-sm text-primary-600 px-2 py-1 shrink-0">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#0A0D14', fontSize: 15 }}>{p.name}</p>
+                        {p.email && <p style={{ margin: 0, fontSize: 12, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</p>}
+                      </div>
+                      <button onClick={() => startEdit(p)} style={{ background: 'none', border: 'none', padding: '6px 8px', cursor: 'pointer', color: '#B0B8C4', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
                         {t('common.edit')}
                       </button>
-                      <button onClick={() => remove.mutate(p.id)} className="text-sm text-red-500 px-2 py-1 shrink-0">
+                      <button onClick={() => remove.mutate(p.id)} style={{ background: 'none', border: 'none', padding: '6px 8px', cursor: 'pointer', color: '#FF4D4F', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
                         {t('common.delete')}
                       </button>
                     </div>
@@ -192,9 +250,9 @@ export default function PeoplePage() {
               </div>
             )}
 
-            {isLoading && <p className="text-center text-sm text-gray-400 py-4">{t('common.loading')}</p>}
+            {isLoading && <p style={{ textAlign: 'center', fontSize: 14, color: '#B0B8C4', padding: '16px 0', margin: 0 }}>{t('common.loading')}</p>}
             {!isLoading && people.length === 0 && (
-              <p className="text-center text-sm text-gray-400 py-4">{t('people.no_people')}</p>
+              <p style={{ textAlign: 'center', fontSize: 14, color: '#B0B8C4', padding: '16px 0', margin: 0 }}>{t('people.no_people')}</p>
             )}
           </>
         )}
@@ -203,11 +261,11 @@ export default function PeoplePage() {
         {tab === 'requests' && (
           <>
             {/* Send invite */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{t('people.send_invite')}</p>
-              <form onSubmit={handleSendRequest} className="flex gap-2">
+            <SurfaceCard style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={sectionLabelStyle}>{t('people.send_invite')}</p>
+              <form onSubmit={handleSendRequest} style={{ display: 'flex', gap: 8 }}>
                 <input
-                  className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  style={{ ...inputStyle, flex: 1 }}
                   type="email"
                   placeholder={t('people.invite_placeholder')}
                   value={inviteEmail}
@@ -217,53 +275,62 @@ export default function PeoplePage() {
                 <button
                   type="submit"
                   disabled={sendRequest.isPending || !inviteEmail.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60 shrink-0"
+                  style={{
+                    padding: '11px 18px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: inviteEmail.trim() && !sendRequest.isPending ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#E9ECF0',
+                    color: inviteEmail.trim() && !sendRequest.isPending ? '#fff' : '#B0B8C4',
+                    fontWeight: 800,
+                    fontSize: 14,
+                    cursor: inviteEmail.trim() && !sendRequest.isPending ? 'pointer' : 'default',
+                    flexShrink: 0,
+                    transition: 'all 0.2s',
+                  }}
                 >
                   {sendRequest.isPending ? '…' : t('people.send')}
                 </button>
               </form>
-              {inviteErr && <p className="text-xs text-red-500">{inviteErr}</p>}
+              {inviteErr && <p style={{ margin: 0, fontSize: 12, color: '#FF4D4F' }}>{inviteErr}</p>}
               {inviteResult && (
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <p style={{ margin: 0, fontSize: 12, color: '#00C2B2', fontWeight: 600 }}>
                   {inviteResult.userExists
                     ? t('people.request_sent_user', { email: inviteResult.email })
                     : t('people.request_sent_invite', { email: inviteResult.email })}
                 </p>
               )}
-            </div>
+            </SurfaceCard>
 
             {/* Received requests */}
             {requests.received?.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-                  {t('people.received')}
-                </p>
-                <div className="space-y-2">
+                <p style={sectionLabelStyle}>{t('people.received')}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {requests.received.map((r) => (
-                    <div key={r.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-sm font-bold text-primary-600 dark:text-primary-300 shrink-0">
+                    <div key={r.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#00C2B2,#009E90)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
                         {(r.sender?.name || r.sender?.email || '?')[0].toUpperCase()}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#0A0D14', fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {r.sender?.name || r.sender?.email}
                         </p>
                         {r.sender?.name && (
-                          <p className="text-xs text-gray-400 truncate">{r.sender?.email}</p>
+                          <p style={{ margin: 0, fontSize: 12, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.sender?.email}</p>
                         )}
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                         <button
                           onClick={() => reject.mutate(r.id)}
                           disabled={reject.isPending}
-                          className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold"
+                          style={{ padding: '7px 14px', borderRadius: 10, border: '1.5px solid #E9ECF0', background: '#fff', color: '#B0B8C4', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                         >
                           {t('people.reject')}
                         </button>
                         <button
                           onClick={() => accept.mutate(r.id)}
                           disabled={accept.isPending}
-                          className="px-3 py-1.5 rounded-xl bg-primary-600 text-white text-xs font-semibold"
+                          style={{ padding: '7px 14px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
                         >
                           ✓ {t('people.accept')}
                         </button>
@@ -277,23 +344,21 @@ export default function PeoplePage() {
             {/* Sent requests */}
             {requests.sent?.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2 px-1">
-                  {t('people.sent')}
-                </p>
-                <div className="space-y-2">
+                <p style={sectionLabelStyle}>{t('people.sent')}</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {requests.sent.map((r) => (
-                    <div key={r.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex items-center gap-3 opacity-80">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0">
+                    <div key={r.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, opacity: 0.82 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F0F2F7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: '#B0B8C4', flexShrink: 0 }}>
                         {(r.recipientEmail || '?')[0].toUpperCase()}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontWeight: 700, color: '#0A0D14', fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {r.recipient?.name || r.recipientEmail}
                         </p>
                         {r.recipient?.name && (
-                          <p className="text-xs text-gray-400 truncate">{r.recipientEmail}</p>
+                          <p style={{ margin: 0, fontSize: 12, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.recipientEmail}</p>
                         )}
-                        <p className="text-xs text-yellow-500">⏳ {t('people.pending')}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#F5A623', fontWeight: 600 }}>⏳ {t('people.pending')}</p>
                       </div>
                     </div>
                   ))}
@@ -302,9 +367,9 @@ export default function PeoplePage() {
             )}
 
             {requests.received?.length === 0 && requests.sent?.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <span className="text-4xl mb-3">📬</span>
-                <p className="text-sm text-gray-400">{t('people.no_requests')}</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', textAlign: 'center' }}>
+                <span style={{ fontSize: 40, marginBottom: 12 }}>📬</span>
+                <p style={{ margin: 0, fontSize: 14, color: '#B0B8C4' }}>{t('people.no_requests')}</p>
               </div>
             )}
           </>

@@ -14,13 +14,6 @@
   ],
   "shortcuts": [
     {
-      "name": "Quick Add",
-      "short_name": "Add",
-      "description": "Instantly add an expense — 3 taps",
-      "url": "/quick-add",
-      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
       "name": "Groups",
       "short_name": "Groups",
       "description": "View your groups",

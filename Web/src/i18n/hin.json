@@ -135,9 +135,6 @@
   },
   "settings": {
     "title": "Settings",
-    "dark_mode": "Dark Mode",
-    "dark_on": "On hai · band karne ke liye tap karo",
-    "dark_off": "Off hai · on karne ke liye tap karo",
     "language": "Bhasha",
     "edit_profile": "Profile aur photo edit karo →",
     "categories": "Categories",

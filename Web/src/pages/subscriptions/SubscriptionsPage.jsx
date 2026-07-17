@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import ProgressBar from '../../components/ui/ProgressBar';
 import {
   useSubscriptions,
   useCreateSubscription,
@@ -25,18 +27,18 @@ const EMPTY = {
   category: 'Entertainment', logo: '', isAutoPay: false, note: '',
 };
 
-function dueColor(days) {
-  if (days <= 1)  return 'text-red-500 bg-red-50 dark:bg-red-900/20';
-  if (days <= 3)  return 'text-orange-500 bg-orange-50 dark:bg-orange-900/20';
-  if (days <= 7)  return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20';
-  return 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800';
+function dueBadgeVariant(days) {
+  if (days <= 0) return 'due-today';
+  if (days <= 3) return 'warning';
+  if (days <= 7) return 'pending';
+  return 'on-track';
 }
 
 function dueLabel(days) {
   if (days < 0)   return 'Overdue';
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
-  return `${days}d`;
+  return `In ${days}d`;
 }
 
 function SubscriptionForm({ initial, onSave, onClose, saving }) {
@@ -50,38 +52,50 @@ function SubscriptionForm({ initial, onSave, onClose, saving }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-5 pb-8 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+        style={{
+          background: '#fff',
+          borderRadius: '24px 24px 0 0',
+          padding: '20px 20px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 16,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-1" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 99, margin: '0 auto 4px' }} />
+        <h2 style={{ fontSize: 15, fontWeight: 800, color: '#0A0D14', margin: 0 }}>
           {initial ? 'Edit Subscription' : 'Add Subscription'}
         </h2>
 
         {/* Name + Logo row */}
-        <div className="flex gap-3">
-          <div className="w-16">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Logo</label>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ width: 64 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Logo</label>
             <input
               type="text"
               value={form.logo}
               onChange={(e) => set('logo', e.target.value)}
               placeholder="📺"
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-2 py-2.5 text-xl text-center outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 8px', fontSize: 20, textAlign: 'center', border: 'none', outline: 'none', boxSizing: 'border-box' }}
               maxLength={2}
             />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Name</label>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. Netflix"
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 16px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
               required
               autoFocus
             />
@@ -89,24 +103,24 @@ function SubscriptionForm({ initial, onSave, onClose, saving }) {
         </div>
 
         {/* Amount + Cycle */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Amount (₹)</label>
             <input
               type="number"
               value={form.amount}
               onChange={(e) => set('amount', e.target.value)}
               placeholder="0"
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 16px', fontSize: 14, fontWeight: 700, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
               required
             />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Billing cycle</label>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Billing cycle</label>
             <select
               value={form.billingCycle}
               onChange={(e) => set('billingCycle', e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             >
               {CYCLES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
@@ -114,61 +128,84 @@ function SubscriptionForm({ initial, onSave, onClose, saving }) {
         </div>
 
         {/* Category + Next due */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Category</label>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Category</label>
             <select
               value={form.category}
               onChange={(e) => set('category', e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             >
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Next due</label>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Next due</label>
             <input
               type="date"
               value={form.nextDueDate}
               onChange={(e) => set('nextDueDate', e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+              style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
               required
             />
           </div>
         </div>
 
         {/* Auto-pay toggle */}
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div style={{ position: 'relative' }}>
             <input
               type="checkbox"
               checked={form.isAutoPay}
               onChange={(e) => set('isAutoPay', e.target.checked)}
-              className="sr-only"
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
             />
-            <div className={`w-10 h-6 rounded-full transition-colors ${form.isAutoPay ? 'bg-violet-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${form.isAutoPay ? 'translate-x-5' : 'translate-x-1'}`} />
+            <div style={{
+              width: 40, height: 24, borderRadius: 99,
+              background: form.isAutoPay ? '#00C2B2' : '#E9ECF0',
+              transition: 'background 0.2s',
+              position: 'relative',
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: 4, width: 16, height: 16,
+                borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                transition: 'transform 0.2s',
+                transform: form.isAutoPay ? 'translateX(20px)' : 'translateX(4px)',
+              }} />
             </div>
           </div>
-          <span className="text-sm text-gray-700 dark:text-gray-300">Auto-pay enabled</span>
+          <span style={{ fontSize: 14, color: '#374151' }}>Auto-pay enabled</span>
         </label>
 
         {/* Note */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note (optional)</label>
+          <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Note (optional)</label>
           <input
             type="text"
             value={form.note}
             onChange={(e) => set('note', e.target.value)}
             placeholder="Any note…"
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+            style={{ width: '100%', background: '#F0F2F7', borderRadius: 12, padding: '10px 16px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
 
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-violet-500 hover:bg-violet-600 disabled:opacity-60 text-white font-bold py-3 rounded-2xl text-sm transition-colors"
+          style={{
+            width: '100%',
+            background: saving ? '#B0B8C4' : 'linear-gradient(135deg,#00C2B2 0%,#00A89A 100%)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: 14,
+            padding: '14px 0',
+            borderRadius: 16,
+            border: 'none',
+            cursor: saving ? 'not-allowed' : 'pointer',
+          }}
         >
           {saving ? 'Saving…' : 'Save Subscription'}
         </button>
@@ -178,8 +215,8 @@ function SubscriptionForm({ initial, onSave, onClose, saving }) {
 }
 
 export default function SubscriptionsPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing]   = useState(null);
+  const [showForm, setShowForm]       = useState(false);
+  const [editing, setEditing]         = useState(null);
   const [showInactive, setShowInactive] = useState(false);
 
   const { data: allSubs = [], isLoading } = useSubscriptions();
@@ -225,100 +262,174 @@ export default function SubscriptionsPage() {
   const saving = create.isPending || upd.isPending;
 
   function SubCard({ sub }) {
-    const color = dueColor(sub.daysUntilDue);
+    const variant = dueBadgeVariant(sub.daysUntilDue);
+    const cycleLabel = CYCLES.find((c) => c.value === sub.billingCycle)?.label || sub.billingCycle;
+
     return (
-      <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800">
-        <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center text-xl shrink-0">
-          {sub.logo || '📦'}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{sub.name}</p>
-            {sub.isAutoPay && <span className="text-xs bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 px-1.5 py-0.5 rounded-full">Auto</span>}
+      <SurfaceCard style={{ padding: '12px 14px', borderRadius: 14, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Category emoji icon */}
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: '#F0F2F7',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, flexShrink: 0,
+          }}>
+            {sub.logo || '📦'}
           </div>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            {CYCLES.find((c) => c.value === sub.billingCycle)?.label} · {sub.category}
-          </p>
+
+          {/* Info */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+              <span style={{ fontWeight: 800, color: '#0A0D14', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {sub.name}
+              </span>
+              {sub.isAutoPay && (
+                <Badge variant="on-track" label="Auto" />
+              )}
+            </div>
+            <span style={{ color: '#B0B8C4', fontSize: 11 }}>
+              {cycleLabel} · {sub.category}
+            </span>
+          </div>
+
+          {/* Amount + due badge */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+            <span style={{ fontWeight: 800, color: '#E11D48', fontSize: 15 }}>
+              ₹{Number(sub.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            </span>
+            <Badge
+              variant={variant}
+              label={`${dueLabel(sub.daysUntilDue)} · ${format(new Date(sub.nextDueDate), 'dd MMM')}`}
+            />
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 4, flexShrink: 0 }}>
+            <button
+              onClick={() => openEdit(sub)}
+              style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: '#F0F2F7', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151' }}
+              title="Edit"
+            >✏️</button>
+            <button
+              onClick={() => renew.mutate(sub.id)}
+              style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: '#F0FDF4', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}
+              title="Mark paid & advance due date"
+            >✓</button>
+            <button
+              onClick={() => handleDelete(sub.id)}
+              style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: '#FFF1F3', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E11D48' }}
+              title="Delete"
+            >🗑️</button>
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white">₹{Number(sub.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${color}`}>
-            {dueLabel(sub.daysUntilDue)} · {format(new Date(sub.nextDueDate), 'dd MMM')}
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 ml-1 shrink-0">
-          <button onClick={() => openEdit(sub)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs">✏️</button>
-          <button onClick={() => renew.mutate(sub.id)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-xs" title="Mark paid & advance due date">✓</button>
-          <button onClick={() => handleDelete(sub.id)} className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-xs">🗑️</button>
-        </div>
-      </div>
+      </SurfaceCard>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Subscriptions" showBack />
 
-      {/* Monthly burn hero */}
-      <div className="mx-4 mt-4 mb-3 bg-violet-500 rounded-2xl px-5 py-4 text-white shrink-0">
-        <p className="text-xs font-medium opacity-70 mb-1">{active.length} active subscription{active.length !== 1 ? 's' : ''}</p>
-        <p className="text-3xl font-bold tracking-tight">₹{Math.round(monthlyBurn).toLocaleString('en-IN')}<span className="text-lg font-normal opacity-70">/mo</span></p>
-        <p className="text-xs opacity-60 mt-1">Monthly equivalent burn</p>
+      {/* Monthly burn hero — dark navy gradient */}
+      <div style={{
+        margin: '16px 16px 12px',
+        background: 'linear-gradient(135deg,#0F172A 0%,#1E293B 100%)',
+        borderRadius: 20,
+        padding: '20px 24px',
+        color: '#fff',
+        flexShrink: 0,
+      }}>
+        <p style={{ fontSize: 12, fontWeight: 600, opacity: 0.6, marginBottom: 4 }}>
+          {active.length} active subscription{active.length !== 1 ? 's' : ''}
+        </p>
+        <p style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 2 }}>
+          ₹{Math.round(monthlyBurn).toLocaleString('en-IN')}
+          <span style={{ fontSize: 16, fontWeight: 400, opacity: 0.6 }}>/mo</span>
+        </p>
+        <p style={{ fontSize: 11, opacity: 0.5 }}>Monthly equivalent burn</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-28 flex flex-col gap-4">
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-gray-300 dark:text-gray-600 text-sm">Loading…</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0', color: '#B0B8C4', fontSize: 14 }}>
+            Loading…
+          </div>
         ) : allSubs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 px-6">
-            <span className="text-4xl">📱</span>
-            <p className="text-gray-400 dark:text-gray-500 text-sm text-center">No subscriptions tracked yet</p>
-            <button onClick={() => setShowForm(true)} className="bg-violet-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl">+ Add Subscription</button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', gap: 12, textAlign: 'center' }}>
+            <span style={{ fontSize: 40 }}>📱</span>
+            <p style={{ color: '#B0B8C4', fontSize: 14 }}>No subscriptions tracked yet</p>
+            <button
+              onClick={() => setShowForm(true)}
+              style={{
+                background: 'linear-gradient(135deg,#00C2B2 0%,#00A89A 100%)',
+                color: '#fff', fontSize: 14, fontWeight: 700,
+                padding: '10px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              }}
+            >
+              + Add Subscription
+            </button>
           </div>
         ) : (
           <>
             {/* Due soon section */}
             {dueSoon.length > 0 && (
-              <div>
-                <p className="px-4 pt-2 pb-1 text-xs font-semibold text-orange-500 uppercase tracking-wide">⏰ Due this week</p>
-                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {dueSoon.map((s) => <SubCard key={s.id} sub={s} />)}
-                </div>
+              <div style={{ padding: '0 16px' }}>
+                <p style={{ fontSize: 11, fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.08em', paddingTop: 12, paddingBottom: 6 }}>
+                  ⏰ Due this week
+                </p>
+                {dueSoon.map((s) => <SubCard key={s.id} sub={s} />)}
               </div>
             )}
 
             {/* All active */}
             {active.length > 0 && (
-              <div>
-                <p className="px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">Active</p>
-                <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                  {active.map((s) => <SubCard key={s.id} sub={s} />)}
-                </div>
+              <div style={{ padding: '0 16px' }}>
+                <p style={{ fontSize: 11, fontWeight: 800, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.08em', paddingTop: 12, paddingBottom: 6 }}>
+                  Active
+                </p>
+                {active.map((s) => <SubCard key={s.id} sub={s} />)}
               </div>
             )}
 
             {/* Inactive */}
             {inactive.length > 0 && (
-              <div>
+              <div style={{ padding: '0 16px' }}>
                 <button
                   onClick={() => setShowInactive((v) => !v)}
-                  className="w-full px-4 py-2 flex items-center justify-between text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide"
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: 11, fontWeight: 800, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.08em',
+                    paddingTop: 12, paddingBottom: 6, background: 'none', border: 'none', cursor: 'pointer',
+                  }}
                 >
                   <span>Inactive ({inactive.length})</span>
                   <span>{showInactive ? '▲' : '▼'}</span>
                 </button>
                 {showInactive && (
-                  <div className="divide-y divide-gray-100 dark:divide-gray-700 opacity-60">
+                  <div style={{ opacity: 0.6 }}>
                     {inactive.map((s) => (
-                      <div key={s.id} className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800">
-                        <span className="text-2xl shrink-0">{s.logo || '📦'}</span>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 line-through">{s.name}</p>
-                          <p className="text-xs text-gray-400">₹{Number(s.amount).toLocaleString('en-IN')} · {s.billingCycle}</p>
+                      <SurfaceCard key={s.id} style={{ padding: '12px 14px', borderRadius: 14, marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ fontSize: 24, flexShrink: 0 }}>{s.logo || '📦'}</span>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 14, fontWeight: 500, color: '#B0B8C4', textDecoration: 'line-through' }}>{s.name}</p>
+                            <p style={{ fontSize: 12, color: '#B0B8C4' }}>₹{Number(s.amount).toLocaleString('en-IN')} · {s.billingCycle}</p>
+                          </div>
+                          <button
+                            onClick={() => handleToggleActive(s)}
+                            style={{ fontSize: 12, fontWeight: 700, color: '#00C2B2', padding: '6px 12px', borderRadius: 12, background: '#E6FAF9', border: 'none', cursor: 'pointer' }}
+                          >
+                            Reactivate
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            style={{ width: 28, height: 28, borderRadius: 8, border: 'none', background: '#FFF1F3', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E11D48' }}
+                          >
+                            🗑️
+                          </button>
                         </div>
-                        <button onClick={() => handleToggleActive(s)} className="text-xs text-violet-500 font-semibold px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-900/20">Reactivate</button>
-                        <button onClick={() => handleDelete(s.id)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 text-xs">🗑️</button>
-                      </div>
+                      </SurfaceCard>
                     ))}
                   </div>
                 )}
@@ -328,10 +439,23 @@ export default function SubscriptionsPage() {
         )}
       </div>
 
-      {/* FAB */}
+      {/* FAB — teal gradient */}
       <button
         onClick={() => { setEditing(null); setShowForm(true); }}
-        className="fixed bottom-20 right-5 w-14 h-14 bg-violet-500 hover:bg-violet-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-30 active:scale-95 transition-transform"
+        style={{
+          position: 'fixed',
+          bottom: 'calc(80px + env(safe-area-inset-bottom))',
+          right: 20,
+          width: 56, height: 56,
+          borderRadius: 999,
+          background: 'linear-gradient(135deg,#00C2B2 0%,#00A89A 100%)',
+          color: '#fff',
+          fontSize: 28, fontWeight: 300,
+          border: 'none', cursor: 'pointer',
+          boxShadow: '0 4px 20px rgba(0,194,178,0.40)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 30,
+        }}
         aria-label="Add subscription"
       >
         +
@@ -340,23 +464,21 @@ export default function SubscriptionsPage() {
       {showForm && (
         <SubscriptionForm
           initial={editing ? {
-            name:        editing.name,
-            amount:      String(editing.amount),
-            currency:    editing.currency || 'INR',
+            name:         editing.name,
+            amount:       String(editing.amount),
+            currency:     editing.currency || 'INR',
             billingCycle: editing.billingCycle,
-            nextDueDate: format(new Date(editing.nextDueDate), 'yyyy-MM-dd'),
-            category:    editing.category,
-            logo:        editing.logo || '',
-            isAutoPay:   editing.isAutoPay,
-            note:        editing.note || '',
+            nextDueDate:  format(new Date(editing.nextDueDate), 'yyyy-MM-dd'),
+            category:     editing.category,
+            logo:         editing.logo || '',
+            isAutoPay:    editing.isAutoPay,
+            note:         editing.note || '',
           } : null}
           onSave={handleSave}
           onClose={closeForm}
           saving={saving}
         />
       )}
-
-      <BottomNav />
     </div>
   );
 }

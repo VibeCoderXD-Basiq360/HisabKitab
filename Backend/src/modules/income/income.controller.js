@@ -30,14 +30,14 @@ const summary = async (req, res) => {
     if (toDate)   where.incomeDate.lte = new Date(toDate);
   }
 
-  const incomes = await prisma.income.findMany({ where, select: { amount: true, category: true } });
-  const total = incomes.reduce((s, i) => s + Number(i.amount), 0);
-  const byCategory = {};
-  for (const i of incomes) {
-    byCategory[i.category] = (byCategory[i.category] || 0) + Number(i.amount);
-  }
+  const [grouped, count] = await Promise.all([
+    prisma.income.groupBy({ by: ['category'], where, _sum: { amount: true }, _count: { _all: true } }),
+    prisma.income.count({ where }),
+  ]);
+  const total = grouped.reduce((s, g) => s + Number(g._sum.amount || 0), 0);
+  const byCategory = Object.fromEntries(grouped.map(g => [g.category, Number(g._sum.amount || 0)]));
 
-  res.json({ total, count: incomes.length, byCategory });
+  res.json({ total: Math.round(total * 100) / 100, count, byCategory });
 };
 
 const create = async (req, res) => {

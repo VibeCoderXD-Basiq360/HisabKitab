@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import { useCreateGroup, useSearchUsers } from '../../hooks/useGroups';
 
 const TYPE_KEYS = {
@@ -34,6 +34,28 @@ function initials(name) {
     .slice(0, 2);
 }
 
+const inputStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  background: '#F0F2F7',
+  border: 'none',
+  borderRadius: 10,
+  padding: '11px 14px',
+  fontSize: 15,
+  color: '#0A0D14',
+  outline: 'none',
+};
+
+const sectionLabelStyle = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: '#B0B8C4',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  marginBottom: 8,
+  display: 'block',
+};
+
 function UserSearchDropdown({ q, onSelect, alreadyAdded }) {
   const { data: results = [], isLoading } = useSearchUsers(q);
   const filtered = results.filter((u) => !alreadyAdded.find((m) => m.userId === u.uid));
@@ -41,26 +63,46 @@ function UserSearchDropdown({ q, onSelect, alreadyAdded }) {
   if (q.length < 2) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 z-30 overflow-hidden">
+    <div style={{
+      position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+      background: '#fff', borderRadius: 14, boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+      border: '1px solid #F0F2F7', zIndex: 30, overflow: 'hidden',
+    }}>
       {isLoading ? (
-        <div className="flex items-center justify-center py-4">
-          <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{
+            width: 20, height: 20, borderRadius: '50%',
+            border: '2px solid #00C2B2', borderTopColor: 'transparent',
+            animation: 'spin 0.7s linear infinite',
+          }} />
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 dark:text-gray-500 px-4 py-3">No users found</p>
+        <p style={{ fontSize: 13, color: '#B0B8C4', padding: '12px 16px', margin: 0 }}>No users found</p>
       ) : (
         filtered.map((u) => (
           <button
             key={u.uid}
             onClick={() => onSelect(u)}
-            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600"
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px 16px', textAlign: 'left',
+              background: 'none', border: 'none', cursor: 'pointer',
+              borderBottom: '1px solid #F0F2F7',
+            }}
           >
-            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-sm font-semibold text-primary-700 flex-shrink-0">
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: '#E6FAF9',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 13, fontWeight: 700, color: '#009E90', flexShrink: 0,
+            }}>
               {initials(u.displayName || u.email)}
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{u.displayName || 'User'}</p>
-              <p className="text-xs text-gray-400">{u.email}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', margin: 0 }}>
+                {u.displayName || 'User'}
+              </p>
+              <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>{u.email}</p>
             </div>
           </button>
         ))
@@ -147,31 +189,43 @@ export default function CreateGroupPage() {
   const step1Valid = name.trim().length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={step === 1 ? 'New Group' : 'Add Members'} showBack />
 
-      <div className="flex-1 overflow-auto pb-28">
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`} />
-          <div className={`h-1.5 flex-1 rounded-full ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-600'}`} />
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+
+        {/* Step progress bar */}
+        <div style={{ display: 'flex', gap: 6, padding: '12px 16px 4px' }}>
+          {[1, 2].map((s) => (
+            <div key={s} style={{
+              flex: 1, height: 4, borderRadius: 2,
+              background: step >= s ? '#00C2B2' : '#E5E7EB',
+              transition: 'background 0.3s',
+            }} />
+          ))}
         </div>
 
         {step === 1 && (
-          <div className="px-4 pt-4 flex flex-col gap-5">
+          <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
             {/* Icon picker */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Group icon</p>
-              <div className="flex gap-3">
+              <span style={sectionLabelStyle}>Group Icon</span>
+              <div style={{ display: 'flex', gap: 10 }}>
                 {ICON_OPTIONS.map((em) => (
                   <button
                     key={em}
                     onClick={() => setIcon(em)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl transition-all ${
-                      icon === em
-                        ? 'bg-primary-100 ring-2 ring-primary-500 scale-110'
-                        : 'bg-white dark:bg-gray-700 shadow-sm active:bg-gray-50 dark:active:bg-gray-600'
-                    }`}
+                    style={{
+                      width: 48, height: 48, borderRadius: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22, border: 'none', cursor: 'pointer',
+                      background: icon === em ? '#E6FAF9' : '#F0F2F7',
+                      outline: icon === em ? '2px solid #00C2B2' : 'none',
+                      outlineOffset: 1,
+                      transform: icon === em ? 'scale(1.12)' : 'scale(1)',
+                      transition: 'all 0.15s',
+                    }}
                   >
                     {em}
                   </button>
@@ -179,49 +233,62 @@ export default function CreateGroupPage() {
               </div>
             </div>
 
-            {/* Name */}
+            {/* Group name */}
             <div>
-              <label className="text-sm font-semibold text-gray-600 dark:text-gray-400 block mb-2">Group name</label>
+              <span style={sectionLabelStyle}>Group Name</span>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Goa Trip 2025"
-                className="w-full bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-base"
+                style={inputStyle}
               />
             </div>
 
-            {/* Type selector */}
+            {/* Group type */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Group type</p>
-              <div className="flex flex-wrap gap-2">
-                {TYPE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      setType(opt.value);
-                      if (!ICON_OPTIONS.includes(icon) || icon === '👥') {
-                        const iconMap = { TRIP: '✈️', HOME: '🏠', COUPLE: '💑', WORK: '💼', OTHER: '👥' };
-                        setIcon(iconMap[opt.value]);
-                      }
-                    }}
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      type === opt.value
-                        ? 'bg-primary-600 text-white shadow-sm'
-                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 shadow-sm active:bg-gray-50 dark:active:bg-gray-600'
-                    }`}
-                  >
-                    <span>{opt.icon}</span>
-                    <span>{t(TYPE_KEYS[opt.value])}</span>
-                  </button>
-                ))}
+              <span style={sectionLabelStyle}>Group Type</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {TYPE_OPTIONS.map((opt) => {
+                  const active = type === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setType(opt.value);
+                        if (!ICON_OPTIONS.includes(icon) || icon === '👥') {
+                          const iconMap = { TRIP: '✈️', HOME: '🏠', COUPLE: '💑', WORK: '💼', OTHER: '👥' };
+                          setIcon(iconMap[opt.value]);
+                        }
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '8px 16px', borderRadius: 20,
+                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        border: 'none',
+                        background: active ? 'linear-gradient(135deg, #00C2B2, #009E90)' : '#F0F2F7',
+                        color: active ? '#fff' : '#374151',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <span>{opt.icon}</span>
+                      <span>{t(TYPE_KEYS[opt.value])}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <button
               onClick={() => step1Valid && setStep(2)}
               disabled={!step1Valid}
-              className="mt-2 w-full py-3.5 bg-primary-600 text-white rounded-2xl font-semibold text-base disabled:opacity-40 active:bg-primary-700"
+              style={{
+                width: '100%', padding: '15px 0', marginTop: 4,
+                background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+                color: '#fff', border: 'none', borderRadius: 12,
+                fontSize: 15, fontWeight: 800, cursor: step1Valid ? 'pointer' : 'not-allowed',
+                opacity: step1Valid ? 1 : 0.4,
+              }}
             >
               Next →
             </button>
@@ -229,34 +296,45 @@ export default function CreateGroupPage() {
         )}
 
         {step === 2 && (
-          <div className="px-4 pt-4 flex flex-col gap-5">
-            <p className="text-base font-semibold text-gray-700 dark:text-gray-200">
+          <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', margin: 0 }}>
               Add members to{' '}
-              <span className="text-primary-600">{name}</span>
+              <span style={{ color: '#00C2B2' }}>{name}</span>
             </p>
 
-            {/* Locked creator row */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-primary-600 flex items-center justify-center text-sm font-semibold text-white flex-shrink-0">
+            {/* Creator row (locked) */}
+            <SurfaceCard style={{ padding: '14px 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg, #00C2B2, #009E90)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700, color: '#fff',
+                }}>
                   {initials(user?.displayName || user?.email || 'You')}
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>
                     {user?.displayName || 'You'}
                   </p>
-                  <p className="text-xs text-gray-400">{user?.email}</p>
+                  <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {user?.email}
+                  </p>
                 </div>
-                <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full font-medium">
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: '#009E90',
+                  background: '#E6FAF9', borderRadius: 20, padding: '3px 10px',
+                }}>
                   You
                 </span>
               </div>
-            </div>
+            </SurfaceCard>
 
             {/* Search HisabKitab users */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Search HisabKitab users</p>
-              <div className="relative">
+              <span style={sectionLabelStyle}>Search HisabKitab Users</span>
+              <div style={{ position: 'relative' }}>
                 <input
                   ref={searchRef}
                   type="email"
@@ -267,7 +345,7 @@ export default function CreateGroupPage() {
                   }}
                   onFocus={() => setShowDropdown(true)}
                   placeholder="Search by email…"
-                  className="w-full bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                  style={inputStyle}
                 />
                 {showDropdown && (
                   <div ref={dropdownRef}>
@@ -283,67 +361,105 @@ export default function CreateGroupPage() {
 
             {/* Add guest */}
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Add guest</p>
-              <div className="flex gap-2">
+              <span style={sectionLabelStyle}>Add Guest (no account)</span>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="text"
                   value={guestName}
                   onChange={(e) => setGuestName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddGuest()}
                   placeholder="Guest name"
-                  className="flex-1 bg-white dark:bg-gray-700 rounded-2xl px-4 py-3 text-gray-800 dark:text-white shadow-sm outline-none focus:ring-2 focus:ring-primary-200 text-sm"
+                  style={{ ...inputStyle, flex: 1 }}
                 />
                 <button
                   onClick={handleAddGuest}
                   disabled={!guestName.trim()}
-                  className="px-5 py-3 bg-primary-600 text-white rounded-2xl text-sm font-semibold disabled:opacity-40 active:bg-primary-700"
+                  style={{
+                    padding: '11px 18px',
+                    background: 'linear-gradient(135deg, #00C2B2, #009E90)',
+                    color: '#fff', border: 'none', borderRadius: 10,
+                    fontSize: 14, fontWeight: 700, cursor: guestName.trim() ? 'pointer' : 'not-allowed',
+                    opacity: guestName.trim() ? 1 : 0.4, flexShrink: 0,
+                  }}
                 >
                   {t('common.add')}
                 </button>
               </div>
             </div>
 
-            {/* Pending members list */}
+            {/* Added members list */}
             {members.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                {members.map((m) => (
-                  <div
-                    key={m.id}
-                    className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-gray-700 last:border-0"
-                  >
-                    <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300 flex-shrink-0">
-                      {initials(m.name)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">{m.name}</p>
-                      {m.email && (
-                        <p className="text-xs text-gray-400 truncate">{m.email}</p>
-                      )}
+              <div>
+                <span style={sectionLabelStyle}>Members ({members.length})</span>
+                {/* Member chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
+                  {members.map((m) => (
+                    <div
+                      key={m.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        background: '#E6FAF9', color: '#009E90',
+                        borderRadius: 20, padding: '4px 10px 4px 6px',
+                        fontSize: 13, fontWeight: 600,
+                      }}
+                    >
+                      {/* Avatar circle */}
+                      <div style={{
+                        width: 24, height: 24, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #00C2B2, #009E90)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0,
+                      }}>
+                        {initials(m.name)}
+                      </div>
+                      <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {m.name}
+                      </span>
                       {m.isGuest && (
-                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded-full">
+                        <span style={{
+                          fontSize: 10, color: '#B0B8C4', background: '#F0F2F7',
+                          borderRadius: 10, padding: '1px 6px', marginLeft: 2,
+                        }}>
                           Guest
                         </span>
                       )}
+                      <button
+                        onClick={() => handleRemoveMember(m.id)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#009E90', fontSize: 14, lineHeight: 1,
+                          padding: 0, marginLeft: 2, display: 'flex', alignItems: 'center',
+                        }}
+                      >
+                        ✕
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleRemoveMember(m.id)}
-                      className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-400 active:text-red-500 rounded-full"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
 
+            {/* Create button */}
             <button
               onClick={handleCreate}
               disabled={createGroup.isPending}
-              className="w-full py-3.5 bg-primary-600 text-white rounded-2xl font-semibold text-base disabled:opacity-50 active:bg-primary-700 flex items-center justify-center gap-2"
+              style={{
+                width: '100%', padding: '15px 0',
+                background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+                color: '#fff', border: 'none', borderRadius: 12,
+                fontSize: 15, fontWeight: 800,
+                cursor: createGroup.isPending ? 'not-allowed' : 'pointer',
+                opacity: createGroup.isPending ? 0.6 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
             >
               {createGroup.isPending ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div style={{
+                    width: 18, height: 18, borderRadius: '50%',
+                    border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff',
+                    animation: 'spin 0.7s linear infinite',
+                  }} />
                   {t('common.loading')}
                 </>
               ) : (
@@ -353,8 +469,6 @@ export default function CreateGroupPage() {
           </div>
         )}
       </div>
-
-      <BottomNav />
     </div>
   );
 }

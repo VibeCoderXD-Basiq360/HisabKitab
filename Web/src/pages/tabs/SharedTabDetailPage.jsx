@@ -13,6 +13,10 @@ import {
   useDeclineTab,
 } from '../../hooks/useSharedTabs';
 import { useAuthStore } from '../../store/authStore';
+import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import TransactionRow from '../../components/ui/TransactionRow';
 
 const fmt = (n) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(Math.abs(n));
@@ -20,6 +24,11 @@ const fmt = (n) =>
 const today = () => new Date().toISOString().split('T')[0];
 
 const SPLIT_TYPES = ['THEIRS_ONLY', 'SPLIT'];
+
+function initials(name) {
+  if (!name) return '?';
+  return name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2);
+}
 
 export default function SharedTabDetailPage() {
   const { id } = useParams();
@@ -62,16 +71,16 @@ export default function SharedTabDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-400">{t('common.loading')}</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#9CA3AF' }}>{t('common.loading')}</p>
       </div>
     );
   }
 
   if (!tab) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <p className="text-gray-400">Not found</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#9CA3AF' }}>Not found</p>
       </div>
     );
   }
@@ -87,9 +96,7 @@ export default function SharedTabDetailPage() {
   const isCreator = tab.creatorId === user?.id;
   const isMember = tab.memberId === user?.id;
 
-  // For 2-person balance display
   const isSettled2 = !isMultiMember && Math.abs(balance.net) < 0.01;
-  // For multi-member balance display
   const totalOwed = isMultiMember ? (balance.totalOwed || 0) : 0;
   const totalOwe  = isMultiMember ? (balance.totalOwe  || 0) : 0;
   const isSettledMulti = isMultiMember && totalOwed < 0.01 && totalOwe < 0.01;
@@ -165,192 +172,220 @@ export default function SharedTabDetailPage() {
     return t('tabs.split');
   };
 
-  const splitTypeColor = (type) => {
-    if (type === 'MINE_ONLY') return 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400';
-    if (type === 'THEIRS_ONLY') return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
-    return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+  const splitTypeVariant = (type) => {
+    if (type === 'MINE_ONLY') return 'neutral';
+    if (type === 'THEIRS_ONLY') return 'warning';
+    return 'requested';
   };
 
+  const memberCount = isMultiMember ? (tab.members || []).filter(m => m.userId).length : 2;
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-12 pb-4">
-        <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => tab.groupId ? navigate(`/tab-groups/${tab.groupId}`) : navigate('/tabs')}
-            className="text-gray-500 dark:text-gray-400"
-          >
-            ← {t('common.back')}
-          </button>
-          {isCreator && (
-            <button onClick={() => setShowDeleteConfirm(true)} className="text-red-500 text-sm">
-              {t('common.delete')}
-            </button>
-          )}
-        </div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">{tab.name}</h1>
-        {isMultiMember ? (
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-2 py-0.5 rounded-full font-semibold">
-              👥 {(tab.members || []).length} members
-            </span>
-            {(tab.members || []).map((m) => (
-              <span key={m.id} className="text-xs text-gray-400 dark:text-gray-500">
-                {m.userId === user?.id ? 'You' : m.name || m.user?.name || m.user?.email}
-              </span>
-            ))}
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar title={tab.name} showBack onBack={() => tab.groupId ? navigate(`/tab-groups/${tab.groupId}`) : navigate('/tabs')} />
+
+      {/* Tab header — dark navy gradient card */}
+      <div style={{ margin: '12px 16px 0', borderRadius: 22, padding: 20, background: 'linear-gradient(135deg, #0A1628 0%, #1A3A5C 100%)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {tab.name}
+            </p>
+            {isMultiMember ? (
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>
+                👥 {(tab.members || []).length} members
+              </p>
+            ) : (
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', margin: '4px 0 0' }}>
+                {t('tabs.with')} {other?.name || other?.email}
+              </p>
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            {t('tabs.with')} {other?.name || other?.email}
-          </p>
+          {tab.status === 'CLOSED' && <Badge variant="neutral" label="Closed" />}
+        </div>
+
+        {/* Balance summary */}
+        {!isPending && (
+          isMultiMember ? (
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>You're owed</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: totalOwed > 0.01 ? '#4ADE80' : 'rgba(255,255,255,0.4)', margin: 0 }}>{fmt(totalOwed)}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>You owe</p>
+                <p style={{ fontSize: 22, fontWeight: 800, color: totalOwe > 0.01 ? '#F87171' : 'rgba(255,255,255,0.4)', margin: 0 }}>{fmt(totalOwe)}</p>
+              </div>
+            </div>
+          ) : (
+            isSettled2 ? (
+              <p style={{ fontSize: 22, fontWeight: 800, color: '#4ADE80', margin: 0 }}>✓ {t('common.all_settled')}</p>
+            ) : balance.net > 0 ? (
+              <div>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>{other?.name || other?.email} owes you</p>
+                <p style={{ fontSize: 28, fontWeight: 800, color: '#4ADE80', margin: 0, letterSpacing: '-0.5px' }}>{fmt(balance.net)}</p>
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>You owe {other?.name || other?.email}</p>
+                <p style={{ fontSize: 28, fontWeight: 800, color: '#F87171', margin: 0, letterSpacing: '-0.5px' }}>{fmt(balance.net)}</p>
+              </div>
+            )
+          )
+        )}
+
+        {/* Action buttons */}
+        {!isPending && tab.status !== 'CLOSED' && (
+          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+            <button
+              onClick={() => setShowAddEntry(true)}
+              style={{
+                flex: 1,
+                padding: '11px 16px',
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 13,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              + {t('tabs.add_entry')}
+            </button>
+            {!isSettled && (
+              <button
+                onClick={() => {
+                  if (!isMultiMember) {
+                    setSettleForm((f) => ({ ...f, amount: String(Math.round(balance.youOwe * 100) / 100) }));
+                  }
+                  setShowSettle(true);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '11px 16px',
+                  borderRadius: 12,
+                  background: 'rgba(255,255,255,0.12)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  cursor: 'pointer',
+                }}
+              >
+                💸 {t('tabs.settle_up')}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       {/* Pending banner — 2-person only */}
       {isPending && !isMultiMember && (
-        <div className="mx-4 mt-4 rounded-2xl p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+        <div style={{ margin: '12px 16px 0', borderRadius: 16, padding: 16, background: '#FFFBEB', border: '1px solid #FDE68A' }}>
           {isMember ? (
             <>
-              <p className="font-semibold text-yellow-800 dark:text-yellow-300 text-sm mb-1">
+              <p style={{ fontWeight: 700, color: '#92400E', fontSize: 14, marginBottom: 4 }}>
                 🤝 {t('tabs.invite_pending_member', { name: other?.name || other?.email })}
               </p>
-              <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-3">{t('tabs.invite_pending_member_sub')}</p>
-              <div className="flex gap-2">
+              <p style={{ fontSize: 12, color: '#B45309', marginBottom: 12 }}>{t('tabs.invite_pending_member_sub')}</p>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => declineTab.mutate(id, { onSuccess: () => navigate('/tabs') })}
                   disabled={declineTab.isPending}
-                  className="flex-1 py-2 rounded-xl border border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-300 text-sm font-semibold"
+                  style={{ flex: 1, padding: '10px 16px', borderRadius: 10, border: '1px solid #FCD34D', background: 'transparent', color: '#92400E', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
                 >
                   {t('tabs.decline')}
                 </button>
                 <button
                   onClick={() => acceptTab.mutate(id)}
                   disabled={acceptTab.isPending}
-                  className="flex-1 py-2 rounded-xl bg-primary-600 text-white text-sm font-semibold"
+                  style={{ flex: 1, padding: '10px 16px', borderRadius: 10, background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)', color: '#fff', fontWeight: 700, fontSize: 13, border: 'none', cursor: 'pointer' }}
                 >
                   ✓ {t('tabs.accept')}
                 </button>
               </div>
             </>
           ) : (
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            <p style={{ fontSize: 14, color: '#92400E' }}>
               ⏳ {t('tabs.invite_pending_creator', { name: other?.name || other?.email })}
             </p>
           )}
         </div>
       )}
 
-      {/* Closed month banner */}
+      {/* Closed banner */}
       {tab.status === 'CLOSED' && (
-        <div className="mx-4 mt-4 rounded-2xl p-3 bg-gray-100 dark:bg-gray-700 flex items-center gap-3">
-          <span className="text-xl">🔒</span>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">This month is closed</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Entries and settlements are locked. View only.</p>
-          </div>
-          {tab.groupId && (
-            <button onClick={() => navigate(`/tab-groups/${tab.groupId}`)} className="text-xs font-semibold text-teal-600 dark:text-teal-400 shrink-0">
-              Group →
-            </button>
-          )}
+        <div style={{ margin: '12px 16px 0' }}>
+          <SurfaceCard style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 20 }}>🔒</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: '#374151', margin: 0 }}>This month is closed</p>
+              <p style={{ fontSize: 12, color: '#9CA3AF', margin: '2px 0 0' }}>Entries and settlements are locked. View only.</p>
+            </div>
+            {tab.groupId && (
+              <button
+                onClick={() => navigate(`/tab-groups/${tab.groupId}`)}
+                style={{ fontSize: 12, fontWeight: 700, color: '#009E90', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              >
+                Group →
+              </button>
+            )}
+          </SurfaceCard>
         </div>
       )}
 
-      {/* Balance card */}
-      {!isPending && (
-        <div className="mx-4 mt-4 rounded-2xl shadow-sm overflow-hidden">
-          {isMultiMember ? (
-            /* Multi-member balance */
-            <div className="bg-white dark:bg-gray-800 p-4">
-              <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">Balances</p>
-              {isSettledMulti ? (
-                <p className="text-center text-green-600 dark:text-green-400 font-bold text-lg py-2">✓ {t('common.all_settled')}</p>
-              ) : (
-                <div className="space-y-2">
-                  {(balance.members || []).map((m) => (
-                    <div key={m.userId} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-xs font-bold text-primary-600 dark:text-primary-300 shrink-0">
-                          {(m.name || '?')[0].toUpperCase()}
-                        </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate">{m.name}</span>
-                      </div>
-                      <span className={`text-sm font-bold shrink-0 ml-2 ${m.net > 0.01 ? 'text-green-600 dark:text-green-400' : m.net < -0.01 ? 'text-red-500 dark:text-red-400' : 'text-gray-400'}`}>
-                        {m.net > 0.01 ? `+${fmt(m.net)}` : m.net < -0.01 ? `-${fmt(m.net)}` : 'Settled'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex gap-3 mt-4">
-                <button
-                  onClick={() => setShowAddEntry(true)}
-                  className="flex-1 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow"
-                >
-                  + {t('tabs.add_entry')}
-                </button>
-                {!isSettledMulti && (
-                  <button
-                    onClick={() => setShowSettle(true)}
-                    className="flex-1 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-600 shadow"
-                  >
-                    💸 {t('tabs.settle_up')}
-                  </button>
-                )}
-              </div>
+      {/* Multi-member balance breakdown */}
+      {!isPending && isMultiMember && (balance.members || []).length > 0 && !isSettledMulti && (
+        <div style={{ margin: '12px 16px 0' }}>
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid #F0F2F7' }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Balances</p>
             </div>
-          ) : (
-            /* 2-person balance */
-            <div className={`p-5 text-center ${isSettled2 ? 'bg-green-50 dark:bg-green-900/20' : balance.net > 0 ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
-              {isSettled2 ? (
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">✓ {t('common.all_settled')}</p>
-              ) : balance.net > 0 ? (
-                <>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{other?.name || other?.email} {t('tabs.owes_you')}</p>
-                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">{fmt(balance.net)}</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('tabs.you_owe')} {other?.name || other?.email}</p>
-                  <p className="text-3xl font-bold text-red-500 dark:text-red-400">{fmt(balance.net)}</p>
-                </>
-              )}
-              <div className="flex gap-3 mt-4 justify-center">
-                <button
-                  onClick={() => setShowAddEntry(true)}
-                  className="px-5 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow"
-                >
-                  + {t('tabs.add_entry')}
-                </button>
-                {!isSettled2 && (
-                  <button
-                    onClick={() => {
-                      setSettleForm((f) => ({ ...f, amount: String(Math.round(balance.youOwe * 100) / 100) }));
-                      setShowSettle(true);
-                    }}
-                    className="px-5 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-semibold border border-gray-200 dark:border-gray-600 shadow"
-                  >
-                    💸 {t('tabs.settle_up')}
-                  </button>
-                )}
+            {(balance.members || []).map((m, idx, arr) => (
+              <TransactionRow
+                key={m.userId}
+                icon={initials(m.name || '?')}
+                iconBg={m.net > 0.01 ? 'linear-gradient(135deg, #D1FAE5 0%, #6EE7B7 100%)' : m.net < -0.01 ? 'linear-gradient(135deg, #FEE2E2 0%, #FCA5A5 100%)' : '#F0F2F7'}
+                title={m.name}
+                subtitle={null}
+                isLast={idx === arr.length - 1}
+                rightSlot={
+                  <span style={{ fontSize: 14, fontWeight: 700, color: m.net > 0.01 ? '#059669' : m.net < -0.01 ? '#E11D48' : '#9CA3AF' }}>
+                    {m.net > 0.01 ? `+${fmt(m.net)}` : m.net < -0.01 ? `-${fmt(m.net)}` : 'Settled'}
+                  </span>
+                }
+              />
+            ))}
+            {isSettledMulti && (
+              <div style={{ padding: '16px', textAlign: 'center' }}>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#059669', margin: 0 }}>✓ {t('common.all_settled')}</p>
               </div>
-            </div>
-          )}
+            )}
+          </SurfaceCard>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="mx-4 mt-4 flex gap-2">
+      {/* Tab switcher */}
+      <div style={{ margin: '12px 16px 0', display: 'flex', gap: 8 }}>
         {['entries', 'settlements'].map((t2) => (
           <button
             key={t2}
             onClick={() => setActiveTab(t2)}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
-              activeTab === t2
-                ? 'bg-primary-600 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
-            }`}
+            style={{
+              flex: 1,
+              padding: '10px 16px',
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 700,
+              border: 'none',
+              cursor: 'pointer',
+              background: activeTab === t2
+                ? 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)'
+                : '#fff',
+              color: activeTab === t2 ? '#fff' : '#9CA3AF',
+              boxShadow: activeTab === t2 ? 'none' : '0 2px 8px rgba(0,0,0,0.06)',
+            }}
           >
             {t2 === 'entries' ? t('tabs.entries') : t('tabs.settlements')}
           </button>
@@ -359,86 +394,85 @@ export default function SharedTabDetailPage() {
 
       {/* Entries list */}
       {activeTab === 'entries' && (
-        <div className="mx-4 mt-3 space-y-4">
+        <div style={{ margin: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {tab.entries.length === 0 && (
-            <p className="text-center text-gray-400 py-10 text-sm">{t('tabs.no_entries')}</p>
+            <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0', fontSize: 14 }}>{t('tabs.no_entries')}</p>
           )}
           {grouped.map(([dateStr, entries]) => (
             <div key={dateStr}>
-              <div className="flex items-center gap-2 mb-2">
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
                   {dayLabel(dateStr)}
                 </p>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <div style={{ flex: 1, height: 1, background: '#E5E7EB' }} />
+                <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0 }}>
                   {fmt(entries.reduce((s, e) => s + Number(e.amount), 0))}
                 </p>
               </div>
-              <div className="space-y-2">
-                {entries.map((entry) => {
+
+              <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+                {entries.map((entry, idx) => {
                   const iMadeit = entry.paidById === user?.id;
                   const entryAmt = Number(entry.amount);
-                  const memberCount = isMultiMember ? (tab.members || []).filter(m => m.userId).length : 2;
                   const debtAmt = isMultiMember
                     ? entryAmt / memberCount
                     : entry.splitType === 'MINE_ONLY' ? 0
                     : entry.splitType === 'THEIRS_ONLY' ? entryAmt
                     : entryAmt * (entry.splitRatio / 100);
 
-                  return (
-                    <div key={entry.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 dark:text-white truncate">{entry.description}</p>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            {isMultiMember ? (
-                              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                                Split equally {memberCount} ways
-                              </span>
-                            ) : (
-                              <>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${splitTypeColor(entry.splitType)}`}>
-                                  {splitTypeLabel(entry.splitType)}
-                                </span>
-                                {entry.splitType === 'SPLIT' && (
-                                  <span className="text-xs text-gray-400">{entry.splitRatio}% {t('tabs.theirs')}</span>
-                                )}
-                              </>
-                            )}
-                            {entry.category && (
-                              <span className="text-xs text-gray-400">{entry.category}</span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {iMadeit ? t('tabs.paid_by_you') : `${t('tabs.paid_by')} ${entry.paidBy?.name || entry.paidBy?.email}`}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="font-bold text-gray-900 dark:text-white">{fmt(entryAmt)}</p>
-                          {(!isMultiMember && entry.splitType !== 'MINE_ONLY') || isMultiMember ? (
-                            <p className={`text-xs font-medium ${iMadeit ? 'text-green-600' : 'text-red-500'}`}>
-                              {iMadeit ? `+${fmt(debtAmt)}` : `-${fmt(debtAmt)}`}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      {entry.note && <p className="text-xs text-gray-400 mt-2 italic">"{entry.note}"</p>}
+                  const subtitleParts = [
+                    iMadeit ? t('tabs.paid_by_you') : `${t('tabs.paid_by')} ${entry.paidBy?.name || entry.paidBy?.email}`,
+                    entry.category || null,
+                    entry.note ? `"${entry.note}"` : null,
+                  ].filter(Boolean);
+
+                  const rightSlot = (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', letterSpacing: '-0.3px' }}>{fmt(entryAmt)}</span>
+                      {((!isMultiMember && entry.splitType !== 'MINE_ONLY') || isMultiMember) && (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: iMadeit ? '#059669' : '#E11D48' }}>
+                          {iMadeit ? `+${fmt(debtAmt)}` : `-${fmt(debtAmt)}`}
+                        </span>
+                      )}
+                      {isMultiMember ? (
+                        <Badge variant="requested" label={`Split ${memberCount} ways`} />
+                      ) : (
+                        <Badge variant={splitTypeVariant(entry.splitType)} label={splitTypeLabel(entry.splitType)} />
+                      )}
                       {(iMadeit || isCreator) && (
-                        <div className="flex gap-3 mt-2">
+                        <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                           {iMadeit && (
-                            <button onClick={() => openEditEntry(entry)} className="text-xs text-primary-500 hover:text-primary-700">
+                            <button
+                              onClick={() => openEditEntry(entry)}
+                              style={{ fontSize: 11, color: '#009E90', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                            >
                               {t('common.edit')}
                             </button>
                           )}
-                          <button onClick={() => handleDeleteEntry(entry.id)} className="text-xs text-red-400 hover:text-red-600">
+                          <button
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            style={{ fontSize: 11, color: '#E11D48', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}
+                          >
                             {t('common.delete')}
                           </button>
                         </div>
                       )}
                     </div>
                   );
+
+                  return (
+                    <TransactionRow
+                      key={entry.id}
+                      icon={entry.category ? entry.category[0].toUpperCase() : '📋'}
+                      iconBg="linear-gradient(135deg, #E6FAF9 0%, #B2F0EB 100%)"
+                      title={entry.description}
+                      subtitle={subtitleParts.join(' · ')}
+                      isLast={idx === entries.length - 1}
+                      rightSlot={rightSlot}
+                    />
+                  );
                 })}
-              </div>
+              </SurfaceCard>
             </div>
           ))}
         </div>
@@ -446,44 +480,69 @@ export default function SharedTabDetailPage() {
 
       {/* Settlements list */}
       {activeTab === 'settlements' && (
-        <div className="mx-4 mt-3 space-y-2">
+        <div style={{ margin: '12px 16px 0' }}>
           {tab.settlements.length === 0 && (
-            <p className="text-center text-gray-400 py-10 text-sm">{t('tabs.no_settlements')}</p>
+            <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0', fontSize: 14 }}>{t('tabs.no_settlements')}</p>
           )}
-          {tab.settlements.map((s) => {
-            const iMadeIt = s.paidById === user?.id;
-            const receiver = s.toUser || (tab.creatorId === s.paidById ? tab.member : tab.creator);
-            return (
-              <div key={s.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-lg">
-                  💸
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 dark:text-white text-sm">
-                    {iMadeIt
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+            {tab.settlements.map((s, idx) => {
+              const iMadeIt = s.paidById === user?.id;
+              const receiver = s.toUser || (tab.creatorId === s.paidById ? tab.member : tab.creator);
+              return (
+                <TransactionRow
+                  key={s.id}
+                  icon="💸"
+                  iconBg="linear-gradient(135deg, #D1FAE5 0%, #6EE7B7 100%)"
+                  title={
+                    iMadeIt
                       ? `${t('tabs.you_paid')} ${receiver?.name || receiver?.email || ''}`
-                      : `${s.paidBy?.name || s.paidBy?.email} ${t('tabs.paid')}`}
-                  </p>
-                  {s.note && <p className="text-xs text-gray-400 italic">"{s.note}"</p>}
-                  <p className="text-xs text-gray-400">
-                    {new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600 dark:text-green-400">{fmt(Number(s.amount))}</p>
-                  {(iMadeIt || isCreator) && (
-                    <button
-                      onClick={() => deleteSettlement.mutate(s.id)}
-                      disabled={deleteSettlement.isPending}
-                      className="text-xs text-red-400 hover:text-red-600 mt-1"
-                    >
-                      {t('common.delete')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                      : `${s.paidBy?.name || s.paidBy?.email} ${t('tabs.paid')}`
+                  }
+                  subtitle={[
+                    s.note ? `"${s.note}"` : null,
+                    new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+                  ].filter(Boolean).join(' · ')}
+                  isLast={idx === tab.settlements.length - 1}
+                  rightSlot={
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: '#059669', margin: 0 }}>{fmt(Number(s.amount))}</p>
+                      {(iMadeIt || isCreator) && (
+                        <button
+                          onClick={() => deleteSettlement.mutate(s.id)}
+                          disabled={deleteSettlement.isPending}
+                          style={{ fontSize: 11, color: '#E11D48', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600, marginTop: 4 }}
+                        >
+                          {t('common.delete')}
+                        </button>
+                      )}
+                    </div>
+                  }
+                />
+              );
+            })}
+          </SurfaceCard>
+        </div>
+      )}
+
+      {/* Delete tab button */}
+      {isCreator && (
+        <div style={{ margin: '16px 16px 0' }}>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 14,
+              background: '#FFF1F3',
+              color: '#E11D48',
+              fontWeight: 700,
+              fontSize: 14,
+              border: '1px solid #FECDD3',
+              cursor: 'pointer',
+            }}
+          >
+            {t('tabs.delete_tab')}
+          </button>
         </div>
       )}
 
@@ -491,19 +550,19 @@ export default function SharedTabDetailPage() {
       {showAddEntry && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowAddEntry(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0', padding: 20, maxHeight: '90vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0A0D14', margin: 0 }}>
               {editingEntry ? `${t('common.edit')} ${t('tabs.entry')}` : t('tabs.add_entry')}
             </h2>
             {isMultiMember && (
-              <p className="text-xs text-gray-400 dark:text-gray-500 -mt-2">
+              <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: -8 }}>
                 Split equally among all {(tab.members || []).filter(m => m.userId).length} members
               </p>
             )}
-            <form onSubmit={handleAddEntry} className="space-y-3">
+            <form onSubmit={handleAddEntry} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Field label={t('tabs.description')}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   placeholder={t('tabs.description_placeholder')}
                   value={entryForm.description}
                   onChange={(e) => setEntryForm((f) => ({ ...f, description: e.target.value }))}
@@ -512,7 +571,7 @@ export default function SharedTabDetailPage() {
               </Field>
               <Field label={t('tabs.amount')}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -524,7 +583,7 @@ export default function SharedTabDetailPage() {
               </Field>
               <Field label={t('tabs.date')}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   type="date"
                   value={entryForm.date}
                   onChange={(e) => setEntryForm((f) => ({ ...f, date: e.target.value }))}
@@ -536,26 +595,31 @@ export default function SharedTabDetailPage() {
               {!isMultiMember && (
                 <>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      {t('tabs.split_type')}
-                    </label>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
+                    <label style={labelStyle}>{t('tabs.split_type')}</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 8 }}>
                       {SPLIT_TYPES.map((type) => (
                         <button
                           key={type}
                           type="button"
                           onClick={() => setEntryForm((f) => ({ ...f, splitType: type }))}
-                          className={`py-2 rounded-xl text-xs font-semibold border transition-colors ${
-                            entryForm.splitType === type
-                              ? 'bg-primary-600 text-white border-primary-600'
-                              : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                          }`}
+                          style={{
+                            padding: '9px 8px',
+                            borderRadius: 10,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: entryForm.splitType === type ? 'none' : '1px solid #E5E7EB',
+                            background: entryForm.splitType === type
+                              ? 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)'
+                              : '#F9FAFB',
+                            color: entryForm.splitType === type ? '#fff' : '#6B7280',
+                          }}
                         >
                           {splitTypeLabel(type)}
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 6 }}>
                       {entryForm.splitType === 'THEIRS_ONLY' && t('tabs.theirs_only_hint', { name: other?.name || other?.email })}
                       {entryForm.splitType === 'SPLIT' && t('tabs.split_hint')}
                     </p>
@@ -563,7 +627,7 @@ export default function SharedTabDetailPage() {
 
                   {entryForm.splitType === 'SPLIT' && (
                     <div>
-                      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                      <label style={labelStyle}>
                         {t('tabs.their_share')}: {entryForm.splitRatio}%
                       </label>
                       <input
@@ -572,9 +636,9 @@ export default function SharedTabDetailPage() {
                         max="99"
                         value={entryForm.splitRatio}
                         onChange={(e) => setEntryForm((f) => ({ ...f, splitRatio: Number(e.target.value) }))}
-                        className="w-full mt-2 accent-primary-600"
+                        style={{ width: '100%', marginTop: 8, accentColor: '#009E90' }}
                       />
-                      <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9CA3AF', marginTop: 4 }}>
                         <span>{t('tabs.you')}: {100 - entryForm.splitRatio}%</span>
                         <span>{other?.name || t('tabs.them')}: {entryForm.splitRatio}%</span>
                       </div>
@@ -585,7 +649,7 @@ export default function SharedTabDetailPage() {
 
               <Field label={`${t('tabs.category')} (${t('common.optional')})`}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   placeholder={t('tabs.category_placeholder')}
                   value={entryForm.category}
                   onChange={(e) => setEntryForm((f) => ({ ...f, category: e.target.value }))}
@@ -593,26 +657,37 @@ export default function SharedTabDetailPage() {
               </Field>
               <Field label={`${t('tabs.note')} (${t('common.optional')})`}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   placeholder={t('tabs.note_placeholder')}
                   value={entryForm.note}
                   onChange={(e) => setEntryForm((f) => ({ ...f, note: e.target.value }))}
                 />
               </Field>
 
-              {entryErr && <p className="text-sm text-red-500">{entryErr}</p>}
-              <div className="flex gap-3 pt-1">
+              {entryErr && <p style={{ fontSize: 13, color: '#E11D48' }}>{entryErr}</p>}
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => { setShowAddEntry(false); setEditingEntry(null); setEntryForm(EMPTY_ENTRY); }}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold text-sm"
+                  style={{ flex: 1, padding: '13px 16px', borderRadius: 14, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={addEntry.isPending || updateEntry.isPending}
-                  className="flex-1 py-3 rounded-xl bg-primary-600 text-white font-semibold text-sm disabled:opacity-60"
+                  style={{
+                    flex: 1,
+                    padding: '13px 16px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #009E90 0%, #00C9B8 100%)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                    opacity: (addEntry.isPending || updateEntry.isPending) ? 0.6 : 1,
+                  }}
                 >
                   {(addEntry.isPending || updateEntry.isPending) ? t('common.saving') : editingEntry ? t('common.save') : t('common.add')}
                 </button>
@@ -626,15 +701,15 @@ export default function SharedTabDetailPage() {
       {showSettle && (
         <div className="fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowSettle(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-4">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">💸 {t('tabs.settle_up')}</h2>
-            <form onSubmit={handleSettle} className="space-y-3">
+          <div style={{ position: 'relative', background: '#fff', borderRadius: '24px 24px 0 0', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0A0D14', margin: 0 }}>💸 {t('tabs.settle_up')}</h2>
+            <form onSubmit={handleSettle} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
               {/* "Pay to" picker — multi-member only */}
               {isMultiMember && (
                 <Field label="Pay to">
                   <select
-                    className={inputCls}
+                    style={inputStyle}
                     value={settleForm.toUserId}
                     onChange={(e) => setSettleForm((f) => ({ ...f, toUserId: e.target.value }))}
                     required
@@ -651,7 +726,7 @@ export default function SharedTabDetailPage() {
 
               <Field label={t('tabs.amount')}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -662,7 +737,7 @@ export default function SharedTabDetailPage() {
               </Field>
               <Field label={t('tabs.date')}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   type="date"
                   value={settleForm.date}
                   onChange={(e) => setSettleForm((f) => ({ ...f, date: e.target.value }))}
@@ -670,13 +745,13 @@ export default function SharedTabDetailPage() {
               </Field>
               <Field label={`${t('tabs.note')} (${t('common.optional')})`}>
                 <input
-                  className={inputCls}
+                  style={inputStyle}
                   placeholder={t('tabs.settle_note_placeholder')}
                   value={settleForm.note}
                   onChange={(e) => setSettleForm((f) => ({ ...f, note: e.target.value }))}
                 />
               </Field>
-              {settleErr && <p className="text-sm text-red-500">{settleErr}</p>}
+              {settleErr && <p style={{ fontSize: 13, color: '#E11D48' }}>{settleErr}</p>}
 
               {/* UPI Pay button */}
               {(() => {
@@ -692,25 +767,48 @@ export default function SharedTabDetailPage() {
                 return (
                   <a
                     href={upiUrl}
-                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-green-400 text-green-600 dark:text-green-400 font-semibold text-sm active:scale-[0.98] transition-transform"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '13px 16px',
+                      borderRadius: 14,
+                      border: '2px solid #34D399',
+                      color: '#059669',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      textDecoration: 'none',
+                    }}
                   >
-                    <span className="text-lg">⚡</span> Pay ₹{amt.toFixed(2)} via UPI
+                    <span style={{ fontSize: 18 }}>⚡</span> Pay ₹{amt.toFixed(2)} via UPI
                   </a>
                 );
               })()}
 
-              <div className="flex gap-3 pt-1">
+              <div style={{ display: 'flex', gap: 12, paddingTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => setShowSettle(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold text-sm"
+                  style={{ flex: 1, padding: '13px 16px', borderRadius: 14, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
                 >
                   {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={addSettlement.isPending}
-                  className="flex-1 py-3 rounded-xl bg-green-600 text-white font-semibold text-sm disabled:opacity-60"
+                  style={{
+                    flex: 1,
+                    padding: '13px 16px',
+                    borderRadius: 14,
+                    background: 'linear-gradient(135deg, #059669 0%, #34D399 100%)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: 'none',
+                    cursor: 'pointer',
+                    opacity: addSettlement.isPending ? 0.6 : 1,
+                  }}
                 >
                   {addSettlement.isPending ? t('common.saving') : t('tabs.record_payment')}
                 </button>
@@ -724,20 +822,20 @@ export default function SharedTabDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl p-5 w-full max-w-sm space-y-4">
-            <h3 className="font-bold text-gray-900 dark:text-white">{t('tabs.delete_tab')}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{t('tabs.delete_tab_confirm')}</p>
-            <div className="flex gap-3">
+          <div style={{ position: 'relative', background: '#fff', borderRadius: 20, padding: 20, width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <h3 style={{ fontWeight: 800, color: '#0A0D14', fontSize: 16, margin: 0 }}>{t('tabs.delete_tab')}</h3>
+            <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>{t('tabs.delete_tab_confirm')}</p>
+            <div style={{ display: 'flex', gap: 12 }}>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold"
+                style={{ flex: 1, padding: '12px 16px', borderRadius: 12, border: '1px solid #E5E7EB', background: '#fff', color: '#374151', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleDeleteTab}
                 disabled={deleteTab.isPending}
-                className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-60"
+                style={{ flex: 1, padding: '12px 16px', borderRadius: 12, background: '#E11D48', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', opacity: deleteTab.isPending ? 0.6 : 1 }}
               >
                 {t('common.delete')}
               </button>
@@ -752,11 +850,29 @@ export default function SharedTabDetailPage() {
 function Field({ label, children }) {
   return (
     <div>
-      <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</label>
-      <div className="mt-1">{children}</div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ marginTop: 6 }}>{children}</div>
     </div>
   );
 }
 
-const inputCls =
-  'w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500';
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#6B7280',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  display: 'block',
+};
+
+const inputStyle = {
+  width: '100%',
+  borderRadius: 12,
+  border: '1px solid #E5E7EB',
+  background: '#F9FAFB',
+  color: '#0A0D14',
+  padding: '12px 16px',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+};

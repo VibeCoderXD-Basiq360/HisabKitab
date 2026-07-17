@@ -1,0 +1,51 @@
+services:
+
+  hisabkitab-db:
+    image: postgres:16-alpine
+    container_name: hisabkitab-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hkuser
+      POSTGRES_PASSWORD: hk_pgPass_2026_x9z4
+      POSTGRES_DB: hisabkitab
+    volumes:
+      - hisabkitab_pgdata:/var/lib/postgresql/data
+    networks:
+      - hisabkitab_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hkuser -d hisabkitab"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  hisabkitab-backend:
+    build:
+      context: ./Backend
+    container_name: hisabkitab-backend
+    restart: unless-stopped
+    env_file: ./Backend/.env.production
+    networks:
+      - hisabkitab_internal
+      - edge-network
+    depends_on:
+      hisabkitab-db:
+        condition: service_healthy
+
+  hisabkitab-web:
+    build:
+      context: ./Web
+    container_name: hisabkitab-web
+    restart: unless-stopped
+    networks:
+      - edge-network
+    depends_on:
+      - hisabkitab-backend
+
+networks:
+  hisabkitab_internal:
+    driver: bridge
+  edge-network:
+    external: true
+
+volumes:
+  hisabkitab_pgdata:

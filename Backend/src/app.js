@@ -29,10 +29,8 @@ const searchRoutes         = require('./modules/search/search.routes');
 const incomeRoutes         = require('./modules/income/income.routes');
 const subscriptionRoutes   = require('./modules/subscription/subscription.routes');
 const insightsRoutes       = require('./modules/insights/insights.routes');
-const templateRoutes       = require('./modules/template/template.routes');
 const financialGoalRoutes  = require('./modules/financialGoal/financialGoal.routes');
 const assetRoutes          = require('./modules/asset/asset.routes');
-const netWorthRoutes       = require('./modules/netWorth/netWorth.routes');
 const ocrRoutes            = require('./modules/ocr/ocr.routes');
 const accountRoutes        = require('./modules/account/account.routes');
 const businessRoutes       = require('./modules/business/business.routes');
@@ -42,13 +40,9 @@ const businessCustomerRoutes = require('./modules/businessCustomer/businessCusto
 const businessExpenseRoutes  = require('./modules/businessExpense/businessExpense.routes');
 const businessPLRoutes       = require('./modules/businessPL/businessPL.routes');
 
-// Start scheduled jobs
-require('./jobs/monthlyReport');
-require('./jobs/creditCardReminder');
-require('./jobs/subscriptionReminder');
-require('./jobs/exchangeRateRefresh');
-require('./jobs/budgetAlert');
-require('./jobs/loanReminder');
+// Start persistent job queue (pg-boss — survives server restarts, retries on failure)
+const { startJobs } = require('./jobs/index');
+startJobs().catch((err) => console.error('[queue] Failed to start jobs:', err.message));
 
 const app = express();
 
@@ -88,10 +82,8 @@ app.use('/api/search',          searchRoutes);
 app.use('/api/income',          incomeRoutes);
 app.use('/api/subscriptions',   subscriptionRoutes);
 app.use('/api/insights',        insightsRoutes);
-app.use('/api/templates',       templateRoutes);
 app.use('/api/financial-goals', financialGoalRoutes);
 app.use('/api/assets',         assetRoutes);
-app.use('/api/net-worth',      netWorthRoutes);
 app.use('/api/ocr',            ocrRoutes);
 app.use('/api/accounts',           accountRoutes);
 app.use('/api/business',           businessRoutes);
@@ -100,6 +92,8 @@ app.use('/api/business-jobs',      businessJobRoutes);
 app.use('/api/business-customers', businessCustomerRoutes);
 app.use('/api/business-expenses',  businessExpenseRoutes);
 app.use('/api/business-pl',        businessPLRoutes);
+
+app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use((err, req, res, next) => {
   console.error(err);

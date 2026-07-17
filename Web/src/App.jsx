@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/queryClient';
 import { useAuthStore } from './store/authStore';
-import { useThemeStore } from './store/themeStore';
 import { useFCM } from './hooks/useFCM';
 
 import LoginPage from './pages/auth/LoginPage';
@@ -16,13 +15,13 @@ import CategoryExpensesPage from './pages/analytics/CategoryExpensesPage';
 import PaymentExpensesPage from './pages/analytics/PaymentExpensesPage';
 import BalancesPage from './pages/balances/BalancesPage';
 import PersonExpensesPage from './pages/balances/PersonExpensesPage';
-import SettingsPage from './pages/settings/SettingsPage';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PeoplePage from './pages/settings/PeoplePage';
-import TemplatesPage from './pages/settings/TemplatesPage';
 import FinancialGoalsPage from './pages/settings/FinancialGoalsPage';
-import NetWorthPage from './pages/netWorth/NetWorthPage';
-import QuickAddPage from './pages/quickAdd/QuickAddPage';
+import PlanningPage from './pages/planning/PlanningPage';
+import SocialPage from './pages/social/SocialPage';
+import WealthPage from './pages/wealth/WealthPage';
+import OnboardingFlow from './components/OnboardingFlow';
 import PaymentTypesPage from './pages/settings/PaymentTypesPage';
 import RecurringPage from './pages/settings/RecurringPage';
 import BudgetsPage from './pages/settings/BudgetsPage';
@@ -52,7 +51,6 @@ import IncomePage from './pages/income/IncomePage';
 import SubscriptionsPage from './pages/subscriptions/SubscriptionsPage';
 import AccountsPage from './pages/accounts/AccountsPage';
 import AccountDetailPage from './pages/accounts/AccountDetailPage';
-import CartPage from './pages/cart/CartPage';
 import BusinessDashboard from './pages/business/BusinessDashboard';
 import NewJobPage from './pages/business/NewJobPage';
 import JobsPage from './pages/business/JobsPage';
@@ -64,8 +62,11 @@ import BusinessSettingsPage from './pages/business/BusinessSettingsPage';
 import BusinessExpensePage from './pages/business/BusinessExpensePage';
 import OfflineBar from './components/OfflineBar';
 import KeyboardShortcutsHelp from './components/KeyboardShortcutsHelp';
+import ApiTimingPanel from './components/ApiTimingPanel';
 import LockScreen from './components/LockScreen';
-import Sidebar from './components/Sidebar';
+import BottomNav from './components/BottomNav';
+import MorePage from './pages/more/MorePage';
+import CartPage from './pages/cart/CartPage';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useLockStore } from './store/lockStore';
 
@@ -80,9 +81,9 @@ function FCMSetup() {
   return null;
 }
 
-function AuthSidebar() {
+function AuthBottomNav() {
   const jwt = useAuthStore((s) => s.jwt);
-  return jwt ? <Sidebar /> : null;
+  return jwt ? <BottomNav /> : null;
 }
 
 function KeyboardShortcuts() {
@@ -110,26 +111,19 @@ function BackgroundLock() {
   return null;
 }
 
-function DarkModeSync() {
-  const dark = useThemeStore((s) => s.dark);
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-  }, [dark]);
-  return null;
-}
-
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <DarkModeSync />
         <FCMSetup />
         <KeyboardShortcuts />
         <BackgroundLock />
         <LockScreen />
-        <AuthSidebar />
+        <AuthBottomNav />
         <KeyboardShortcutsHelp />
         <OfflineBar />
+        <OnboardingFlow />
+        {import.meta.env.DEV && <ApiTimingPanel />}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
@@ -144,7 +138,6 @@ export default function App() {
           <Route path="/balances" element={<Protected><BalancesPage /></Protected>} />
           <Route path="/balances/person/:personId" element={<Protected><PersonExpensesPage /></Protected>} />
           <Route path="/balances/history/:personId" element={<Protected><BalanceHistoryPage /></Protected>} />
-          <Route path="/settings" element={<Protected><SettingsPage /></Protected>} />
           <Route path="/settings/categories" element={<Protected><CategoriesPage /></Protected>} />
           <Route path="/settings/people" element={<Protected><PeoplePage /></Protected>} />
           <Route path="/settings/payment-types" element={<Protected><PaymentTypesPage /></Protected>} />
@@ -152,10 +145,10 @@ export default function App() {
           <Route path="/settings/budgets" element={<Protected><BudgetsPage /></Protected>} />
           <Route path="/settings/budgets/:categoryId" element={<Protected><CategoryBudgetPage /></Protected>} />
           <Route path="/settings/export" element={<Protected><ExportPage /></Protected>} />
-          <Route path="/settings/templates" element={<Protected><TemplatesPage /></Protected>} />
           <Route path="/settings/goals" element={<Protected><FinancialGoalsPage /></Protected>} />
-          <Route path="/net-worth" element={<Protected><NetWorthPage /></Protected>} />
-          <Route path="/quick-add" element={<Protected><QuickAddPage /></Protected>} />
+          <Route path="/wealth" element={<Protected><WealthPage /></Protected>} />
+          <Route path="/plan" element={<Protected><PlanningPage /></Protected>} />
+          <Route path="/social" element={<Protected><SocialPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
           <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
           <Route path="/groups/new" element={<Protected><CreateGroupPage /></Protected>} />
@@ -179,7 +172,6 @@ export default function App() {
           <Route path="/subscriptions" element={<Protected><SubscriptionsPage /></Protected>} />
           <Route path="/accounts" element={<Protected><AccountsPage /></Protected>} />
           <Route path="/accounts/:id" element={<Protected><AccountDetailPage /></Protected>} />
-          <Route path="/cart" element={<Protected><CartPage /></Protected>} />
           <Route path="/business" element={<Protected><BusinessDashboard /></Protected>} />
           <Route path="/business/jobs" element={<Protected><JobsPage /></Protected>} />
           <Route path="/business/jobs/new" element={<Protected><NewJobPage /></Protected>} />
@@ -189,6 +181,8 @@ export default function App() {
           <Route path="/business/pl" element={<Protected><PLPage /></Protected>} />
           <Route path="/business/settings" element={<Protected><BusinessSettingsPage /></Protected>} />
           <Route path="/business/expenses" element={<Protected><BusinessExpensePage /></Protected>} />
+          <Route path="/more" element={<Protected><MorePage /></Protected>} />
+          <Route path="/cart" element={<Protected><CartPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

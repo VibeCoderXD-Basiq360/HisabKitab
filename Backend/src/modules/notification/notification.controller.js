@@ -1,23 +1,28 @@
 const prisma = require('../../lib/prisma');
 
 const list = async (req, res) => {
-  const userId = req.user.userId;
-  const page = Number(req.query.page) || 1;
-  const limit = Math.min(Number(req.query.limit) || 30, 100);
-  const skip = (page - 1) * limit;
+  try {
+    const userId = req.user.userId;
+    const page = Number(req.query.page) || 1;
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    const skip = (page - 1) * limit;
 
-  const [data, total, unreadCount] = await Promise.all([
-    prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    }),
-    prisma.notification.count({ where: { userId } }),
-    prisma.notification.count({ where: { userId, isRead: false } }),
-  ]);
+    const [data, total, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.notification.count({ where: { userId } }),
+      prisma.notification.count({ where: { userId, isRead: false } }),
+    ]);
 
-  res.json({ data, total, page, limit, unreadCount });
+    res.json({ data, total, page, limit, unreadCount });
+  } catch (err) {
+    console.error('[notification.list]', err.message);
+    res.status(500).json({ error: 'Failed to load notifications' });
+  }
 };
 
 const markRead = async (req, res) => {

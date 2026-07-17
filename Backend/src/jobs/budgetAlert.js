@@ -1,4 +1,4 @@
-const cron = require('node-cron');
+// node-cron removed — scheduled via pg-boss in jobs/index.js
 const { PrismaClient } = require('@prisma/client');
 const { notify } = require('../lib/notify');
 
@@ -87,7 +87,6 @@ async function processBudgetAlerts() {
   console.log(`[budgetAlert] Done — ${sent} alert(s) sent`);
 }
 
-// Run every day at 9:00 AM
-cron.schedule('0 9 * * *', processBudgetAlerts);
+// Scheduled via pg-boss in jobs/index.js
 
 module.exports = { processBudgetAlerts };

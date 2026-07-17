@@ -2,22 +2,54 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useInventoryItems, useCreateItem, useAddStock, useAdjustStock, useTransferStock, useBusiness } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
-const CATEGORIES = ['FILAMENT','PACKAGING','ELECTRONICS','HARDWARE','OTHER'];
-const UNITS = ['GRAM','KG','PIECE','METER','ROLL'];
-const CAT_ICONS = { FILAMENT:'🧵', PACKAGING:'📦', ELECTRONICS:'⚡', HARDWARE:'🔩', OTHER:'📋' };
+const CATEGORIES = ['FILAMENT', 'PACKAGING', 'ELECTRONICS', 'HARDWARE', 'OTHER'];
+const UNITS = ['GRAM', 'KG', 'PIECE', 'METER', 'ROLL'];
+const CAT_ICONS = { FILAMENT: '🧵', PACKAGING: '📦', ELECTRONICS: '⚡', HARDWARE: '🔩', OTHER: '📋' };
 
-const fmt = (qty, unit) => unit === 'GRAM' ? `${Number(qty).toFixed(0)}g` : unit === 'KG' ? `${Number(qty).toFixed(2)}kg` : `${Number(qty).toFixed(0)} ${unit.toLowerCase()}`;
+const fmt = (qty, unit) =>
+  unit === 'GRAM' ? `${Number(qty).toFixed(0)}g`
+  : unit === 'KG' ? `${Number(qty).toFixed(2)}kg`
+  : `${Number(qty).toFixed(0)} ${unit.toLowerCase()}`;
+
+const inputCls = {
+  width: '100%',
+  padding: '10px 12px',
+  borderRadius: 12,
+  border: '1.5px solid #E9ECF0',
+  background: '#F8F9FB',
+  color: '#0A0D14',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+};
 
 function Sheet({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-3 max-h-[85vh] overflow-y-auto">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.40)' }} onClick={onClose} />
+      <div style={{
+        position: 'relative',
+        background: '#fff',
+        borderRadius: '20px 20px 0 0',
+        padding: 20,
+        maxHeight: '85vh',
+        overflowY: 'auto',
+      }}>
+        <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0A0D14', marginBottom: 16 }}>{title}</h2>
         {children}
       </div>
+    </div>
+  );
+}
+
+function FormField({ label, children }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ fontSize: 12, color: '#6B7280', display: 'block', marginBottom: 4 }}>{label}</label>
+      {children}
     </div>
   );
 }
@@ -32,27 +64,28 @@ export default function InventoryPage() {
   const transfer   = useTransferStock();
 
   const locations = business?.locations || [];
-  const [sheet, setSheet] = useState(null); // 'new-item' | 'add-stock' | 'adjust' | 'transfer'
-  const [selItem, setSelItem] = useState(null);
+  const [sheet, setSheet]       = useState(null); // 'new-item' | 'add-stock' | 'adjust' | 'transfer'
+  const [selItem, setSelItem]   = useState(null);
   const [filterCat, setFilterCat] = useState('');
+  const [search, setSearch]     = useState('');
 
-  const [itemForm, setItemForm] = useState({ name:'', sku:'', category:'FILAMENT', unit:'GRAM', costPrice:'', lowStockThreshold:'' });
-  const [stockForm, setStockForm] = useState({ locationId: locations[0]?.id || '', quantity:'', unitCost:'', note:'', date: new Date().toISOString().split('T')[0] });
-  const [adjForm, setAdjForm] = useState({ locationId: locations[0]?.id || '', quantity:'', type:'ADJUSTMENT', note:'' });
-  const [xferForm, setXferForm] = useState({ fromLocationId: locations[0]?.id || '', toLocationId: locations[1]?.id || '', quantity:'', note:'' });
+  const [itemForm, setItemForm] = useState({ name: '', sku: '', category: 'FILAMENT', unit: 'GRAM', costPrice: '', lowStockThreshold: '' });
+  const [stockForm, setStockForm] = useState({ locationId: locations[0]?.id || '', quantity: '', unitCost: '', note: '', date: new Date().toISOString().split('T')[0] });
+  const [adjForm, setAdjForm]   = useState({ locationId: locations[0]?.id || '', quantity: '', type: 'ADJUSTMENT', note: '' });
+  const [xferForm, setXferForm] = useState({ fromLocationId: locations[0]?.id || '', toLocationId: locations[1]?.id || '', quantity: '', note: '' });
 
   const [err, setErr] = useState('');
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm';
-
-  const filteredItems = filterCat ? items.filter(i => i.category === filterCat) : items;
+  const filteredItems = items
+    .filter(i => !filterCat || i.category === filterCat)
+    .filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()));
 
   async function handleCreateItem(e) {
     e.preventDefault(); setErr('');
     try {
       await createItem.mutateAsync(itemForm);
       setSheet(null);
-      setItemForm({ name:'', sku:'', category:'FILAMENT', unit:'GRAM', costPrice:'', lowStockThreshold:'' });
+      setItemForm({ name: '', sku: '', category: 'FILAMENT', unit: 'GRAM', costPrice: '', lowStockThreshold: '' });
     } catch (ex) { setErr(ex.response?.data?.error || 'Error'); }
   }
 
@@ -83,105 +116,210 @@ export default function InventoryPage() {
   function openAction(item, action) { setSelItem(item); setErr(''); setSheet(action); }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <TopBar title="Inventory" onBack={() => navigate('/business')} />
+    <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar title="Inventory" showBack onBack={() => navigate('/business')} />
 
-      <div className="px-4 pt-4">
-        {/* Category filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-3">
+      <div style={{ padding: '16px 16px 0' }}>
+
+        {/* Search bar */}
+        <div style={{
+          background: '#fff',
+          borderRadius: 14,
+          border: '1.5px solid #E9ECF0',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 14px',
+          marginBottom: 12,
+          boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+        }}>
+          <span style={{ color: '#9CA3AF', marginRight: 8, fontSize: 16 }}>🔍</span>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search items…"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: '#0A0D14', padding: '12px 0' }}
+          />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: 18, padding: 0 }}>×</button>
+          )}
+        </div>
+
+        {/* Category filter chips */}
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 14 }}>
           {['', ...CATEGORIES].map(c => (
-            <button key={c} onClick={() => setFilterCat(c)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold ${filterCat === c ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
+            <button
+              key={c}
+              onClick={() => setFilterCat(c)}
+              style={{
+                flexShrink: 0,
+                padding: '7px 14px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                background: filterCat === c
+                  ? 'linear-gradient(135deg, #00C2B2, #00D896)'
+                  : '#E9ECF0',
+                color: filterCat === c ? '#fff' : '#6B7280',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
               {c ? `${CAT_ICONS[c]} ${c}` : 'All'}
             </button>
           ))}
         </div>
 
-        <button onClick={() => { setErr(''); setSheet('new-item'); }}
-          className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold text-sm shadow mb-3">
-          + New Item
-        </button>
+        {isLoading && (
+          <p style={{ textAlign: 'center', color: '#9CA3AF', padding: '40px 0' }}>Loading…</p>
+        )}
 
-        {isLoading && <p className="text-center text-gray-400 py-10">Loading…</p>}
-
-        <div className="space-y-2">
+        {/* Item list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredItems.map(item => {
             const totalQty = item.stocks.reduce((s, st) => s + Number(st.quantity), 0);
-            const isLow = item.lowStockThreshold && totalQty <= Number(item.lowStockThreshold);
+            const isLow  = item.lowStockThreshold && totalQty > 0 && totalQty <= Number(item.lowStockThreshold);
+            const isOut  = totalQty === 0;
+            const totalValue = totalQty * Number(item.costPrice);
+
             return (
-              <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-lg">{CAT_ICONS[item.category]}</span>
-                      <p className="font-semibold text-gray-900 dark:text-white">{item.name}</p>
-                      {isLow && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">Low stock</span>}
+              <SurfaceCard key={item.id} style={{ padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                      <span style={{ fontSize: 18 }}>{CAT_ICONS[item.category]}</span>
+                      <p style={{ fontWeight: 700, color: '#0A0D14', fontSize: 15, margin: 0 }}>{item.name}</p>
+                      {isOut  && <Badge variant="danger"  label="Out of stock" />}
+                      {!isOut && isLow && <Badge variant="warning" label="Low stock" />}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">{item.category} · ₹{Number(item.costPrice).toFixed(item.unit === 'GRAM' ? 4 : 2)}/{item.unit.toLowerCase()}</p>
+                    <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
+                      {item.category} · <span style={{ color: '#00C2B2', fontWeight: 700 }}>
+                        ₹{Number(item.costPrice).toFixed(item.unit === 'GRAM' ? 4 : 2)}/{item.unit.toLowerCase()}
+                      </span>
+                    </p>
                   </div>
-                  <div className="text-right ml-3 shrink-0">
-                    <p className="font-bold text-gray-900 dark:text-white">{fmt(totalQty, item.unit)}</p>
-                    <p className="text-xs text-gray-400">total</p>
+
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontWeight: 800, color: '#0A0D14', fontSize: 16, margin: 0 }}>
+                      ₹{Math.round(totalValue).toLocaleString('en-IN')}
+                    </p>
+                    <p style={{ fontSize: 11, color: '#374151', marginTop: 1 }}>
+                      {fmt(totalQty, item.unit)}
+                    </p>
                   </div>
                 </div>
 
-                {/* Per-location stock */}
+                {/* Per-location stock pills */}
                 {item.stocks.length > 0 && (
-                  <div className="mt-2 flex gap-2 flex-wrap">
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                     {item.stocks.map(st => (
-                      <span key={st.id} className="text-xs bg-gray-50 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-500 dark:text-gray-400">
+                      <span key={st.id} style={{
+                        fontSize: 11,
+                        background: '#F0F2F7',
+                        color: '#6B7280',
+                        borderRadius: 999,
+                        padding: '3px 10px',
+                      }}>
                         {st.location.name}: {fmt(st.quantity, item.unit)}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Actions */}
-                <div className="flex gap-2 mt-3">
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                   {[['+ Stock', 'add-stock'], ['Adjust', 'adjust'], ['Transfer', 'transfer']].map(([label, action]) => (
-                    <button key={action} onClick={() => openAction(item, action)}
-                      className="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+                    <button
+                      key={action}
+                      onClick={() => openAction(item, action)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 0',
+                        borderRadius: 10,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        border: '1.5px solid #E9ECF0',
+                        background: '#F8F9FB',
+                        color: '#374151',
+                        cursor: 'pointer',
+                      }}
+                    >
                       {label}
                     </button>
                   ))}
                 </div>
-              </div>
+              </SurfaceCard>
             );
           })}
         </div>
       </div>
 
+      {/* FAB */}
+      <button
+        onClick={() => { setErr(''); setSheet('new-item'); }}
+        style={{
+          position: 'fixed',
+          bottom: 'calc(88px + env(safe-area-inset-bottom))',
+          right: 20,
+          background: 'linear-gradient(135deg, #00C2B2, #00D896)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 999,
+          padding: '14px 22px',
+          fontSize: 14,
+          fontWeight: 700,
+          boxShadow: '0 4px 16px rgba(0,194,178,0.35)',
+          cursor: 'pointer',
+          zIndex: 40,
+        }}
+      >
+        + New Item
+      </button>
+
       {/* New item sheet */}
       {sheet === 'new-item' && (
         <Sheet title="New Inventory Item" onClose={() => setSheet(null)}>
-          <form onSubmit={handleCreateItem} className="space-y-3">
-            <div><label className="text-xs text-gray-400 mb-1 block">Name *</label>
-              <input className={inputCls} required value={itemForm.name} onChange={e => setItemForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. PLA Black 1kg" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400 mb-1 block">Category</label>
-                <select className={inputCls} value={itemForm.category} onChange={e => setItemForm(f => ({ ...f, category: e.target.value }))}>
+          <form onSubmit={handleCreateItem}>
+            <FormField label="Name *">
+              <input style={inputCls} required value={itemForm.name}
+                onChange={e => setItemForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. PLA Black 1kg" />
+            </FormField>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <FormField label="Category">
+                <select style={inputCls} value={itemForm.category}
+                  onChange={e => setItemForm(f => ({ ...f, category: e.target.value }))}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-              </div>
-              <div><label className="text-xs text-gray-400 mb-1 block">Unit</label>
-                <select className={inputCls} value={itemForm.unit} onChange={e => setItemForm(f => ({ ...f, unit: e.target.value }))}>
+              </FormField>
+              <FormField label="Unit">
+                <select style={inputCls} value={itemForm.unit}
+                  onChange={e => setItemForm(f => ({ ...f, unit: e.target.value }))}>
                   {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
-              </div>
+              </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400 mb-1 block">Cost price (per unit)</label>
-                <input className={inputCls} type="number" step="0.0001" required value={itemForm.costPrice} onChange={e => setItemForm(f => ({ ...f, costPrice: e.target.value }))} />
-              </div>
-              <div><label className="text-xs text-gray-400 mb-1 block">Low stock alert</label>
-                <input className={inputCls} type="number" value={itemForm.lowStockThreshold} onChange={e => setItemForm(f => ({ ...f, lowStockThreshold: e.target.value }))} placeholder="optional" />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <FormField label="Cost price (per unit)">
+                <input style={inputCls} type="number" step="0.0001" required
+                  value={itemForm.costPrice}
+                  onChange={e => setItemForm(f => ({ ...f, costPrice: e.target.value }))} />
+              </FormField>
+              <FormField label="Low stock alert">
+                <input style={inputCls} type="number"
+                  value={itemForm.lowStockThreshold}
+                  onChange={e => setItemForm(f => ({ ...f, lowStockThreshold: e.target.value }))}
+                  placeholder="optional" />
+              </FormField>
             </div>
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={createItem.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            {err && <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 8 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+              <button type="button" onClick={() => setSheet(null)}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: '1.5px solid #E9ECF0', background: '#fff', color: '#374151', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={createItem.isPending}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #00C2B2, #00D896)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: createItem.isPending ? 0.6 : 1 }}>
                 {createItem.isPending ? 'Creating…' : 'Create'}
               </button>
             </div>
@@ -192,30 +330,40 @@ export default function InventoryPage() {
       {/* Add stock sheet */}
       {sheet === 'add-stock' && selItem && (
         <Sheet title={`Add Stock — ${selItem.name}`} onClose={() => setSheet(null)}>
-          <form onSubmit={handleAddStock} className="space-y-3">
-            <div><label className="text-xs text-gray-400 mb-1 block">Location</label>
-              <select className={inputCls} value={stockForm.locationId} onChange={e => setStockForm(f => ({ ...f, locationId: e.target.value }))}>
+          <form onSubmit={handleAddStock}>
+            <FormField label="Location">
+              <select style={inputCls} value={stockForm.locationId}
+                onChange={e => setStockForm(f => ({ ...f, locationId: e.target.value }))}>
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
+            </FormField>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <FormField label={`Quantity (${selItem.unit.toLowerCase()})`}>
+                <input style={inputCls} type="number" required value={stockForm.quantity}
+                  onChange={e => setStockForm(f => ({ ...f, quantity: e.target.value }))} />
+              </FormField>
+              <FormField label="Unit cost (optional)">
+                <input style={inputCls} type="number" step="0.0001" value={stockForm.unitCost}
+                  onChange={e => setStockForm(f => ({ ...f, unitCost: e.target.value }))}
+                  placeholder={Number(selItem.costPrice).toFixed(4)} />
+              </FormField>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400 mb-1 block">Quantity ({selItem.unit.toLowerCase()})</label>
-                <input className={inputCls} type="number" required value={stockForm.quantity} onChange={e => setStockForm(f => ({ ...f, quantity: e.target.value }))} />
-              </div>
-              <div><label className="text-xs text-gray-400 mb-1 block">Unit cost (optional)</label>
-                <input className={inputCls} type="number" step="0.0001" value={stockForm.unitCost} onChange={e => setStockForm(f => ({ ...f, unitCost: e.target.value }))} placeholder={Number(selItem.costPrice).toFixed(4)} />
-              </div>
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Date</label>
-              <input className={inputCls} type="date" value={stockForm.date} onChange={e => setStockForm(f => ({ ...f, date: e.target.value }))} />
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Note (optional)</label>
-              <input className={inputCls} value={stockForm.note} onChange={e => setStockForm(f => ({ ...f, note: e.target.value }))} />
-            </div>
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={addStock.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            <FormField label="Date">
+              <input style={inputCls} type="date" value={stockForm.date}
+                onChange={e => setStockForm(f => ({ ...f, date: e.target.value }))} />
+            </FormField>
+            <FormField label="Note (optional)">
+              <input style={inputCls} value={stockForm.note}
+                onChange={e => setStockForm(f => ({ ...f, note: e.target.value }))} />
+            </FormField>
+            {err && <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 8 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button type="button" onClick={() => setSheet(null)}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: '1.5px solid #E9ECF0', background: '#fff', color: '#374151', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={addStock.isPending}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #00C2B2, #00D896)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: addStock.isPending ? 0.6 : 1 }}>
                 {addStock.isPending ? '…' : 'Add Stock'}
               </button>
             </div>
@@ -226,28 +374,37 @@ export default function InventoryPage() {
       {/* Adjust sheet */}
       {sheet === 'adjust' && selItem && (
         <Sheet title={`Adjust — ${selItem.name}`} onClose={() => setSheet(null)}>
-          <form onSubmit={handleAdjust} className="space-y-3">
-            <div><label className="text-xs text-gray-400 mb-1 block">Location</label>
-              <select className={inputCls} value={adjForm.locationId} onChange={e => setAdjForm(f => ({ ...f, locationId: e.target.value }))}>
+          <form onSubmit={handleAdjust}>
+            <FormField label="Location">
+              <select style={inputCls} value={adjForm.locationId}
+                onChange={e => setAdjForm(f => ({ ...f, locationId: e.target.value }))}>
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
               </select>
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Type</label>
-              <select className={inputCls} value={adjForm.type} onChange={e => setAdjForm(f => ({ ...f, type: e.target.value }))}>
+            </FormField>
+            <FormField label="Type">
+              <select style={inputCls} value={adjForm.type}
+                onChange={e => setAdjForm(f => ({ ...f, type: e.target.value }))}>
                 <option value="ADJUSTMENT">Adjustment (manual count fix)</option>
                 <option value="WASTAGE">Wastage (lost/damaged)</option>
               </select>
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Quantity change (negative to remove)</label>
-              <input className={inputCls} type="number" required value={adjForm.quantity} onChange={e => setAdjForm(f => ({ ...f, quantity: e.target.value }))} placeholder="-50 or +100" />
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Note</label>
-              <input className={inputCls} value={adjForm.note} onChange={e => setAdjForm(f => ({ ...f, note: e.target.value }))} />
-            </div>
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={adjust.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            </FormField>
+            <FormField label="Quantity change (negative to remove)">
+              <input style={inputCls} type="number" required value={adjForm.quantity}
+                onChange={e => setAdjForm(f => ({ ...f, quantity: e.target.value }))}
+                placeholder="-50 or +100" />
+            </FormField>
+            <FormField label="Note">
+              <input style={inputCls} value={adjForm.note}
+                onChange={e => setAdjForm(f => ({ ...f, note: e.target.value }))} />
+            </FormField>
+            {err && <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 8 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button type="button" onClick={() => setSheet(null)}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: '1.5px solid #E9ECF0', background: '#fff', color: '#374151', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={adjust.isPending}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #00C2B2, #00D896)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: adjust.isPending ? 0.6 : 1 }}>
                 {adjust.isPending ? '…' : 'Save'}
               </button>
             </div>
@@ -258,37 +415,43 @@ export default function InventoryPage() {
       {/* Transfer sheet */}
       {sheet === 'transfer' && selItem && (
         <Sheet title={`Transfer — ${selItem.name}`} onClose={() => setSheet(null)}>
-          <form onSubmit={handleTransfer} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400 mb-1 block">From</label>
-                <select className={inputCls} value={xferForm.fromLocationId} onChange={e => setXferForm(f => ({ ...f, fromLocationId: e.target.value }))}>
+          <form onSubmit={handleTransfer}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <FormField label="From">
+                <select style={inputCls} value={xferForm.fromLocationId}
+                  onChange={e => setXferForm(f => ({ ...f, fromLocationId: e.target.value }))}>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
-              </div>
-              <div><label className="text-xs text-gray-400 mb-1 block">To</label>
-                <select className={inputCls} value={xferForm.toLocationId} onChange={e => setXferForm(f => ({ ...f, toLocationId: e.target.value }))}>
+              </FormField>
+              <FormField label="To">
+                <select style={inputCls} value={xferForm.toLocationId}
+                  onChange={e => setXferForm(f => ({ ...f, toLocationId: e.target.value }))}>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
-              </div>
+              </FormField>
             </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Quantity ({selItem.unit.toLowerCase()})</label>
-              <input className={inputCls} type="number" required value={xferForm.quantity} onChange={e => setXferForm(f => ({ ...f, quantity: e.target.value }))} />
-            </div>
-            <div><label className="text-xs text-gray-400 mb-1 block">Note (optional)</label>
-              <input className={inputCls} value={xferForm.note} onChange={e => setXferForm(f => ({ ...f, note: e.target.value }))} />
-            </div>
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={transfer.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            <FormField label={`Quantity (${selItem.unit.toLowerCase()})`}>
+              <input style={inputCls} type="number" required value={xferForm.quantity}
+                onChange={e => setXferForm(f => ({ ...f, quantity: e.target.value }))} />
+            </FormField>
+            <FormField label="Note (optional)">
+              <input style={inputCls} value={xferForm.note}
+                onChange={e => setXferForm(f => ({ ...f, note: e.target.value }))} />
+            </FormField>
+            {err && <p style={{ fontSize: 13, color: '#E11D48', marginBottom: 8 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button type="button" onClick={() => setSheet(null)}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: '1.5px solid #E9ECF0', background: '#fff', color: '#374151', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={transfer.isPending}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, #00C2B2, #00D896)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: transfer.isPending ? 0.6 : 1 }}>
                 {transfer.isPending ? '…' : 'Transfer'}
               </button>
             </div>
           </form>
         </Sheet>
       )}
-
-      <BottomNav />
     </div>
   );
 }

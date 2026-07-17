@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useBusinessExpenses, useCreateExpense, useDeleteExpense, useBusiness } from '../../hooks/useBusiness';
 import { useAccounts } from '../../hooks/useAccounts';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const fmt = n => `₹${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-IN')}`;
 const CATEGORIES = ['Materials','Rent','Utilities','Labour','Marketing','Transport','Equipment','Software','Packaging','Other'];
@@ -12,12 +13,17 @@ const CAT_ICONS = { Materials:'🧵', Rent:'🏠', Utilities:'💡', Labour:'�
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const now = new Date();
 
+const inputStyle = {
+  width:'100%', padding:'11px 14px', background:'#F0F2F7', border:'none',
+  borderRadius:10, fontSize:13, color:'#0A0D14', outline:'none', boxSizing:'border-box',
+};
+
 function Sheet({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-3 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+    <div style={{ position:'fixed', inset:0, zIndex:50, display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.4)' }} onClick={onClose} />
+      <div style={{ position:'relative', background:'#fff', borderRadius:'24px 24px 0 0', padding:'24px 20px', maxHeight:'90vh', overflowY:'auto', display:'flex', flexDirection:'column', gap:14 }}>
+        <h2 style={{ fontSize:17, fontWeight:800, color:'#0A0D14' }}>{title}</h2>
         {children}
       </div>
     </div>
@@ -32,6 +38,7 @@ export default function BusinessExpensePage() {
 
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year,  setYear]  = useState(now.getFullYear());
+  const [activeCategory, setActiveCategory] = useState('All');
 
   const from = new Date(year, month - 1, 1).toISOString();
   const to   = new Date(year, month, 0, 23, 59, 59).toISOString();
@@ -48,8 +55,6 @@ export default function BusinessExpensePage() {
   const [err, setErr] = useState('');
   const [delId, setDelId] = useState(null);
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm';
-
   function shift(delta) {
     let m = month + delta, y = year;
     if (m > 12) { m = 1; y++; }
@@ -58,7 +63,11 @@ export default function BusinessExpensePage() {
   }
 
   const totalSpend = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  const grouped = expenses.reduce((acc, e) => {
+
+  const usedCategories = ['All', ...Array.from(new Set(expenses.map(e => e.category)))];
+  const filtered = activeCategory === 'All' ? expenses : expenses.filter(e => e.category === activeCategory);
+
+  const grouped = filtered.reduce((acc, e) => {
     const key = new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     (acc[key] = acc[key] || []).push(e);
     return acc;
@@ -83,73 +92,95 @@ export default function BusinessExpensePage() {
     setDelId(null);
   }
 
-  const accountColor = (acc) => {
-    if (!acc) return 'bg-gray-100 dark:bg-gray-700 text-gray-400';
-    const colors = { SAVINGS: 'bg-blue-50 text-blue-600', CURRENT: 'bg-indigo-50 text-indigo-600',
-      WALLET: 'bg-green-50 text-green-600', CASH: 'bg-yellow-50 text-yellow-700', CREDIT_CARD: 'bg-red-50 text-red-600' };
-    return colors[acc.type] || 'bg-gray-50 text-gray-600';
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
+    <div style={{ minHeight:'100vh', background:'#F0F2F7', paddingBottom:'calc(100px + env(safe-area-inset-bottom))' }}>
       <TopBar title="Business Expenses" onBack={() => navigate('/business')} />
 
-      <div className="px-4 pt-4 space-y-4">
-        {/* Month picker */}
-        <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-2xl px-4 py-3 shadow-sm">
-          <button onClick={() => shift(-1)} className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-500 font-bold">‹</button>
-          <p className="font-bold text-gray-900 dark:text-white">{MONTHS[month - 1]} {year}</p>
-          <button onClick={() => shift(1)} disabled={year === now.getFullYear() && month === now.getMonth() + 1}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-50 dark:bg-gray-700 text-gray-500 font-bold disabled:opacity-40">›</button>
+      <div style={{ padding:'16px 16px 0', display:'flex', flexDirection:'column', gap:14 }}>
+
+        {/* Hero — dark navy gradient */}
+        <div style={{ background:'linear-gradient(135deg,#0D1B2A 0%,#1B2E45 60%,#0D2137 100%)', borderRadius:22, padding:'22px 20px', boxShadow:'0 6px 28px rgba(13,27,42,0.25)' }}>
+          {/* Month picker */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <button onClick={() => shift(-1)} style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.7)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>‹</button>
+            <p style={{ fontSize:15, fontWeight:700, color:'#fff' }}>{MONTHS[month - 1]} {year}</p>
+            <button onClick={() => shift(1)} disabled={year === now.getFullYear() && month === now.getMonth() + 1} style={{ width:32, height:32, borderRadius:10, background:'rgba(255,255,255,0.1)', border:'none', color:'rgba(255,255,255,0.7)', fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', opacity:(year === now.getFullYear() && month === now.getMonth() + 1) ? 0.3 : 1 }}>›</button>
+          </div>
+
+          <p style={{ fontSize:12, color:'rgba(255,255,255,0.45)', marginBottom:4, textAlign:'center' }}>{expenses.length} expenses this month</p>
+          <p style={{ fontSize:34, fontWeight:800, color:'#fff', textAlign:'center', lineHeight:1 }}>{fmt(totalSpend)}</p>
+          <p style={{ fontSize:12, color:'rgba(255,194,178,0.6)', textAlign:'center', marginTop:4 }}>Total spent</p>
         </div>
 
-        {/* Total */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex justify-between items-center">
-          <p className="text-sm text-gray-400">{expenses.length} expenses this month</p>
-          <p className="text-xl font-bold text-red-500">{fmt(totalSpend)}</p>
-        </div>
-
-        <button onClick={() => { setErr(''); setSheet(true); }}
-          className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold text-sm shadow">
+        {/* Add button */}
+        <button
+          onClick={() => { setErr(''); setSheet(true); }}
+          style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', background:'linear-gradient(135deg,#00C2B2,#009E91)', color:'#fff', fontWeight:800, fontSize:14, cursor:'pointer', boxShadow:'0 4px 18px rgba(0,194,178,0.3)' }}
+        >
           + Add Expense
         </button>
 
-        {isLoading && <p className="text-center text-gray-400 py-10">Loading…</p>}
-        {!isLoading && expenses.length === 0 && <p className="text-center text-gray-400 py-10">No expenses this month</p>}
+        {/* Category filter chips */}
+        {usedCategories.length > 1 && (
+          <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:4 }}>
+            {usedCategories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  padding:'6px 14px', borderRadius:20, border:'none', cursor:'pointer', whiteSpace:'nowrap', fontSize:12, fontWeight:700,
+                  background: activeCategory === cat ? '#00C2B2' : '#fff',
+                  color: activeCategory === cat ? '#fff' : '#374151',
+                  boxShadow: activeCategory === cat ? '0 2px 10px rgba(0,194,178,0.3)' : '0 1px 6px rgba(0,0,0,0.06)',
+                  flexShrink:0,
+                }}
+              >
+                {cat === 'All' ? 'All' : `${CAT_ICONS[cat] || '📋'} ${cat}`}
+              </button>
+            ))}
+          </div>
+        )}
 
-        <div className="space-y-3">
+        {isLoading && <p style={{ textAlign:'center', color:'#B0B8C4', padding:'40px 0' }}>Loading…</p>}
+        {!isLoading && filtered.length === 0 && <p style={{ textAlign:'center', color:'#B0B8C4', padding:'40px 0' }}>No expenses this month</p>}
+
+        {/* Expense rows grouped by date */}
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           {Object.entries(grouped).map(([date, items]) => (
             <div key={date}>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{date}</p>
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+              <p style={{ fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 }}>{date}</p>
+              <SurfaceCard style={{ padding:0 }}>
                 {items.map((exp, i) => (
-                  <div key={exp.id} className={`flex items-center gap-3 px-4 py-3 ${i < items.length - 1 ? 'border-b border-gray-50 dark:border-gray-700' : ''}`}>
-                    <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-lg shrink-0">
+                  <div
+                    key={exp.id}
+                    style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom: i < items.length - 1 ? '1px solid #F0F2F7' : 'none' }}
+                  >
+                    <div style={{ width:40, height:40, borderRadius:12, background:'#F5F3FF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>
                       {CAT_ICONS[exp.category] || '📋'}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{exp.vendor || exp.category}</p>
-                        <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full font-bold shrink-0">🏭</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:2 }}>
+                        <p style={{ fontSize:13, fontWeight:600, color:'#0A0D14', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{exp.vendor || exp.category}</p>
+                        <Badge variant="purple" label="Biz" style={{ fontSize:8 }} />
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-xs text-gray-400">{exp.category}</p>
-                        {exp.location && <p className="text-xs text-gray-400">· {exp.location.name}</p>}
+                      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap' }}>
+                        <p style={{ fontSize:11, color:'#B0B8C4' }}>{exp.category}</p>
+                        {exp.location && <p style={{ fontSize:11, color:'#B0B8C4' }}>· {exp.location.name}</p>}
                         {exp.account && (
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${accountColor(exp.account)}`}>
+                          <span style={{ fontSize:10, padding:'2px 7px', borderRadius:20, background:'#F0F2F7', color:'#374151', fontWeight:600 }}>
                             {exp.account.icon || ''} {exp.account.name}
                           </span>
                         )}
                       </div>
-                      {exp.note && <p className="text-xs text-gray-400 mt-0.5 truncate">{exp.note}</p>}
+                      {exp.note && <p style={{ fontSize:11, color:'#B0B8C4', marginTop:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{exp.note}</p>}
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-red-500">{fmt(exp.amount)}</p>
-                      <button onClick={() => setDelId(exp.id)} className="text-xs text-gray-300 dark:text-gray-600 hover:text-red-400 mt-0.5">Delete</button>
+                    <div style={{ textAlign:'right', flexShrink:0 }}>
+                      <p style={{ fontSize:14, fontWeight:700, color:'#E11D48' }}>{fmt(exp.amount)}</p>
+                      <button onClick={() => setDelId(exp.id)} style={{ background:'none', border:'none', fontSize:11, color:'#B0B8C4', cursor:'pointer', marginTop:2 }}>Delete</button>
                     </div>
                   </div>
                 ))}
-              </div>
+              </SurfaceCard>
             </div>
           ))}
         </div>
@@ -158,56 +189,63 @@ export default function BusinessExpensePage() {
       {/* Add expense sheet */}
       {sheet && (
         <Sheet title="Add Business Expense" onClose={() => setSheet(false)}>
-          <form onSubmit={handleCreate} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className="text-xs text-gray-400 mb-1 block">Category</label>
-                <select className={inputCls} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+          <form onSubmit={handleCreate} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div>
+                <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Category</label>
+                <select style={inputStyle} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
                   {CATEGORIES.map(c => <option key={c} value={c}>{CAT_ICONS[c]} {c}</option>)}
                 </select>
               </div>
-              <div><label className="text-xs text-gray-400 mb-1 block">Amount *</label>
-                <input className={inputCls} type="number" required step="0.01" value={form.amount}
+              <div>
+                <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Amount *</label>
+                <input style={inputStyle} type="number" required step="0.01" value={form.amount}
                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" />
               </div>
             </div>
 
-            <div><label className="text-xs text-gray-400 mb-1 block">Debit Account</label>
-              <select className={inputCls} value={form.accountId} onChange={e => setForm(f => ({ ...f, accountId: e.target.value }))}>
+            <div>
+              <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Debit Account</label>
+              <select style={inputStyle} value={form.accountId} onChange={e => setForm(f => ({ ...f, accountId: e.target.value }))}>
                 <option value="">-- No account (untracked) --</option>
                 {accounts.filter(a => a.type !== 'CREDIT_CARD').map(a => (
-                  <option key={a.id} value={a.id}>{a.icon || ''} {a.name} ({a.type}) — Bal: {fmt(a.balance)}</option>
+                  <option key={a.id} value={a.id}>{a.icon || ''} {a.name} ({a.type}) – Bal: {fmt(a.balance)}</option>
                 ))}
               </select>
-              {form.accountId && <p className="text-xs text-gray-400 mt-1">💸 This amount will be deducted from the selected account balance.</p>}
+              {form.accountId && <p style={{ fontSize:11, color:'#B0B8C4', marginTop:5 }}>This amount will be deducted from the selected account balance.</p>}
             </div>
 
-            <div><label className="text-xs text-gray-400 mb-1 block">Date *</label>
-              <input className={inputCls} type="date" required value={form.date}
+            <div>
+              <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Date *</label>
+              <input style={inputStyle} type="date" required value={form.date}
                 onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </div>
 
-            <div><label className="text-xs text-gray-400 mb-1 block">Vendor / Description</label>
-              <input className={inputCls} value={form.vendor} onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))}
+            <div>
+              <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Vendor / Description</label>
+              <input style={inputStyle} value={form.vendor} onChange={e => setForm(f => ({ ...f, vendor: e.target.value }))}
                 placeholder="e.g. Amazon, Local supplier" />
             </div>
 
             {locations.length > 0 && (
-              <div><label className="text-xs text-gray-400 mb-1 block">Location</label>
-                <select className={inputCls} value={form.locationId} onChange={e => setForm(f => ({ ...f, locationId: e.target.value }))}>
+              <div>
+                <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Location</label>
+                <select style={inputStyle} value={form.locationId} onChange={e => setForm(f => ({ ...f, locationId: e.target.value }))}>
                   <option value="">All locations</option>
                   {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                 </select>
               </div>
             )}
 
-            <div><label className="text-xs text-gray-400 mb-1 block">Note (optional)</label>
-              <input className={inputCls} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
+            <div>
+              <label style={{ fontSize:11, color:'#B0B8C4', display:'block', marginBottom:5 }}>Note (optional)</label>
+              <input style={inputStyle} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
             </div>
 
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(false)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={createExpense.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            {err && <p style={{ fontSize:13, color:'#E11D48' }}>{err}</p>}
+            <div style={{ display:'flex', gap:10 }}>
+              <button type="button" onClick={() => setSheet(false)} style={{ flex:1, padding:'13px', borderRadius:12, border:'1px solid #E5E7EB', background:'#fff', color:'#374151', fontSize:13, fontWeight:600, cursor:'pointer' }}>Cancel</button>
+              <button type="submit" disabled={createExpense.isPending} style={{ flex:1, padding:'13px', borderRadius:12, border:'none', background:'linear-gradient(135deg,#00C2B2,#009E91)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', opacity: createExpense.isPending ? 0.6 : 1 }}>
                 {createExpense.isPending ? 'Saving…' : 'Add Expense'}
               </button>
             </div>
@@ -218,18 +256,16 @@ export default function BusinessExpensePage() {
       {/* Delete confirm */}
       {delId && (
         <Sheet title="Delete expense?" onClose={() => setDelId(null)}>
-          <p className="text-sm text-gray-500 dark:text-gray-400">This will also remove the account balance impact.</p>
-          <div className="flex gap-3">
-            <button onClick={() => setDelId(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 text-sm font-semibold">Cancel</button>
+          <p style={{ fontSize:13, color:'#374151' }}>This will also remove the account balance impact.</p>
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={() => setDelId(null)} style={{ flex:1, padding:'13px', borderRadius:12, border:'1px solid #E5E7EB', background:'#fff', color:'#374151', fontSize:13, fontWeight:600, cursor:'pointer' }}>Cancel</button>
             <button onClick={() => handleDelete(delId)} disabled={deleteExpense.isPending}
-              className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-60">
+              style={{ flex:1, padding:'13px', borderRadius:12, border:'none', background:'#E11D48', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', opacity: deleteExpense.isPending ? 0.6 : 1 }}>
               {deleteExpense.isPending ? '…' : 'Delete'}
             </button>
           </div>
         </Sheet>
       )}
-
-      <BottomNav />
     </div>
   );
 }

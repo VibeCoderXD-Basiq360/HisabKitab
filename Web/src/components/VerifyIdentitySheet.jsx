@@ -121,14 +121,60 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const inputStyle = {
+    minHeight: 48,
+    padding: '0 16px',
+    borderRadius: 16,
+    border: '1.5px solid #E9ECF0',
+    background: '#F0F2F7',
+    fontSize: 14,
+    color: '#0A0D14',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+  };
+
+  const primaryBtnStyle = {
+    width: '100%',
+    padding: '14px 0',
+    borderRadius: 16,
+    background: 'linear-gradient(135deg, #00C2B2, #009E90)',
+    color: '#fff',
+    fontWeight: 700,
+    fontSize: 14,
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    transition: 'transform 0.1s',
+  };
+
+  const outlineBtnStyle = {
+    width: '100%',
+    padding: '14px 0',
+    borderRadius: 16,
+    border: '2px solid #E9ECF0',
+    background: '#fff',
+    fontSize: 14,
+    fontWeight: 600,
+    color: '#374151',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  };
+
   const renderMain = () => (
     <>
       <div className="text-center">
         <div className="text-5xl mb-3">🔐</div>
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0A0D14' }}>
           {title || 'Verify your identity'}
         </h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
+        <p style={{ fontSize: 12, color: '#B0B8C4', marginTop: 6, lineHeight: 1.6 }}>
           {description || 'This sensitive action requires identity verification'}
         </p>
       </div>
@@ -139,7 +185,7 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
           <button
             onClick={handleBiometric}
             disabled={loading}
-            className="w-full py-4 rounded-2xl bg-primary-500 text-white font-semibold text-sm flex items-center justify-center gap-3 disabled:opacity-50 active:scale-[0.98] transition-transform"
+            style={{ ...primaryBtnStyle, opacity: loading ? 0.5 : 1 }}
           >
             <span className="text-2xl">☝️</span>
             {loading ? 'Authenticating…' : 'Use fingerprint / Face ID'}
@@ -150,7 +196,12 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
         {canRegister && (
           <button
             onClick={() => setView('register')}
-            className="w-full py-3.5 rounded-2xl border-2 border-dashed border-primary-300 dark:border-primary-700 text-primary-600 dark:text-primary-400 font-medium text-sm flex items-center justify-center gap-2"
+            style={{
+              ...outlineBtnStyle,
+              borderStyle: 'dashed',
+              borderColor: '#00C2B2',
+              color: '#00C2B2',
+            }}
           >
             <span className="text-xl">☝️</span>
             Set up fingerprint / Face ID
@@ -160,9 +211,9 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
         {/* Divider */}
         {biometricSupported && (
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
-            <span className="text-xs text-gray-400">or</span>
-            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-600" />
+            <div className="flex-1 h-px" style={{ background: '#E9ECF0' }} />
+            <span style={{ fontSize: 12, color: '#B0B8C4' }}>or</span>
+            <div className="flex-1 h-px" style={{ background: '#E9ECF0' }} />
           </div>
         )}
 
@@ -171,31 +222,34 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
           <button
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full py-3.5 rounded-2xl border-2 border-gray-200 dark:border-gray-600 flex items-center justify-center gap-3 text-sm font-semibold text-gray-800 dark:text-gray-200 disabled:opacity-50"
+            style={{ ...outlineBtnStyle, opacity: loading ? 0.5 : 1 }}
           >
-            <span className="text-xl font-bold text-blue-500">G</span>
+            <span className="text-xl font-bold" style={{ color: '#4285F4' }}>G</span>
             {loading ? 'Verifying…' : 'Verify with Google'}
           </button>
         ) : (
           <button
             onClick={() => setView('password')}
-            className="w-full py-3.5 rounded-2xl border-2 border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center justify-center gap-2"
+            style={outlineBtnStyle}
           >
             <span>🔒</span> Use password instead
           </button>
         )}
       </div>
 
-      {error && <p className="text-xs text-red-500 text-center">{error}</p>}
+      {error && <p style={{ fontSize: 12, color: '#E11D48', textAlign: 'center' }}>{error}</p>}
     </>
   );
 
   const renderPassword = () => (
     <>
-      <button onClick={() => { setView('main'); setError(''); }} className="text-xs text-gray-400 flex items-center gap-1 mb-1">
+      <button
+        onClick={() => { setView('main'); setError(''); }}
+        style={{ fontSize: 12, color: '#B0B8C4', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 4 }}
+      >
         ← Back
       </button>
-      <h2 className="text-base font-bold text-gray-900 dark:text-white">Enter your password</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0A0D14' }}>Enter your password</h2>
       <form onSubmit={handlePassword} className="flex flex-col gap-3">
         <input
           type="password"
@@ -203,13 +257,13 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Your account password"
           autoFocus
-          className="min-h-[48px] px-4 rounded-2xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+          style={inputStyle}
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p style={{ fontSize: 12, color: '#E11D48' }}>{error}</p>}
         <button
           type="submit"
           disabled={!password || loading}
-          className="w-full py-3.5 rounded-2xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
+          style={{ ...primaryBtnStyle, opacity: !password || loading ? 0.5 : 1 }}
         >
           {loading ? 'Verifying…' : 'Verify & continue'}
         </button>
@@ -219,31 +273,34 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
 
   const renderRegister = () => (
     <>
-      <button onClick={() => { setView('main'); setError(''); }} className="text-xs text-gray-400 flex items-center gap-1 mb-1">
+      <button
+        onClick={() => { setView('main'); setError(''); }}
+        style={{ fontSize: 12, color: '#B0B8C4', display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', marginBottom: 4 }}
+      >
         ← Back
       </button>
       <div>
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">Set up biometric</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0A0D14' }}>Set up biometric</h2>
+        <p style={{ fontSize: 12, color: '#B0B8C4', marginTop: 4 }}>
           Register your fingerprint or Face ID to quickly verify sensitive actions in the future
         </p>
       </div>
       <form onSubmit={handleRegister} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Device name (optional)</label>
+          <label style={{ fontSize: 12, fontWeight: 500, color: '#B0B8C4' }}>Device name (optional)</label>
           <input
             type="text"
             value={deviceName}
             onChange={(e) => setDeviceName(e.target.value)}
             placeholder="e.g. My Phone"
-            className="min-h-[44px] px-4 rounded-2xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+            style={inputStyle}
           />
         </div>
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p style={{ fontSize: 12, color: '#E11D48' }}>{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 rounded-2xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+          style={{ ...primaryBtnStyle, opacity: loading ? 0.5 : 1 }}
         >
           <span className="text-xl">☝️</span>
           {loading ? 'Setting up…' : 'Register fingerprint / Face ID'}
@@ -253,12 +310,20 @@ export default function VerifyIdentitySheet({ title, description, onVerified, on
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[60] flex flex-col justify-end"
+      style={{ background: 'rgba(10,13,20,0.55)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white dark:bg-gray-800 rounded-t-3xl px-5 pt-5 pb-10 flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
+        className="px-5 pt-5 pb-10 flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
+        style={{ background: '#fff', borderRadius: '22px 22px 0 0' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
+        <div
+          className="mx-auto"
+          style={{ width: 40, height: 4, borderRadius: 99, background: '#E9ECF0' }}
+        />
         {view === 'main'     && renderMain()}
         {view === 'password' && renderPassword()}
         {view === 'register' && renderRegister()}

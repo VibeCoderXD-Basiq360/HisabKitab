@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
-import Button from '../../components/ui/Button';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import ProgressBar from '../../components/ui/ProgressBar';
 import { useSavingsGoal, useUpsertSavingsGoal, useDeleteSavingsGoal } from '../../hooks/useSavingsGoal';
 
 export default function SavingsGoalPage() {
@@ -40,93 +40,216 @@ export default function SavingsGoalPage() {
     remove.mutate(undefined, { onSuccess: () => navigate('/settings') });
   }
 
-  if (isLoading) return <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900"><TopBar title={t('settings.savings_goal')} showBack /></div>;
+  const savedPct = hasGoal && Number(goal.monthlySavings) > 0
+    ? Math.min(100, Math.round((Number(goal.savedThisMonth ?? 0) / Number(goal.monthlySavings)) * 100))
+    : 0;
+
+  if (isLoading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <TopBar title={t('settings.savings_goal')} showBack />
+    </div>
+  );
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('settings.savings_goal')} showBack />
-      <div className="flex-1 pb-8 p-4 flex flex-col gap-4">
+      <div style={{
+        flex: 1,
+        padding: '16px 16px',
+        paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
 
-        {/* Explainer */}
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-2xl px-4 py-3">
-          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">How it works</p>
-          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
-            Set how much you want to save each month. Optionally enter your income so we can compute your max spending budget. Your home screen will show if the goal is intact.
+        {/* Hero card — dark navy gradient */}
+        <div style={{
+          background: 'linear-gradient(140deg,#0B1A38 0%,#0A2B38 55%,#0B2A28 100%)',
+          borderRadius: 22,
+          padding: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+        }}>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 600, margin: 0 }}>
+            Monthly savings target
           </p>
+          <p style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+            {hasGoal ? `₹${Number(goal.monthlySavings).toLocaleString('en-IN')}` : '—'}
+          </p>
+          {hasGoal && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>Saved this month</span>
+                <span style={{ color: '#fff', fontSize: 14, fontWeight: 700 }}>
+                  ₹{Number(goal.savedThisMonth ?? 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <ProgressBar
+                pct={savedPct}
+                height={6}
+                style={{ background: 'rgba(255,255,255,0.15)' }}
+              />
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0, textAlign: 'right' }}>
+                {savedPct}% of goal
+              </p>
+            </>
+          )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-4">
-          {/* Monthly income (optional) */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Monthly income <span className="text-gray-400 font-normal">(optional)</span>
+        {/* Explainer */}
+        <SurfaceCard style={{ padding: '12px 16px' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14', margin: 0 }}>How it works</p>
+          <p style={{ fontSize: 12, color: '#6B7280', marginTop: 4, marginBottom: 0, lineHeight: 1.5 }}>
+            Set how much you want to save each month. Optionally enter your income so we can compute your max spending budget. Your home screen will show if the goal is intact.
+          </p>
+        </SurfaceCard>
+
+        {/* Input card */}
+        <SurfaceCard style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Monthly income */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
+              Monthly income{' '}
+              <span style={{ color: '#B0B8C4', fontWeight: 400 }}>(optional)</span>
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                color: '#B0B8C4', fontSize: 14, pointerEvents: 'none',
+              }}>₹</span>
               <input
                 type="number"
                 inputMode="decimal"
                 value={income}
                 onChange={(e) => setIncome(e.target.value)}
                 placeholder="e.g. 80000"
-                className="w-full pl-7 pr-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  paddingLeft: 32,
+                  paddingRight: 14,
+                  paddingTop: 11,
+                  paddingBottom: 11,
+                  background: '#F0F2F7',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: '#0A0D14',
+                  outline: 'none',
+                }}
               />
             </div>
           </div>
 
           {/* Monthly savings target */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>
               {t('home.savings_goal')} target
             </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                color: '#B0B8C4', fontSize: 14, pointerEvents: 'none',
+              }}>₹</span>
               <input
                 type="number"
                 inputMode="decimal"
                 value={savings}
                 onChange={(e) => setSavings(e.target.value)}
                 placeholder="e.g. 15000"
-                className="w-full pl-7 pr-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  paddingLeft: 32,
+                  paddingRight: 14,
+                  paddingTop: 11,
+                  paddingBottom: 11,
+                  background: '#F0F2F7',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: '#0A0D14',
+                  outline: 'none',
+                }}
               />
             </div>
           </div>
 
           {/* Derived max spend */}
           {maxSpend !== null && (
-            <div className={`rounded-xl px-4 py-3 ${maxSpend >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+            <div style={{
+              borderRadius: 10,
+              padding: '10px 14px',
+              background: maxSpend >= 0 ? 'rgba(0,194,178,0.08)' : 'rgba(225,29,72,0.07)',
+            }}>
               {maxSpend >= 0 ? (
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  You can spend up to <span className="font-bold">₹{maxSpend.toLocaleString('en-IN')}</span>/month and still hit your savings goal.
+                <p style={{ fontSize: 13, color: '#00867D', margin: 0 }}>
+                  You can spend up to{' '}
+                  <span style={{ fontWeight: 800 }}>₹{maxSpend.toLocaleString('en-IN')}</span>/month
+                  and still hit your savings goal.
                 </p>
               ) : (
-                <p className="text-sm text-red-600 dark:text-red-400">
+                <p style={{ fontSize: 13, color: '#E11D48', margin: 0 }}>
                   Your savings target exceeds your income by ₹{Math.abs(maxSpend).toLocaleString('en-IN')}. Adjust the numbers.
                 </p>
               )}
             </div>
           )}
-        </div>
+        </SurfaceCard>
 
-        <Button
-          variant="primary"
+        {/* Monthly contribution row */}
+        {hasGoal && Number(goal.monthlyIncome) > 0 && (
+          <SurfaceCard style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 14, color: '#374151', fontWeight: 500 }}>Monthly contribution</span>
+            <span style={{ fontSize: 16, color: '#00C2B2', fontWeight: 800 }}>
+              ₹{Number(goal.monthlySavings).toLocaleString('en-IN')}
+            </span>
+          </SurfaceCard>
+        )}
+
+        {/* Save button */}
+        <button
           onClick={handleSave}
           disabled={!savings || Number(savings) <= 0 || upsert.isPending}
+          style={{
+            background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+            color: '#fff',
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 15,
+            border: 'none',
+            padding: '14px 0',
+            cursor: !savings || Number(savings) <= 0 || upsert.isPending ? 'not-allowed' : 'pointer',
+            opacity: !savings || Number(savings) <= 0 || upsert.isPending ? 0.5 : 1,
+            transition: 'opacity 0.2s',
+          }}
         >
           {upsert.isPending ? t('common.saving') : hasGoal ? 'Update Goal' : 'Set Goal'}
-        </Button>
+        </button>
 
         {hasGoal && (
           <button
             onClick={handleDelete}
             disabled={remove.isPending}
-            className="text-sm text-red-500 text-center py-2 disabled:opacity-50"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#E11D48',
+              fontSize: 14,
+              fontWeight: 600,
+              textAlign: 'center',
+              padding: '8px 0',
+              cursor: remove.isPending ? 'not-allowed' : 'pointer',
+              opacity: remove.isPending ? 0.5 : 1,
+            }}
           >
             {remove.isPending ? 'Removing…' : 'Remove goal'}
           </button>
         )}
       </div>
-      <BottomNav />
     </div>
   );
 }

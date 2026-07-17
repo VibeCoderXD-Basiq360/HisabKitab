@@ -2,18 +2,46 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCustomers, useCreateCustomer, useUpdateCustomer, useCustomerDetail } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const fmt = n => `₹${Math.round(Math.abs(Number(n) || 0)).toLocaleString('en-IN')}`;
-const STATUS_COLORS = { QUOTED:'bg-gray-100 text-gray-500', IN_PROGRESS:'bg-blue-100 text-blue-600',
-  PRINTED:'bg-purple-100 text-purple-600', DELIVERED:'bg-green-100 text-green-600', CANCELLED:'bg-red-100 text-red-400' };
+const STATUS_COLORS = {
+  QUOTED:      { background: '#F3F4F6', color: '#6B7280' },
+  IN_PROGRESS: { background: '#DBEAFE', color: '#2563EB' },
+  PRINTED:     { background: '#EDE9FE', color: '#7C3AED' },
+  DELIVERED:   { background: '#D1FAE5', color: '#059669' },
+  CANCELLED:   { background: '#FEE2E2', color: '#EF4444' },
+};
+
+const inputCls = {
+  width: '100%',
+  padding: '10px 14px',
+  borderRadius: 14,
+  border: '1.5px solid #E9ECF0',
+  background: '#fff',
+  color: '#0A0D14',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+};
 
 function Sheet({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl p-5 space-y-3 max-h-[85vh] overflow-y-auto">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={onClose} />
+      <div style={{
+        position: 'relative',
+        background: '#fff',
+        borderRadius: '20px 20px 0 0',
+        padding: 20,
+        maxHeight: '85vh',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: '#0A0D14', margin: 0 }}>{title}</h2>
         {children}
       </div>
     </div>
@@ -26,47 +54,67 @@ function CustomerDetail({ customerId, onClose }) {
 
   return (
     <Sheet title={data?.name || 'Customer'} onClose={onClose}>
-      {isLoading && <p className="text-gray-400 text-sm py-4 text-center">Loading…</p>}
+      {isLoading && <p style={{ color: '#B0B8C4', fontSize: 14, textAlign: 'center', padding: '16px 0' }}>Loading…</p>}
       {data && (
         <>
-          <div className="space-y-1 text-sm">
-            {data.phone && <p className="text-gray-600 dark:text-gray-300">📞 {data.phone}</p>}
-            {data.email && <p className="text-gray-600 dark:text-gray-300">✉️ {data.email}</p>}
-            {data.address && <p className="text-gray-600 dark:text-gray-300">📍 {data.address}</p>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {data.phone   && <p style={{ fontSize: 13, color: '#4B5563', margin: 0 }}>📞 {data.phone}</p>}
+            {data.email   && <p style={{ fontSize: 13, color: '#4B5563', margin: 0 }}>✉️ {data.email}</p>}
+            {data.address && <p style={{ fontSize: 13, color: '#4B5563', margin: 0 }}>📍 {data.address}</p>}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            {[['Jobs', data.jobs?.length || 0], ['Revenue', fmt(data.jobs?.reduce((s,j) => s + Number(j.actualPrice || j.suggestedPrice || 0), 0) || 0)],
-              ['Last job', data.jobs?.length ? new Date(data.jobs[0].orderDate).toLocaleDateString('en-IN', { day:'numeric', month:'short' }) : '—']
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, paddingTop: 8 }}>
+            {[
+              ['Jobs', data.jobs?.length || 0],
+              ['Revenue', fmt(data.jobs?.reduce((s, j) => s + Number(j.actualPrice || j.suggestedPrice || 0), 0) || 0)],
+              ['Last job', data.jobs?.length
+                ? new Date(data.jobs[0].orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+                : '—'],
             ].map(([l, v]) => (
-              <div key={l} className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-400 mb-0.5">{l}</p>
-                <p className="font-bold text-sm text-gray-900 dark:text-white">{v}</p>
-              </div>
+              <SurfaceCard key={l} style={{ padding: 12, textAlign: 'center' }}>
+                <p style={{ fontSize: 11, color: '#B0B8C4', margin: '0 0 2px' }}>{l}</p>
+                <p style={{ fontWeight: 700, fontSize: 14, color: '#0A0D14', margin: 0 }}>{v}</p>
+              </SurfaceCard>
             ))}
           </div>
 
           {data.jobs?.length > 0 && (
             <>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pt-1">Job History</p>
-              <div className="space-y-2">
-                {data.jobs.map(j => (
-                  <div key={j.id} onClick={() => { onClose(); navigate(`/business/jobs/${j.id}`); }}
-                    className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700 last:border-0 cursor-pointer">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{j.title}</p>
-                      <p className="text-xs text-gray-400">{new Date(j.orderDate).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '4px 0 0' }}>Job History</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {data.jobs.map(j => {
+                  const sc = STATUS_COLORS[j.status] || STATUS_COLORS.QUOTED;
+                  return (
+                    <div key={j.id}
+                      onClick={() => { onClose(); navigate(`/business/jobs/${j.id}`); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 0', borderBottom: '1px solid #F0F2F7', cursor: 'pointer',
+                      }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.title}</p>
+                        <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>
+                          {new Date(j.orderDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div style={{ marginLeft: 12, textAlign: 'right', flexShrink: 0 }}>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: '0 0 3px' }}>{fmt(j.actualPrice || j.suggestedPrice)}</p>
+                        <span style={{
+                          fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99,
+                          background: sc.background, color: sc.color,
+                        }}>{j.status}</span>
+                      </div>
                     </div>
-                    <div className="ml-3 text-right shrink-0">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(j.actualPrice || j.suggestedPrice)}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${STATUS_COLORS[j.status]}`}>{j.status}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
-          {data.notes && <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-300">{data.notes}</div>}
+          {data.notes && (
+            <SurfaceCard style={{ padding: 12 }}>
+              <p style={{ fontSize: 13, color: '#4B5563', margin: 0 }}>{data.notes}</p>
+            </SurfaceCard>
+          )}
         </>
       )}
     </Sheet>
@@ -82,10 +130,8 @@ export default function CustomersPage() {
   const [sheet, setSheet] = useState(null); // 'new' | { id }
   const [detailId, setDetailId] = useState(null);
   const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ name:'', phone:'', email:'', address:'', notes:'' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', notes: '' });
   const [err, setErr] = useState('');
-
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm';
 
   const filtered = search
     ? customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone?.includes(search))
@@ -100,7 +146,7 @@ export default function CustomersPage() {
         await createCustomer.mutateAsync(form);
       }
       setSheet(null);
-      setForm({ name:'', phone:'', email:'', address:'', notes:'' });
+      setForm({ name: '', phone: '', email: '', address: '', notes: '' });
     } catch (ex) { setErr(ex.response?.data?.error || 'Error'); }
   }
 
@@ -111,55 +157,155 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <TopBar title="Customers" onBack={() => navigate('/business')} />
+    <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar title="Customers" showBack onBack={() => navigate('/business')} />
 
-      <div className="px-4 pt-4">
-        <button onClick={() => { setForm({ name:'', phone:'', email:'', address:'', notes:'' }); setErr(''); setSheet('new'); }}
-          className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold text-sm shadow mb-3">
-          + New Customer
-        </button>
+      <div style={{ padding: '16px 16px 0' }}>
+        {/* Search bar */}
+        <input
+          style={{ ...inputCls, marginBottom: 12 }}
+          placeholder="Search by name or phone…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
 
-        <input className={`${inputCls} mb-3`} placeholder="Search by name or phone…" value={search} onChange={e => setSearch(e.target.value)} />
+        {isLoading && <p style={{ textAlign: 'center', color: '#B0B8C4', padding: '40px 0' }}>Loading…</p>}
+        {!isLoading && filtered.length === 0 && (
+          <p style={{ textAlign: 'center', color: '#B0B8C4', padding: '40px 0' }}>No customers found</p>
+        )}
 
-        {isLoading && <p className="text-center text-gray-400 py-10">Loading…</p>}
-        {!isLoading && filtered.length === 0 && <p className="text-center text-gray-400 py-10">No customers found</p>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map(c => {
+            const totalSpent = c.jobs?.reduce((s, j) => s + Number(j.actualPrice || j.suggestedPrice || 0), 0) || 0;
+            const outstanding = c.jobs?.reduce((s, j) => s + Number(j.outstandingBalance || 0), 0) || 0;
+            const jobCount = c.jobs?.length || 0;
+            const initial = (c.name || '?')[0].toUpperCase();
 
-        <div className="space-y-2">
-          {filtered.map(c => (
-            <div key={c.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div onClick={() => setDetailId(c.id)} className="flex-1 min-w-0 cursor-pointer">
-                  <p className="font-semibold text-gray-900 dark:text-white">{c.name}</p>
-                  {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
-                  {c.email && <p className="text-xs text-gray-400">{c.email}</p>}
+            return (
+              <SurfaceCard key={c.id} style={{ padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                    background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{initial}</span>
+                  </div>
+
+                  {/* Info */}
+                  <div
+                    style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
+                    onClick={() => setDetailId(c.id)}
+                  >
+                    <p style={{ fontWeight: 800, color: '#0A0D14', fontSize: 15, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name}
+                    </p>
+                    {c.phone && <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>{c.phone}</p>}
+                    {c.email && !c.phone && <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>{c.email}</p>}
+                    <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+                      {totalSpent > 0 && (
+                        <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>
+                          {fmt(totalSpent)} spent
+                        </span>
+                      )}
+                      {outstanding > 0 && (
+                        <span style={{ fontSize: 12, color: '#E11D48', fontWeight: 700 }}>
+                          {fmt(outstanding)} due
+                        </span>
+                      )}
+                      {jobCount > 0 && (
+                        <span style={{ fontSize: 12, color: '#B0B8C4' }}>
+                          {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Edit button */}
+                  <button
+                    onClick={() => openEdit(c)}
+                    style={{
+                      flexShrink: 0, padding: '6px 14px', borderRadius: 12,
+                      fontSize: 12, fontWeight: 600,
+                      background: '#F0F2F7', color: '#4B5563',
+                      border: '1px solid #E9ECF0', cursor: 'pointer',
+                    }}
+                  >
+                    Edit
+                  </button>
                 </div>
-                <button onClick={() => openEdit(c)}
-                  className="ml-3 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
+              </SurfaceCard>
+            );
+          })}
         </div>
       </div>
+
+      {/* FAB — New Customer */}
+      <button
+        onClick={() => { setForm({ name: '', phone: '', email: '', address: '', notes: '' }); setErr(''); setSheet('new'); }}
+        style={{
+          position: 'fixed', bottom: 'calc(84px + env(safe-area-inset-bottom))', right: 20,
+          background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+          color: '#fff', fontWeight: 700, fontSize: 24,
+          width: 56, height: 56, borderRadius: 999,
+          border: 'none', cursor: 'pointer',
+          boxShadow: '0 4px 18px rgba(0,194,178,0.35)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 40,
+        }}
+      >
+        +
+      </button>
 
       {/* Create / Edit sheet */}
       {sheet !== null && (
         <Sheet title={sheet?.id ? 'Edit Customer' : 'New Customer'} onClose={() => setSheet(null)}>
-          <form onSubmit={handleSubmit} className="space-y-3">
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[['Name *', 'name', 'text', true], ['Phone', 'phone', 'tel', false], ['Email', 'email', 'email', false], ['Address', 'address', 'text', false]].map(([label, key, type, req]) => (
-              <div key={key}><label className="text-xs text-gray-400 mb-1 block">{label}</label>
-                <input className={inputCls} type={type} required={req} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
+              <div key={key}>
+                <label style={{ fontSize: 12, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>{label}</label>
+                <input
+                  style={inputCls}
+                  type={type}
+                  required={req}
+                  value={form[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                />
               </div>
             ))}
-            <div><label className="text-xs text-gray-400 mb-1 block">Notes</label>
-              <textarea className={`${inputCls} resize-none`} rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
+            <div>
+              <label style={{ fontSize: 12, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Notes</label>
+              <textarea
+                style={{ ...inputCls, resize: 'none' }}
+                rows={2}
+                value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              />
             </div>
-            {err && <p className="text-sm text-red-500">{err}</p>}
-            <div className="flex gap-3">
-              <button type="button" onClick={() => setSheet(null)} className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold">Cancel</button>
-              <button type="submit" disabled={createCustomer.isPending || updateCustomer.isPending} className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-semibold disabled:opacity-60">
+            {err && <p style={{ fontSize: 13, color: '#E11D48', margin: 0 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => setSheet(null)}
+                style={{
+                  flex: 1, padding: '12px 0', borderRadius: 14,
+                  border: '1.5px solid #E9ECF0', background: '#fff',
+                  color: '#4B5563', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={createCustomer.isPending || updateCustomer.isPending}
+                style={{
+                  flex: 1, padding: '12px 0', borderRadius: 14,
+                  background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+                  color: '#fff', fontSize: 14, fontWeight: 700,
+                  border: 'none', cursor: 'pointer', opacity: (createCustomer.isPending || updateCustomer.isPending) ? 0.6 : 1,
+                }}
+              >
                 {createCustomer.isPending || updateCustomer.isPending ? '…' : (sheet?.id ? 'Save' : 'Create')}
               </button>
             </div>
@@ -169,8 +315,6 @@ export default function CustomersPage() {
 
       {/* Detail sheet */}
       {detailId && <CustomerDetail customerId={detailId} onClose={() => setDetailId(null)} />}
-
-      <BottomNav />
     </div>
   );
 }

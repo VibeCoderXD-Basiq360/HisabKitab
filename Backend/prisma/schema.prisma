@@ -531,6 +531,7 @@ model FinancialGoal {
   updatedAt    DateTime  @updatedAt
 
   @@index([userId])
+  @@index([userId, isCompleted])
 }
 
 enum AssetType {
@@ -835,6 +836,8 @@ model ExpenseSplit {
   @@unique([expenseId, personId])
   @@index([expenseId])
   @@index([personId])
+  @@index([personId, status])
+  @@index([expenseId, status])
 }
 
 model PaymentRequest {

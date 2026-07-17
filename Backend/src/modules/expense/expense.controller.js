@@ -76,6 +76,18 @@ const include = {
   items:    { orderBy: { order: 'asc' } },
 };
 
+// Lightweight include for list view — omits splits, comments, items (loaded on demand in detail view)
+const listInclude = {
+  category: true,
+  paymentType: true,
+  people: { include: { person: true } },
+  paidForPerson: true,
+  recurringExpense: { select: { id: true, frequency: true, isActive: true } },
+  group: { select: { id: true, name: true, icon: true } },
+  tabEntry: { select: { id: true, tab: { select: { id: true, name: true } } } },
+  tabSettlement: { select: { id: true, tab: { select: { id: true, name: true } } } },
+};
+
 async function syncSplits(expenseId, expenseTitle, payerId, amount, peopleIds, paidForPersonId, customSplitAmount = null) {
   await prisma.expenseSplit.deleteMany({ where: { expenseId } });
 
@@ -144,31 +156,37 @@ async function linkDelegation(expenseId, paymentTypeId, userId, title, amount) {
 }
 
 const list = async (req, res) => {
-  await processDueRecurring(req.user.userId);
+  // Fire-and-forget: don't let recurring processing block or break the list
+  processDueRecurring(req.user.userId).catch(e => console.error('[recurring]', e.message));
 
-  const { fromDate, toDate, categoryId, paymentTypeId, personId, search, page = 1, limit = 20 } = req.query;
+  try {
+    const { fromDate, toDate, categoryId, paymentTypeId, personId, search, page = 1, limit = 20 } = req.query;
 
-  const where = { userId: req.user.userId };
+    const where = { userId: req.user.userId };
 
-  if (fromDate || toDate) {
-    where.expenseDate = {};
-    if (fromDate) where.expenseDate.gte = new Date(fromDate);
-    if (toDate) where.expenseDate.lte = new Date(toDate);
+    if (fromDate || toDate) {
+      where.expenseDate = {};
+      if (fromDate) where.expenseDate.gte = new Date(fromDate);
+      if (toDate) where.expenseDate.lte = new Date(toDate);
+    }
+    if (categoryId) where.categoryId = categoryId;
+    if (paymentTypeId) where.paymentTypeId = paymentTypeId;
+    if (personId) where.people = { some: { personId } };
+    if (search) where.title = { contains: search, mode: 'insensitive' };
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const take = Number(limit);
+
+    const [total, data] = await Promise.all([
+      prisma.expense.count({ where }),
+      prisma.expense.findMany({ where, include: listInclude, orderBy: { expenseDate: 'desc' }, skip, take }),
+    ]);
+
+    res.json({ data, total, page: Number(page), limit: take });
+  } catch (err) {
+    console.error('[expense.list]', err.message);
+    res.status(500).json({ error: 'Failed to load expenses' });
   }
-  if (categoryId) where.categoryId = categoryId;
-  if (paymentTypeId) where.paymentTypeId = paymentTypeId;
-  if (personId) where.people = { some: { personId } };
-  if (search) where.title = { contains: search, mode: 'insensitive' };
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const take = Number(limit);
-
-  const [total, data] = await Promise.all([
-    prisma.expense.count({ where }),
-    prisma.expense.findMany({ where, include, orderBy: { expenseDate: 'desc' }, skip, take }),
-  ]);
-
-  res.json({ data, total, page: Number(page), limit: take });
 };
 
 const create = async (req, res) => {

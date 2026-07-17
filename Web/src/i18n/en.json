@@ -135,9 +135,6 @@
   },
   "settings": {
     "title": "Settings",
-    "dark_mode": "Dark Mode",
-    "dark_on": "On · tap to toggle",
-    "dark_off": "Off · tap to toggle",
     "language": "Language",
     "edit_profile": "Edit profile & photo →",
     "categories": "Categories",

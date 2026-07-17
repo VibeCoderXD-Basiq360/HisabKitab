@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
-import ExpenseCard from '../../components/ExpenseCard';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import TransactionRow from '../../components/ui/TransactionRow';
 import { useExpenses } from '../../hooks/useExpenses';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
 
@@ -31,56 +31,84 @@ export default function PaymentExpensesPage() {
   const expenses = expenseData?.data || [];
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
 
-  const iconBg = paymentType?.color ? `${paymentType.color}25` : '#f3f4f6';
+  const iconBg = paymentType?.color ? `${paymentType.color}30` : 'rgba(255,255,255,0.12)';
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={paymentType?.name || 'Payment Method'} showBack />
 
-      <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
-        {/* Summary header */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0"
-            style={{ backgroundColor: iconBg }}
-          >
+      <div style={{ flex: 1, padding: '16px', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Hero card — dark navy gradient */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0A0D14 0%, #1a2340 100%)',
+          borderRadius: 20,
+          padding: '20px 20px 22px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          <div style={{
+            width: 52,
+            height: 52,
+            borderRadius: 16,
+            background: iconBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 26,
+            flexShrink: 0,
+          }}>
             {paymentType?.icon || '💳'}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 dark:text-gray-500">{periodLabel || 'All expenses'}</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{fmt(total)}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
+              {periodLabel || 'All expenses'}
+            </p>
+            <p style={{ fontSize: 28, fontWeight: 700, color: '#FFFFFF', margin: '2px 0 0', letterSpacing: '-0.5px' }}>
+              {fmt(total)}
+            </p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '4px 0 0' }}>
               {t('analytics.transactions', { n: expenses.length })}
             </p>
           </div>
         </div>
 
-        {/* Expense list */}
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide px-1">Transactions</p>
+        {/* Transaction list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '0 4px', margin: 0 }}>
+            Transactions
+          </p>
 
           {isLoading ? (
-            <p className="text-center text-sm text-gray-400 py-10">{t('common.loading')}</p>
+            <p style={{ textAlign: 'center', fontSize: 14, color: '#B0B8C4', padding: '40px 0' }}>
+              {t('common.loading')}
+            </p>
           ) : expenses.length === 0 ? (
-            <div className="bg-white rounded-2xl py-12 flex flex-col items-center gap-2">
-              <span className="text-4xl">💳</span>
-              <p className="text-sm text-gray-400">{t('analytics.no_expenses')}</p>
-            </div>
+            <SurfaceCard style={{ padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 40 }}>💳</span>
+              <p style={{ fontSize: 14, color: '#B0B8C4', margin: 0 }}>{t('analytics.no_expenses')}</p>
+            </SurfaceCard>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
-              {expenses.map((expense) => (
-                <ExpenseCard
+            <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+              {expenses.map((expense, idx) => (
+                <TransactionRow
                   key={expense.id}
-                  expense={expense}
+                  icon={paymentType?.icon || '💳'}
+                  iconBg={paymentType?.color ? `${paymentType.color}25` : '#E6FAF9'}
+                  title={expense.title || 'Expense'}
+                  subtitle={expense.expenseDate
+                    ? new Date(expense.expenseDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : ''}
+                  amount={`₹${Number(expense.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`}
+                  isLast={idx === expenses.length - 1}
                   onClick={() => navigate(`/expense/${expense.id}`)}
                 />
               ))}
-            </div>
+            </SurfaceCard>
           )}
         </div>
       </div>
-
-      <BottomNav />
     </div>
   );
 }

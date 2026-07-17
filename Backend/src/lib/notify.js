@@ -1,11 +1,16 @@
 const webpush = require('web-push');
 const prisma = require('./prisma');
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || 'mailto:admin@hisabkitab.com',
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY
-);
+const vapidReady = !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+if (vapidReady) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:admin@hisabkitab.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.warn('[notify] VAPID keys not set — push notifications disabled (DB notifications still work)');
+}
 
 async function notify(userId, pushSubscriptionJson, { title, body, data: payload = {} }) {
   if (userId) {
@@ -29,6 +34,8 @@ async function notify(userId, pushSubscriptionJson, { title, body, data: payload
   } catch {
     return; // not valid JSON — skip
   }
+
+  if (!vapidReady) return;
 
   try {
     await webpush.sendNotification(

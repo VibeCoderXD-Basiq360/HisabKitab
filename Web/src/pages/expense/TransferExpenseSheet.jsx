@@ -44,61 +44,74 @@ export default function TransferExpenseSheet({ expense, onClose }) {
     }
   };
 
+  const inputStyle = {
+    width: '100%', minHeight: 48, padding: '0 16px', borderRadius: 12,
+    border: '1.5px solid #E9ECF0', background: '#fff', fontSize: 15,
+    color: '#0A0D14', outline: 'none', fontFamily: 'inherit',
+    appearance: 'none', boxSizing: 'border-box',
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+    <div
+      style={{ position:'fixed', inset:0, zIndex:50, display:'flex', flexDirection:'column', justifyContent:'flex-end', background:'rgba(10,13,20,0.55)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white dark:bg-gray-900 rounded-t-2xl max-h-[92vh] overflow-y-auto flex flex-col"
+        style={{ background:'#fff', borderRadius:'24px 24px 0 0', maxHeight:'92vh', overflowY:'auto', display:'flex', flexDirection:'column' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle bar */}
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+        {/* Handle */}
+        <div style={{ display:'flex', justifyContent:'center', padding:'12px 0 6px' }}>
+          <div style={{ width:40, height:4, borderRadius:2, background:'#E9ECF0' }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px 14px', borderBottom:'1px solid #F0F2F7' }}>
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">Transfer Expense</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Assign this cost to someone — they'll owe you</p>
+            <h2 style={{ fontSize:16, fontWeight:800, color:'#0A0D14', margin:0 }}>Transfer Expense</h2>
+            <p style={{ fontSize:12, color:'#B0B8C4', margin:'3px 0 0' }}>Assign this cost — they'll owe you</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none">×</button>
+          <button onClick={onClose} style={{ fontSize:24, color:'#B0B8C4', background:'none', border:'none', cursor:'pointer', lineHeight:1, padding:4 }}>×</button>
         </div>
 
-        <div className="flex flex-col gap-4 px-5 py-4 overflow-y-auto">
+        <div style={{ display:'flex', flexDirection:'column', gap:16, padding:'16px 20px', overflowY:'auto' }}>
 
           {/* Expense summary chip */}
-          <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-lg shrink-0"
-              style={{ backgroundColor: expense.category?.color ? `${expense.category.color}25` : '#f3f4f6' }}
-            >
+          <div style={{ display:'flex', alignItems:'center', gap:12, background:'#F0F2F7', borderRadius:14, padding:'12px 14px' }}>
+            <div style={{
+              width:36, height:36, borderRadius:'50%', flexShrink:0,
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:18,
+              background: expense.category?.color ? `${expense.category.color}25` : '#E9ECF0',
+            }}>
               {expense.category?.icon || '💸'}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{expense.title || 'Expense'}</p>
-              <p className="text-xs text-gray-400">{expense.category?.name} · {expense.paymentType?.name}</p>
+            <div style={{ flex:1, minWidth:0 }}>
+              <p style={{ fontSize:14, fontWeight:700, color:'#0A0D14', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {expense.title || 'Expense'}
+              </p>
+              <p style={{ fontSize:12, color:'#B0B8C4', margin:'2px 0 0' }}>
+                {expense.category?.name} · {expense.paymentType?.name}
+              </p>
             </div>
-            <p className="text-base font-bold text-gray-900 dark:text-white shrink-0">{fmt(amount)}</p>
+            <p style={{ fontSize:15, fontWeight:800, color:'#0A0D14', flexShrink:0 }}>{fmt(amount)}</p>
           </div>
 
           {/* Existing split warning */}
           {hasExistingSplit && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3 flex items-start gap-2">
-              <span className="text-amber-500 mt-0.5">⚠️</span>
-              <p className="text-xs text-amber-700 dark:text-amber-400">
+            <div style={{ background:'#FFFBEB', border:'1.5px solid #F59E0B', borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'flex-start', gap:8 }}>
+              <span style={{ marginTop:1 }}>⚠️</span>
+              <p style={{ fontSize:12, color:'#92400E', margin:0 }}>
                 This expense already has an active split. Transferring will replace it.
               </p>
             </div>
           )}
 
           {/* Who to transfer to */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Who will owe you?</label>
-            <select
-              value={personId}
-              onChange={(e) => setPersonId(e.target.value)}
-              className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-            >
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            <label style={{ fontSize:12, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+              Who will owe you?
+            </label>
+            <select value={personId} onChange={(e) => setPersonId(e.target.value)} style={inputStyle}>
               <option value="">Select a person…</option>
               {people.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -107,44 +120,44 @@ export default function TransferExpenseSheet({ expense, onClose }) {
           </div>
 
           {/* How much they owe */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">How much do they owe?</label>
-            <div className="grid grid-cols-3 gap-2">
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <label style={{ fontSize:12, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+              How much do they owe?
+            </label>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
               {[
                 { key: 'FULL', label: 'Full amount', sub: 'They owe everything' },
-                { key: 'SPLIT', label: 'Split 50 / 50', sub: 'You share equally' },
+                { key: 'SPLIT', label: 'Split 50/50', sub: 'You share equally' },
                 { key: 'CUSTOM', label: 'Custom %', sub: 'Set their share' },
               ].map(({ key, label, sub }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => setTransferType(key)}
-                  className={`flex flex-col items-center justify-center py-3 px-2 rounded-xl border text-center transition-colors ${
-                    transferType === key
-                      ? 'bg-primary-500 border-primary-500 text-white'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300'
-                  }`}
+                  style={{
+                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                    padding:'10px 6px', borderRadius:12, border:'none', textAlign:'center', cursor:'pointer',
+                    background: transferType === key ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#F0F2F7',
+                    transition:'background 0.15s',
+                  }}
                 >
-                  <span className="text-xs font-semibold leading-tight">{label}</span>
-                  <span className={`text-[10px] mt-0.5 leading-tight ${transferType === key ? 'text-white/80' : 'text-gray-400'}`}>{sub}</span>
+                  <span style={{ fontSize:11, fontWeight:700, color: transferType === key ? '#fff' : '#0A0D14', lineHeight:1.3 }}>{label}</span>
+                  <span style={{ fontSize:10, color: transferType === key ? 'rgba(255,255,255,0.75)' : '#B0B8C4', marginTop:2, lineHeight:1.3 }}>{sub}</span>
                 </button>
               ))}
             </div>
 
             {/* Custom ratio slider */}
             {transferType === 'CUSTOM' && (
-              <div className="flex flex-col gap-1 mt-1">
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>Their share: <strong className="text-primary-600">{customRatio}%</strong></span>
+              <div style={{ display:'flex', flexDirection:'column', gap:4, marginTop:4 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, color:'#374151' }}>
+                  <span>Their share: <strong style={{ color:'#00C2B2' }}>{customRatio}%</strong></span>
                   <span>Your share: <strong>{100 - customRatio}%</strong></span>
                 </div>
                 <input
-                  type="range"
-                  min={1}
-                  max={99}
-                  value={customRatio}
+                  type="range" min={1} max={99} value={customRatio}
                   onChange={(e) => setCustomRatio(Number(e.target.value))}
-                  className="w-full accent-primary-500"
+                  style={{ width:'100%', accentColor:'#00C2B2' }}
                 />
               </div>
             )}
@@ -152,26 +165,24 @@ export default function TransferExpenseSheet({ expense, onClose }) {
 
           {/* Balance impact preview */}
           {personId && (
-            <div className={`rounded-xl border px-4 py-3 flex flex-col gap-1 ${
-              theirShare === amount
-                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-100 dark:border-orange-800'
-                : 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-800'
-            }`}>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">After transfer</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {selectedPerson?.name} owes you
-                </span>
-                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">{fmt(theirShare)}</span>
+            <div style={{
+              borderRadius:12, border:'1.5px solid #E6FAF9', padding:'12px 14px',
+              background: theirShare === amount ? '#FFFBEB' : '#E6FAF9',
+              display:'flex', flexDirection:'column', gap:6,
+            }}>
+              <p style={{ fontSize:11, fontWeight:800, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.06em', margin:0 }}>After transfer</p>
+              <div style={{ display:'flex', justifyContent:'space-between' }}>
+                <span style={{ fontSize:13, color:'#374151' }}>{selectedPerson?.name} owes you</span>
+                <span style={{ fontSize:13, fontWeight:800, color:'#F97316' }}>{fmt(theirShare)}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Your net expense</span>
-                <span className={`text-sm font-bold ${myShare === 0 ? 'text-green-600' : 'text-gray-900 dark:text-white'}`}>
+              <div style={{ display:'flex', justifyContent:'space-between' }}>
+                <span style={{ fontSize:13, color:'#374151' }}>Your net expense</span>
+                <span style={{ fontSize:13, fontWeight:800, color: myShare === 0 ? '#059669' : '#0A0D14' }}>
                   {myShare === 0 ? 'Nothing (fully recovered)' : fmt(myShare)}
                 </span>
               </div>
               {!selectedPerson?.linkedUserId && (
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p style={{ fontSize:11, color:'#B0B8C4', margin:0 }}>
                   {selectedPerson?.name} is not on the app — the debt will show in your Balances page only.
                 </p>
               )}
@@ -180,22 +191,18 @@ export default function TransferExpenseSheet({ expense, onClose }) {
 
           {/* Optional tab link */}
           {activeTabs.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Also add to Shared Tab <span className="text-xs font-normal text-gray-400">(optional)</span>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              <label style={{ fontSize:12, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+                Also add to Shared Tab <span style={{ fontSize:11, fontWeight:500, color:'#B0B8C4', textTransform:'none' }}>(optional)</span>
               </label>
-              <select
-                value={tabId}
-                onChange={(e) => setTabId(e.target.value)}
-                className="min-h-[48px] px-4 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-base text-gray-900 dark:text-white outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
-              >
+              <select value={tabId} onChange={(e) => setTabId(e.target.value)} style={inputStyle}>
                 <option value="">Don't link to a tab</option>
                 {activeTabs.map((t) => (
                   <option key={t.id} value={t.id}>{t.name}</option>
                 ))}
               </select>
               {tabId && (
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <p style={{ fontSize:12, color:'#00C2B2', margin:0, display:'flex', alignItems:'center', gap:4 }}>
                   🤝 This will also appear in the tab and update the shared balance.
                 </p>
               )}
@@ -203,16 +210,21 @@ export default function TransferExpenseSheet({ expense, onClose }) {
           )}
 
           {error && (
-            <p className="text-sm text-red-500 text-center">{error}</p>
+            <p style={{ fontSize:13, color:'#E11D48', textAlign:'center', margin:0 }}>{error}</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
+        <div style={{ padding:'12px 20px', paddingBottom:'calc(12px + env(safe-area-inset-bottom))', borderTop:'1px solid #F0F2F7', flexShrink:0 }}>
           <button
             onClick={handleTransfer}
             disabled={!personId || transfer.isPending}
-            className="w-full h-12 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed active:bg-primary-600 transition-colors"
+            style={{
+              width:'100%', height:52, borderRadius:12, border:'none', cursor:'pointer',
+              background: (!personId || transfer.isPending) ? '#E9ECF0' : 'linear-gradient(135deg,#00C2B2,#009E90)',
+              color: (!personId || transfer.isPending) ? '#B0B8C4' : '#fff',
+              fontSize:15, fontWeight:800, fontFamily:'inherit', transition:'background 0.15s',
+            }}
           >
             {transfer.isPending ? 'Transferring…' : `Transfer ${personId ? fmt(theirShare) : ''}${personId && selectedPerson ? ` to ${selectedPerson.name}` : ''}`}
           </button>

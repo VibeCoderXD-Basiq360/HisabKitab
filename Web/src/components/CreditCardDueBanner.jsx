@@ -20,6 +20,28 @@ function getBillingCycleDates(billingCycleDay) {
 
 const fmt = (d) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 
+// Inline style maps — no dark: variants
+const URGENCY = {
+  overdue: {
+    bg: '#FFF1F3',
+    border: '#F43F5E',
+    textColor: '#E11D48',
+    subColor: '#E11D48',
+  },
+  urgent: {
+    bg: '#FFF7ED',
+    border: '#F97316',
+    textColor: '#C2410C',
+    subColor: '#EA580C',
+  },
+  normal: {
+    bg: '#FEFCE8',
+    border: '#EAB308',
+    textColor: '#854D0E',
+    subColor: '#CA8A04',
+  },
+};
+
 export default function CreditCardDueBanner() {
   const { data: types = [] } = usePaymentTypes();
 
@@ -45,23 +67,11 @@ export default function CreditCardDueBanner() {
         const isDueToday = card.days === 0;
         const isUrgent = card.days <= 3;
 
-        const bg = isOverdue || isDueToday
-          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        const urgency = isOverdue || isDueToday
+          ? URGENCY.overdue
           : isUrgent
-          ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-          : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
-
-        const textColor = isOverdue || isDueToday
-          ? 'text-red-700 dark:text-red-400'
-          : isUrgent
-          ? 'text-orange-700 dark:text-orange-400'
-          : 'text-yellow-700 dark:text-yellow-500';
-
-        const subColor = isOverdue || isDueToday
-          ? 'text-red-500 dark:text-red-500'
-          : isUrgent
-          ? 'text-orange-500 dark:text-orange-500'
-          : 'text-yellow-600 dark:text-yellow-600';
+          ? URGENCY.urgent
+          : URGENCY.normal;
 
         const label = isOverdue
           ? `Overdue by ${Math.abs(card.days)} day${Math.abs(card.days) !== 1 ? 's' : ''}`
@@ -72,25 +82,43 @@ export default function CreditCardDueBanner() {
           : `Due in ${card.days} days · ${fmt(card.dueDate)}`;
 
         return (
-          <div key={card.id} className={`rounded-2xl border px-4 py-3 flex items-start gap-3 ${bg}`}>
+          <div
+            key={card.id}
+            className="flex items-start gap-3"
+            style={{
+              background: urgency.bg,
+              border: `1.5px solid ${urgency.border}`,
+              borderRadius: 12,
+              padding: '12px 16px',
+            }}
+          >
             <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0"
-              style={{ backgroundColor: card.color ? `${card.color}30` : '#e0e7ff' }}
+              className="flex items-center justify-center shrink-0"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                fontSize: 16,
+                backgroundColor: card.color ? `${card.color}30` : '#e0e7ff',
+              }}
             >
               {card.icon || '🏦'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-semibold ${textColor}`}>{card.name}</p>
-              <p className={`text-xs font-medium mt-0.5 ${subColor}`}>{label}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: urgency.textColor }}>{card.name}</p>
+              <p style={{ fontSize: 12, fontWeight: 500, marginTop: 2, color: urgency.subColor }}>{label}</p>
               {card.cycle && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p style={{ fontSize: 12, color: '#B0B8C4', marginTop: 2 }}>
                   Current cycle: {fmt(card.cycle.start)} – {fmt(card.cycle.end)}
                 </p>
               )}
             </div>
-            <div className={`text-2xl font-black tabular-nums ${textColor}`}>
+            <div
+              className="tabular-nums"
+              style={{ fontSize: 24, fontWeight: 900, color: urgency.textColor }}
+            >
               {isOverdue ? '!' : card.days}
-              {!isOverdue && <span className="text-xs font-normal ml-0.5">d</span>}
+              {!isOverdue && <span style={{ fontSize: 12, fontWeight: 400, marginLeft: 2 }}>d</span>}
             </div>
           </div>
         );

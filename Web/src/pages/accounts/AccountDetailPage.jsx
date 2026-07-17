@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import TransactionRow from '../../components/ui/TransactionRow';
+import HeroCard from '../../components/ui/HeroCard';
 import { useAccountLedger, useAccounts, usePayCreditCardBill, useCreateTransfer } from '../../hooks/useAccounts';
 
 const TYPE_META = {
   SAVINGS:     { icon: '🏦', label: 'Savings' },
-  CURRENT:     { icon: '🏧', label: 'Current' },
+  CURRENT:     { icon: '🧾', label: 'Current' },
   CREDIT_CARD: { icon: '💳', label: 'Credit Card' },
   CASH:        { icon: '💵', label: 'Cash' },
   WALLET:      { icon: '👛', label: 'Wallet' },
@@ -17,6 +19,27 @@ const TYPE_META = {
 
 const fmt = (n) =>
   `₹${Math.abs(Number(n)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/* ─── Sheet input style ─── */
+const sheetInput = {
+  width: '100%',
+  background: '#F0F2F7',
+  border: '1.5px solid #E9ECF0',
+  borderRadius: 12,
+  padding: '10px 14px',
+  fontSize: 15,
+  color: '#0A0D14',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const sheetLabel = {
+  fontSize: 11,
+  fontWeight: 600,
+  color: '#B0B8C4',
+  display: 'block',
+  marginBottom: 4,
+};
 
 function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) {
   const [amount, setAmount]       = useState('');
@@ -39,30 +62,33 @@ function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.50)' }}
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4"
+        style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">Pay Credit Card Bill</h2>
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 9999, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Pay Credit Card Bill</h2>
 
         {/* Outstanding reminder */}
-        <div className="bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2.5 flex items-center justify-between">
-          <span className="text-xs text-red-600 dark:text-red-400 font-medium">{cardName} outstanding</span>
-          <span className="text-sm font-bold text-red-600 dark:text-red-400">{fmt(outstanding)}</span>
+        <div style={{ background: '#FFF1F4', borderRadius: 12, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, color: '#E11D48', fontWeight: 600 }}>{cardName} outstanding</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#E11D48' }}>{fmt(outstanding)}</span>
         </div>
 
         {/* Amount */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Payment Amount (₹)</label>
+          <label style={sheetLabel}>Payment Amount (₹)</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder={String(Number(outstanding).toFixed(2))}
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            style={{ ...sheetInput, fontSize: 18, fontWeight: 800 }}
             autoFocus
             required
           />
@@ -70,7 +96,7 @@ function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) 
             <button
               type="button"
               onClick={() => setAmount(String(Number(outstanding).toFixed(2)))}
-              className="mt-1 text-xs text-primary-500 font-medium"
+              style={{ marginTop: 4, fontSize: 12, color: '#00C2B2', fontWeight: 600, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
             >
               Pay full outstanding ({fmt(outstanding)})
             </button>
@@ -80,16 +106,16 @@ function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) 
         {/* Pay from account */}
         {bankAccounts.length > 0 && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Pay From Account</label>
+            <label style={sheetLabel}>Pay From Account</label>
             <select
               value={fromId}
               onChange={(e) => setFromId(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+              style={sheetInput}
             >
               <option value="">Don't track source account</option>
               {bankAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {TYPE_META[a.type]?.icon} {a.name} — {fmt(a.balance)}
+                  {TYPE_META[a.type]?.icon} {a.name} – {fmt(a.balance)}
                 </option>
               ))}
             </select>
@@ -97,36 +123,25 @@ function PayBillSheet({ cardId, cardName, outstanding, bankAccounts, onClose }) 
         )}
 
         {/* Date + Note */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={sheetInput} />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note (optional)</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="e.g. June bill"
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Note (optional)</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. June bill" style={sheetInput} />
           </div>
         </div>
 
         {payBill.error && (
-          <p className="text-xs text-red-500">{payBill.error.response?.data?.error || 'Failed to record payment'}</p>
+          <p style={{ fontSize: 12, color: '#E11D48', margin: 0 }}>{payBill.error.response?.data?.error || 'Failed to record payment'}</p>
         )}
 
         <button
           type="submit"
           disabled={payBill.isPending || !amount}
-          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+          style={{ width: '100%', height: 52, borderRadius: 12, background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer', opacity: (payBill.isPending || !amount) ? 0.4 : 1 }}
         >
           {payBill.isPending ? 'Recording…' : `Record Payment${amount ? ' of ' + fmt(amount) : ''}`}
         </button>
@@ -159,42 +174,41 @@ function CashWithdrawSheet({ fromAccount, cashAccounts, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.50)' }}
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4"
+        style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">Withdraw Cash</h2>
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 9999, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Withdraw Cash</h2>
 
         {/* From (locked) */}
-        <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
-          <div className="flex-1">
-            <p className="text-xs text-gray-400 mb-0.5">From</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#F0F2F7', borderRadius: 12, padding: '12px 16px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 11, color: '#B0B8C4', margin: '0 0 2px' }}>From</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>
               {TYPE_META[fromAccount.type]?.icon} {fromAccount.name}
             </p>
           </div>
-          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{fmt(Number(fromAccount.balance))}</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#374151', margin: 0 }}>{fmt(Number(fromAccount.balance))}</p>
         </div>
 
         {/* To */}
         {cashAccounts.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+          <p style={{ fontSize: 14, color: '#B0B8C4', textAlign: 'center', margin: 0 }}>
             No wallet, cash, or metro card account found. Add one in Accounts first.
           </p>
         ) : (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">To (Wallet / Cash / Metro Card)</label>
-            <select
-              value={toId}
-              onChange={(e) => setToId(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            >
+            <label style={sheetLabel}>To (Wallet / Cash / Metro Card)</label>
+            <select value={toId} onChange={(e) => setToId(e.target.value)} style={sheetInput}>
               {cashAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {TYPE_META[a.type]?.icon} {a.name} — {fmt(Number(a.balance))}
+                  {TYPE_META[a.type]?.icon} {a.name} – {fmt(Number(a.balance))}
                 </option>
               ))}
             </select>
@@ -203,57 +217,43 @@ function CashWithdrawSheet({ fromAccount, cashAccounts, onClose }) {
 
         {/* Amount */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <label style={sheetLabel}>Amount (₹)</label>
           <input
-            type="number"
-            min="1"
-            step="0.01"
-            value={amount}
+            type="number" min="1" step="0.01" value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            autoFocus
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            placeholder="0.00" autoFocus
+            style={{ ...sheetInput, fontSize: 18, fontWeight: 800 }}
           />
         </div>
 
         {/* Date + Note */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={sheetInput} />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Note</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} style={sheetInput} />
           </div>
         </div>
 
         {/* Balance preview */}
         {toAcct && amount && Number(amount) > 0 && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex flex-col gap-1">
-            <p><span className="font-semibold">{fromAccount.name}</span> {fmt(Number(fromAccount.balance))} → {fmt(Number(fromAccount.balance) - Number(amount))}</p>
-            <p><span className="font-semibold">{toAcct.name}</span> {fmt(Number(toAcct.balance))} → {fmt(Number(toAcct.balance) + Number(amount))}</p>
+          <div style={{ background: '#EFF6FF', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#1D4ED8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ margin: 0 }}><strong>{fromAccount.name}</strong> {fmt(Number(fromAccount.balance))} → {fmt(Number(fromAccount.balance) - Number(amount))}</p>
+            <p style={{ margin: 0 }}><strong>{toAcct.name}</strong> {fmt(Number(toAcct.balance))} → {fmt(Number(toAcct.balance) + Number(amount))}</p>
           </div>
         )}
 
         {createTransfer.error && (
-          <p className="text-xs text-red-500">{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
+          <p style={{ fontSize: 12, color: '#E11D48', margin: 0 }}>{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
         )}
 
         <button
           type="submit"
           disabled={!toId || !amount || Number(amount) <= 0 || cashAccounts.length === 0 || createTransfer.isPending}
-          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+          style={{ width: '100%', height: 52, borderRadius: 12, background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer', opacity: (!toId || !amount || Number(amount) <= 0 || cashAccounts.length === 0 || createTransfer.isPending) ? 0.4 : 1 }}
         >
           {createTransfer.isPending ? 'Processing…' : `Withdraw${amount ? ' ' + fmt(amount) : ''}`}
         </button>
@@ -286,31 +286,30 @@ function TopUpSheet({ toAccount, sourceAccounts, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.50)' }}
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4"
+        style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">🚇 Top Up Metro Card</h2>
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 9999, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0A0D14', margin: 0 }}>🚇 Top Up Metro Card</h2>
 
         {/* From (bank account selector) */}
         {sourceAccounts.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+          <p style={{ fontSize: 14, color: '#B0B8C4', textAlign: 'center', margin: 0 }}>
             No savings or current account found. Add one in Accounts first.
           </p>
         ) : (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">From (Bank Account)</label>
-            <select
-              value={fromId}
-              onChange={(e) => setFromId(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            >
+            <label style={sheetLabel}>From (Bank Account)</label>
+            <select value={fromId} onChange={(e) => setFromId(e.target.value)} style={sheetInput}>
               {sourceAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {TYPE_META[a.type]?.icon} {a.name} — {fmt(Number(a.balance))}
+                  {TYPE_META[a.type]?.icon} {a.name} – {fmt(Number(a.balance))}
                 </option>
               ))}
             </select>
@@ -318,69 +317,55 @@ function TopUpSheet({ toAccount, sourceAccounts, onClose }) {
         )}
 
         {/* To (locked metro card) */}
-        <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl px-4 py-3">
-          <div className="flex-1">
-            <p className="text-xs text-gray-400 mb-0.5">To</p>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#F0F2F7', borderRadius: 12, padding: '12px 16px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 11, color: '#B0B8C4', margin: '0 0 2px' }}>To</p>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>
               {TYPE_META[toAccount.type]?.icon} {toAccount.name}
             </p>
           </div>
-          <p className="text-sm font-bold text-gray-700 dark:text-gray-300">{fmt(Number(toAccount.balance))}</p>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#374151', margin: 0 }}>{fmt(Number(toAccount.balance))}</p>
         </div>
 
         {/* Amount */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <label style={sheetLabel}>Amount (₹)</label>
           <input
-            type="number"
-            min="1"
-            step="0.01"
-            value={amount}
+            type="number" min="1" step="0.01" value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            autoFocus
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            placeholder="0.00" autoFocus
+            style={{ ...sheetInput, fontSize: 18, fontWeight: 800 }}
           />
         </div>
 
         {/* Date + Note */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Date</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={sheetInput} />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note</label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
-            />
+          <div style={{ flex: 1 }}>
+            <label style={sheetLabel}>Note</label>
+            <input type="text" value={note} onChange={(e) => setNote(e.target.value)} style={sheetInput} />
           </div>
         </div>
 
         {/* Balance preview */}
         {fromAcct && amount && Number(amount) > 0 && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl px-4 py-3 text-xs text-blue-700 dark:text-blue-300 flex flex-col gap-1">
-            <p><span className="font-semibold">{fromAcct.name}</span> {fmt(Number(fromAcct.balance))} → {fmt(Number(fromAcct.balance) - Number(amount))}</p>
-            <p><span className="font-semibold">{toAccount.name}</span> {fmt(Number(toAccount.balance))} → {fmt(Number(toAccount.balance) + Number(amount))}</p>
+          <div style={{ background: '#EFF6FF', borderRadius: 12, padding: '12px 16px', fontSize: 12, color: '#1D4ED8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ margin: 0 }}><strong>{fromAcct.name}</strong> {fmt(Number(fromAcct.balance))} → {fmt(Number(fromAcct.balance) - Number(amount))}</p>
+            <p style={{ margin: 0 }}><strong>{toAccount.name}</strong> {fmt(Number(toAccount.balance))} → {fmt(Number(toAccount.balance) + Number(amount))}</p>
           </div>
         )}
 
         {createTransfer.error && (
-          <p className="text-xs text-red-500">{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
+          <p style={{ fontSize: 12, color: '#E11D48', margin: 0 }}>{createTransfer.error.response?.data?.error || 'Transfer failed'}</p>
         )}
 
         <button
           type="submit"
           disabled={!fromId || !amount || Number(amount) <= 0 || sourceAccounts.length === 0 || createTransfer.isPending}
-          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+          style={{ width: '100%', height: 52, borderRadius: 12, background: 'linear-gradient(135deg,#00C2B2,#009E90)', color: '#fff', fontWeight: 800, fontSize: 16, border: 'none', cursor: 'pointer', opacity: (!fromId || !amount || Number(amount) <= 0 || sourceAccounts.length === 0 || createTransfer.isPending) ? 0.4 : 1 }}
         >
           {createTransfer.isPending ? 'Processing…' : `Top Up${amount ? ' ' + fmt(amount) : ''}`}
         </button>
@@ -399,9 +384,9 @@ export default function AccountDetailPage() {
   const [showTopUp, setShowTopUp]         = useState(false);
 
   if (isLoading) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
+    <div style={{ minHeight: '100vh', background: '#F0F2F7', paddingBottom: 32 }}>
       <TopBar title="Account" showBack onBack={() => navigate(-1)} />
-      <p className="text-center text-gray-400 py-12">Loading…</p>
+      <p style={{ textAlign: 'center', color: '#B0B8C4', paddingTop: 48 }}>Loading…</p>
     </div>
   );
 
@@ -413,122 +398,127 @@ export default function AccountDetailPage() {
   const bal    = Number(account.balance);
   const isNeg  = bal < 0;
 
-  // For the Pay Bill sheet: only show bank/cash/wallet accounts as sources
-  const bankAccounts  = allAccounts.filter((a) => a.id !== id && a.type !== 'CREDIT_CARD' && a.isActive !== false);
-  // For Cash Withdraw: destination must be WALLET, CASH, or METRO_CARD type
-  const cashAccounts  = allAccounts.filter((a) => a.id !== id && (a.type === 'WALLET' || a.type === 'CASH' || a.type === 'METRO_CARD') && a.isActive !== false);
-  const isBankAccount = account.type === 'SAVINGS' || account.type === 'CURRENT';
-  const isMetroCard   = account.type === 'METRO_CARD';
-  // For Metro Card Top Up: source must be a bank account
+  const bankAccounts   = allAccounts.filter((a) => a.id !== id && a.type !== 'CREDIT_CARD' && a.isActive !== false);
+  const cashAccounts   = allAccounts.filter((a) => a.id !== id && (a.type === 'WALLET' || a.type === 'CASH' || a.type === 'METRO_CARD') && a.isActive !== false);
+  const isBankAccount  = account.type === 'SAVINGS' || account.type === 'CURRENT';
+  const isMetroCard    = account.type === 'METRO_CARD';
   const sourceAccounts = allAccounts.filter((a) => a.id !== id && (a.type === 'SAVINGS' || a.type === 'CURRENT') && a.isActive !== false);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
+    <div style={{ minHeight: '100vh', background: '#F0F2F7', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
       <TopBar title={account.name} showBack onBack={() => navigate(-1)} />
 
-      {/* Account header */}
-      <div className="bg-white dark:bg-gray-800 px-5 py-5 border-b border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-3 mb-3">
-          <span className="text-3xl">{meta.icon}</span>
-          <div className="flex-1">
-            <p className="font-semibold text-gray-900 dark:text-white">{account.name}</p>
-            <p className="text-xs text-gray-400">
-              {meta.label} · {isCC ? 'Opening outstanding' : 'Opening'} ₹{Number(account.openingBalance).toLocaleString('en-IN')}
-            </p>
+      {/* Hero card */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <HeroCard>
+          {/* Account name + action button row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 28 }}>{meta.icon}</span>
+              <div>
+                <p style={{ fontSize: 18, fontWeight: 800, color: '#fff', margin: 0 }}>{account.name}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: '2px 0 0' }}>
+                  {meta.label} · {isCC ? 'Opening outstanding' : 'Opening'} ₹{Number(account.openingBalance).toLocaleString('en-IN')}
+                </p>
+              </div>
+            </div>
+            {isCC && (
+              <button
+                onClick={() => setShowPayBill(true)}
+                style={{ background: '#00C2B2', color: '#fff', fontSize: 12, fontWeight: 800, padding: '8px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              >
+                Pay Bill
+              </button>
+            )}
+            {isBankAccount && (
+              <button
+                onClick={() => setShowWithdraw(true)}
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 12, fontWeight: 800, padding: '8px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              >
+                💵 Withdraw
+              </button>
+            )}
+            {isMetroCard && (
+              <button
+                onClick={() => setShowTopUp(true)}
+                style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', fontSize: 12, fontWeight: 800, padding: '8px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', flexShrink: 0 }}
+              >
+                🚇 Top Up
+              </button>
+            )}
           </div>
-          {isCC && (
-            <button
-              onClick={() => setShowPayBill(true)}
-              className="bg-primary-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
-            >
-              Pay Bill
-            </button>
-          )}
-          {isBankAccount && (
-            <button
-              onClick={() => setShowWithdraw(true)}
-              className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
-            >
-              💵 Withdraw
-            </button>
-          )}
-          {isMetroCard && (
-            <button
-              onClick={() => setShowTopUp(true)}
-              className="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0"
-            >
-              🚇 Top Up
-            </button>
-          )}
-        </div>
 
-        {isCC ? (
-          <div>
-            <p className="text-xs text-red-500 uppercase tracking-wide font-semibold">Outstanding</p>
-            <p className="text-3xl font-bold mt-0.5 text-red-500">{fmt(bal)}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Amount owed to the bank</p>
-          </div>
-        ) : (
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">Current Balance</p>
-            <p className={`text-3xl font-bold mt-0.5 ${isNeg ? 'text-red-500' : 'text-gray-900 dark:text-white'}`}>
-              {isNeg ? '-' : ''}{fmt(bal)}
-            </p>
-          </div>
-        )}
+          {/* Balance */}
+          {isCC ? (
+            <div>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, margin: 0 }}>Outstanding</p>
+              <p style={{ fontSize: 34, fontWeight: 800, color: '#fff', margin: '4px 0 2px' }}>{fmt(bal)}</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Amount owed to the bank</p>
+            </div>
+          ) : (
+            <div>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, margin: 0 }}>Current Balance</p>
+              <p style={{ fontSize: 34, fontWeight: 800, color: '#fff', margin: '4px 0 0' }}>
+                {isNeg ? '-' : ''}{fmt(bal)}
+              </p>
+            </div>
+          )}
 
-        {/* Quick stats */}
-        {isCC ? (
-          <div className="flex gap-4 mt-3">
-            <div className="flex-1 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-2">
-              <p className="text-xs text-red-500 font-medium">Total Purchases</p>
-              <p className="text-sm font-bold text-red-600">
-                {fmt(transactions.filter((t) => t._type === 'expense').reduce((s, t) => s + Number(t.amount), 0))}
-              </p>
-            </div>
-            <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2">
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total Paid</p>
-              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                {fmt(transactions.filter((t) => t._type === 'cc_payment').reduce((s, t) => s + Number(t.amount), 0))}
-              </p>
-            </div>
+          {/* Quick stats */}
+          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+            {isCC ? (
+              <>
+                <div style={{ flex: 1, background: 'rgba(225,29,72,0.18)', borderRadius: 12, padding: '10px 14px' }}>
+                  <p style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 600, margin: '0 0 4px' }}>Total Purchases</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: 0 }}>
+                    {fmt(transactions.filter((t) => t._type === 'expense').reduce((s, t) => s + Number(t.amount), 0))}
+                  </p>
+                </div>
+                <div style={{ flex: 1, background: 'rgba(5,150,105,0.18)', borderRadius: 12, padding: '10px 14px' }}>
+                  <p style={{ fontSize: 11, color: '#6EE7B7', fontWeight: 600, margin: '0 0 4px' }}>Total Paid</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: 0 }}>
+                    {fmt(transactions.filter((t) => t._type === 'cc_payment').reduce((s, t) => s + Number(t.amount), 0))}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ flex: 1, background: 'rgba(5,150,105,0.18)', borderRadius: 12, padding: '10px 14px' }}>
+                  <p style={{ fontSize: 11, color: '#6EE7B7', fontWeight: 600, margin: '0 0 4px' }}>Total In</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: 0 }}>
+                    {fmt(transactions.filter((t) => t._type === 'income' || t._type === 'transfer_in').reduce((s, t) => s + Number(t.amount), 0))}
+                  </p>
+                </div>
+                <div style={{ flex: 1, background: 'rgba(225,29,72,0.18)', borderRadius: 12, padding: '10px 14px' }}>
+                  <p style={{ fontSize: 11, color: '#FCA5A5', fontWeight: 600, margin: '0 0 4px' }}>Total Out</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#fff', margin: 0 }}>
+                    {fmt(transactions.filter((t) => !['income','transfer_in'].includes(t._type)).reduce((s, t) => s + Number(t.amount), 0))}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-        ) : (
-          <div className="flex gap-4 mt-3">
-            <div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl px-3 py-2">
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Total In</p>
-              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                {fmt(transactions.filter((t) => t._type === 'income' || t._type === 'transfer_in').reduce((s, t) => s + Number(t.amount), 0))}
-              </p>
-            </div>
-            <div className="flex-1 bg-red-50 dark:bg-red-900/20 rounded-xl px-3 py-2">
-              <p className="text-xs text-red-500 font-medium">Total Out</p>
-              <p className="text-sm font-bold text-red-600">
-                {fmt(transactions.filter((t) => !['income','transfer_in'].includes(t._type)).reduce((s, t) => s + Number(t.amount), 0))}
-              </p>
-            </div>
-          </div>
-        )}
+        </HeroCard>
       </div>
 
       {/* Ledger */}
-      <div className="px-4 py-3">
-        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">
+      <div style={{ padding: '20px 16px 0' }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>
           {transactions.length} Transactions
         </p>
 
         {transactions.length === 0 ? (
-          <div className="text-center py-10">
-            <p className="text-3xl mb-2">{isCC ? '💳' : '📋'}</p>
-            <p className="text-sm text-gray-400">No transactions yet.</p>
-            <p className="text-xs text-gray-400 mt-1">
+          <div style={{ textAlign: 'center', paddingTop: 48 }}>
+            <p style={{ fontSize: 32, margin: '0 0 8px' }}>{isCC ? '💳' : '📋'}</p>
+            <p style={{ fontSize: 14, color: '#B0B8C4', margin: 0 }}>No transactions yet.</p>
+            <p style={{ fontSize: 12, color: '#B0B8C4', marginTop: 4 }}>
               {isCC
                 ? 'Tag expenses to this card to track purchases.'
                 : 'Tag expenses or income to this account to see them here.'}
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700">
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
             {transactions.map((txn, i) => {
               const isIncome    = txn._type === 'income';
               const isCCPay     = txn._type === 'cc_payment';
@@ -544,79 +534,66 @@ export default function AccountDetailPage() {
 
               const isXferIn  = txn._type === 'transfer_in';
               const isXferOut = txn._type === 'transfer_out';
+              const isBizExp  = txn._type === 'biz_expense';
 
-              const isBizExp = txn._type === 'biz_expense';
-
-              let icon, label, sublabel, amountColor, amountSign;
+              let icon, label, sublabel, isIncomeRow, iconBg;
               if (isIncome) {
                 icon = '↓'; label = txn.title; sublabel = txn.source || 'Income';
-                amountColor = 'text-emerald-600'; amountSign = '+';
+                isIncomeRow = true; iconBg = '#D1FAE5';
               } else if (isCCPay) {
-                icon = '✓'; label = txn.note || 'Bill Payment';
+                icon = '✔'; label = txn.note || 'Bill Payment';
                 sublabel = txn.fromAccount ? `From ${txn.fromAccount.name}` : 'Payment';
-                amountColor = 'text-emerald-600'; amountSign = '-';
+                isIncomeRow = true; iconBg = '#D1FAE5';
               } else if (isCCPaySent) {
                 icon = '↑'; label = txn.note || 'CC Bill Payment';
                 sublabel = `To ${txn.creditCardAccount?.name || 'Credit Card'}`;
-                amountColor = 'text-orange-500'; amountSign = '-';
+                isIncomeRow = false; iconBg = '#FEF3C7';
               } else if (isXferIn) {
                 icon = '↙'; label = txn.note || 'Transfer Received';
                 sublabel = `From ${txn.fromAccount?.name || 'Account'}`;
-                amountColor = 'text-emerald-600'; amountSign = '+';
+                isIncomeRow = true; iconBg = '#D1FAE5';
               } else if (isXferOut) {
                 icon = '↗'; label = txn.note || 'Transfer Sent';
                 sublabel = `To ${txn.toAccount?.name || 'Account'}`;
-                amountColor = 'text-blue-500'; amountSign = '-';
+                isIncomeRow = false; iconBg = '#DBEAFE';
               } else if (isBizExp) {
                 icon = '🏭'; label = txn.vendor || txn.category;
                 sublabel = `Business · ${txn.category}${txn.location?.name ? ` · ${txn.location.name}` : ''}`;
-                amountColor = 'text-purple-600'; amountSign = '-';
+                isIncomeRow = false; iconBg = '#EDE9FE';
               } else {
                 icon = '↑'; label = txn.title;
                 sublabel = txn.category?.name || '';
-                amountColor = 'text-red-500'; amountSign = '-';
+                isIncomeRow = false; iconBg = '#FFE4E6';
               }
 
-              const dotBg = (isIncome || isCCPay || isXferIn)
-                ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600'
-                : isCCPaySent
-                  ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-500'
-                  : isXferOut
-                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-500'
-                    : isBizExp
-                      ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600'
-                      : 'bg-red-100 dark:bg-red-900/40 text-red-500';
+              const balColor = isXferOut ? '#3B82F6' : isBizExp ? '#7C3AED' : isCCPaySent ? '#F59E0B' : undefined;
 
               return (
-                <div
+                <TransactionRow
                   key={txn.id}
-                  className={`flex items-center gap-3 px-4 py-3 ${i < transactions.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 ${dotBg}`}>
-                    {icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{label}</p>
-                    <p className="text-xs text-gray-400">
-                      {format(date, 'd MMM yyyy')}{sublabel ? ` · ${sublabel}` : ''}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-bold ${amountColor}`}>
-                      {amountSign}{fmt(txn.amount)}
-                    </p>
-                    <p className={`text-xs ${runBal < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                      {isCC ? 'Owed: ' : 'Bal: '}{runBal < 0 ? '-' : ''}{fmt(runBal)}
-                    </p>
-                  </div>
-                </div>
+                  icon={icon}
+                  iconBg={iconBg}
+                  title={label}
+                  subtitle={`${format(date, 'd MMM yyyy')}${sublabel ? ` · ${sublabel}` : ''}`}
+                  amount={fmt(txn.amount)}
+                  isIncome={isIncomeRow}
+                  isLast={i === transactions.length - 1}
+                  rightSlot={
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: balColor || (isIncomeRow ? '#059669' : '#E11D48'), letterSpacing: '-0.3px' }}>
+                        {isIncomeRow ? '+' : '-'}{fmt(txn.amount)}
+                      </span>
+                      <span style={{ display: 'block', fontSize: 11, color: runBal < 0 ? '#E11D48' : '#B0B8C4' }}>
+                        {isCC ? 'Owed: ' : 'Bal: '}{runBal < 0 ? '-' : ''}{fmt(runBal)}
+                      </span>
+                    </div>
+                  }
+                />
               );
             })}
-          </div>
+          </SurfaceCard>
         )}
       </div>
-
-      <BottomNav />
 
       {showPayBill && (
         <PayBillSheet

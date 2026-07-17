@@ -1,46 +1,44 @@
 const prisma = require('../../lib/prisma');
 
 const list = async (req, res) => {
-  const userId = req.user.userId;
-  const now = new Date();
-  const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  try {
+    const userId = req.user.userId;
+    const now = new Date();
+    const fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [categories, budgets, spendRows] = await Promise.all([
-    prisma.category.findMany({
-      where: { userId },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.budget.findMany({ where: { userId } }),
-    prisma.expense.groupBy({
-      by: ['categoryId'],
-      where: {
-        userId,
-        expenseDate: { gte: fromDate },
-        categoryId: { not: null },
-      },
-      _sum: { amount: true },
-    }),
-  ]);
+    const [categories, budgets, spendRows] = await Promise.all([
+      prisma.category.findMany({ where: { userId }, orderBy: { name: 'asc' } }),
+      prisma.budget.findMany({ where: { userId } }),
+      prisma.expense.groupBy({
+        by: ['categoryId'],
+        where: { userId, expenseDate: { gte: fromDate }, categoryId: { not: null } },
+        _sum: { amount: true },
+      }),
+    ]);
 
-  const budgetMap = Object.fromEntries(budgets.map((b) => [b.categoryId, b]));
-  const spendMap = Object.fromEntries(
-    spendRows.map((r) => [r.categoryId, Number(r._sum.amount || 0)])
-  );
+    const budgetMap = Object.fromEntries(budgets.map((b) => [b.categoryId, b]));
+    const spendMap = Object.fromEntries(
+      spendRows.map((r) => [r.categoryId, Number(r._sum.amount || 0)])
+    );
 
-  const result = categories.map((cat) => {
-    const budget = budgetMap[cat.id] || null;
-    const spent = spendMap[cat.id] || 0;
-    const percentage = budget ? Math.round((spent / Number(budget.amount)) * 100) : null;
-    return {
-      categoryId: cat.id,
-      category: cat,
-      budget: budget ? { id: budget.id, amount: Number(budget.amount) } : null,
-      spent,
-      percentage,
-    };
-  });
+    const result = categories.map((cat) => {
+      const budget = budgetMap[cat.id] || null;
+      const spent = spendMap[cat.id] || 0;
+      const percentage = budget ? Math.round((spent / Number(budget.amount)) * 100) : null;
+      return {
+        categoryId: cat.id,
+        category: cat,
+        budget: budget ? { id: budget.id, amount: Number(budget.amount) } : null,
+        spent,
+        percentage,
+      };
+    });
 
-  res.json(result);
+    res.json(result);
+  } catch (err) {
+    console.error('[budget.list]', err.message);
+    res.status(500).json({ error: 'Failed to load budgets' });
+  }
 };
 
 const upsert = async (req, res) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import { useExchangeRates, useUpdateRate, useRefreshRates } from '../../hooks/useExchangeRates';
 
 const CURRENCY_NAMES = {
@@ -36,7 +36,7 @@ function timeAgo(date) {
 export default function ExchangeRatesPage() {
   const { t } = useTranslation();
   const { data: rates = [], isLoading } = useExchangeRates();
-  const updateRate  = useUpdateRate();
+  const updateRate   = useUpdateRate();
   const refreshRates = useRefreshRates();
   const [editing, setEditing] = useState({});
   const [saved, setSaved]     = useState(null);
@@ -71,68 +71,109 @@ export default function ExchangeRatesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('settings.exchange_rates')} showBack />
 
-      <div className="flex-1 overflow-auto pb-8 p-4 flex flex-col gap-3">
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
 
         {/* Info + refresh button */}
-        <div className="bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-700 rounded-2xl px-4 py-3 flex items-start gap-3">
-          <div className="flex-1">
-            <p className="text-xs text-indigo-700 dark:text-indigo-300 font-medium">
-              Rates update automatically every 6 hours from live market data. You can also tap a rate to edit it manually.
-            </p>
-            {oldestUpdatedAt && (
-              <p className="text-[10px] text-indigo-500 dark:text-indigo-400 mt-1">
-                Last synced: {timeAgo(oldestUpdatedAt)}
+        <SurfaceCard style={{ padding: '12px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, color: '#374151', fontWeight: 500, margin: 0 }}>
+                Rates update automatically every 6 hours from live market data. You can also tap a rate to edit it manually.
               </p>
-            )}
+              {oldestUpdatedAt && (
+                <p style={{ fontSize: 11, color: '#B0B8C4', marginTop: 4, marginBottom: 0 }}>
+                  Last synced: {timeAgo(oldestUpdatedAt)}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshRates.isPending}
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '8px 14px',
+                background: refreshDone ? '#D1FAE5' : '#E6FAF9',
+                color: refreshDone ? '#059669' : '#009E90',
+                border: 'none',
+                borderRadius: 10,
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+            >
+              {refreshRates.isPending ? (
+                <span style={{
+                  display: 'inline-block',
+                  width: 12,
+                  height: 12,
+                  border: '2px solid #00C2B2',
+                  borderTop: '2px solid transparent',
+                  borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite',
+                }} />
+              ) : refreshDone ? (
+                '✓'
+              ) : (
+                '↻'
+              )}
+              {refreshRates.isPending ? 'Syncing…' : refreshDone ? 'Updated!' : 'Sync now'}
+            </button>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshRates.isPending}
-            className={`shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all ${
-              refreshDone
-                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
-                : 'bg-indigo-100 dark:bg-indigo-800 text-indigo-700 dark:text-indigo-300 active:bg-indigo-200'
-            }`}
-          >
-            {refreshRates.isPending ? (
-              <span className="animate-spin inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full" />
-            ) : refreshDone ? (
-              '✓'
-            ) : (
-              '↻'
-            )}
-            {refreshRates.isPending ? 'Syncing…' : refreshDone ? 'Updated!' : 'Sync now'}
-          </button>
-        </div>
+        </SurfaceCard>
 
         {refreshRates.isError && (
-          <div className="bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-700 rounded-xl px-4 py-2">
-            <p className="text-xs text-red-600 dark:text-red-400">Could not reach rate server. Using saved rates.</p>
+          <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '8px 16px' }}>
+            <p style={{ fontSize: 12, color: '#DC2626', margin: 0 }}>Could not reach rate server. Using saved rates.</p>
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+        <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
           {isLoading ? (
-            <div className="flex items-center justify-center py-12 text-gray-300 text-sm">{t('common.loading')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', gap: 10 }}>
+              <span style={{
+                display: 'inline-block',
+                width: 20,
+                height: 20,
+                border: '2px solid #E6FAF9',
+                borderTop: '3px solid #00C2B2',
+                borderRadius: '50%',
+                animation: 'spin 0.7s linear infinite',
+              }} />
+              <span style={{ fontSize: 13, color: '#B0B8C4' }}>{t('common.loading')}</span>
+            </div>
           ) : (
-            rates.map((r) => {
+            rates.map((r, idx) => {
               const isEditing = editing[r.fromCurrency] !== undefined;
               const isSaved   = saved === r.fromCurrency;
               return (
-                <div key={r.fromCurrency} className="px-4 py-3 flex items-center gap-3">
-                  <span className="text-2xl w-9 text-center">{CURRENCY_FLAGS[r.fromCurrency] || '💱'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{r.fromCurrency}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">{CURRENCY_NAMES[r.fromCurrency] || r.fromCurrency}</p>
+                <div
+                  key={r.fromCurrency}
+                  style={{
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    borderBottom: idx < rates.length - 1 ? '1px solid #F0F2F7' : 'none',
+                    background: '#fff',
+                  }}
+                >
+                  <span style={{ fontSize: 22, width: 36, textAlign: 'center' }}>{CURRENCY_FLAGS[r.fromCurrency] || '💱'}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 800, color: '#0A0D14', margin: 0 }}>{r.fromCurrency}</p>
+                    <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>{CURRENCY_NAMES[r.fromCurrency] || r.fromCurrency}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">1 {r.fromCurrency} =</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: '#B0B8C4' }}>1 {r.fromCurrency} =</span>
                     {isEditing ? (
                       <>
-                        <span className="text-xs text-gray-500">₹</span>
+                        <span style={{ fontSize: 12, color: '#6B7280' }}>₹</span>
                         <input
                           type="number"
                           step="0.01"
@@ -141,18 +182,37 @@ export default function ExchangeRatesPage() {
                           onChange={(e) => setEditing((x) => ({ ...x, [r.fromCurrency]: e.target.value }))}
                           onKeyDown={(e) => e.key === 'Enter' && saveRate(r.fromCurrency)}
                           autoFocus
-                          className="w-20 text-sm text-right bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-primary-300 text-gray-800 dark:text-gray-200"
+                          style={{
+                            width: 80,
+                            fontSize: 13,
+                            textAlign: 'right',
+                            background: '#F0F2F7',
+                            border: '1.5px solid #00C2B2',
+                            borderRadius: 8,
+                            padding: '4px 8px',
+                            outline: 'none',
+                            color: '#0A0D14',
+                          }}
                         />
                         <button
                           onClick={() => saveRate(r.fromCurrency)}
                           disabled={updateRate.isPending}
-                          className="text-xs font-semibold text-primary-600 dark:text-primary-400 px-2 py-1 rounded-lg bg-primary-50 dark:bg-primary-900/30 active:bg-primary-100"
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: '#009E90',
+                            padding: '4px 10px',
+                            borderRadius: 8,
+                            background: '#E6FAF9',
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
                         >
                           {t('common.save')}
                         </button>
                         <button
                           onClick={() => setEditing((e) => { const n = { ...e }; delete n[r.fromCurrency]; return n; })}
-                          className="text-xs text-gray-400 px-1"
+                          style={{ fontSize: 12, color: '#B0B8C4', padding: '4px 4px', background: 'none', border: 'none', cursor: 'pointer' }}
                         >
                           ✕
                         </button>
@@ -160,11 +220,17 @@ export default function ExchangeRatesPage() {
                     ) : (
                       <button
                         onClick={() => startEdit(r.fromCurrency, r.rate)}
-                        className={`text-sm font-bold px-2 py-1 rounded-lg transition-colors ${
-                          isSaved
-                            ? 'text-green-600 bg-green-50 dark:bg-green-900/30'
-                            : 'text-gray-800 dark:text-gray-100 bg-gray-100 dark:bg-gray-700 active:bg-gray-200'
-                        }`}
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: isSaved ? '#059669' : '#00C2B2',
+                          padding: '4px 10px',
+                          borderRadius: 8,
+                          background: isSaved ? '#D1FAE5' : '#E6FAF9',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
+                        }}
                       >
                         {isSaved ? '✓ ₹' : '₹'}{Number(r.rate).toFixed(Number(r.rate) < 1 ? 3 : 2)}
                       </button>
@@ -174,13 +240,16 @@ export default function ExchangeRatesPage() {
               );
             })
           )}
-        </div>
+        </SurfaceCard>
 
-        <p className="text-xs text-center text-gray-400 dark:text-gray-500 px-4">
+        <p style={{ fontSize: 11, color: '#B0B8C4', textAlign: 'center', padding: '0 16px', margin: 0 }}>
           Tap any rate to override it manually. Rates are sourced from the European Central Bank.
         </p>
       </div>
-      <BottomNav />
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

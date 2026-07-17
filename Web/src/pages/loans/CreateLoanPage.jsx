@@ -3,12 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
-import Button from '../../components/ui/Button';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import { useCreateLoan } from '../../hooks/useLoans';
 import { calculateEMI } from '../../utils/emi';
 
 const fmt = (n) => `₹${Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+
+const inputStyle = {
+  width: '100%',
+  background: '#F0F2F7',
+  border: 'none',
+  borderRadius: 10,
+  padding: '11px 14px',
+  fontSize: 15,
+  color: '#0A0D14',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const labelStyle = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: '#B0B8C4',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  marginBottom: 6,
+  display: 'block',
+};
 
 export default function CreateLoanPage() {
   const { t } = useTranslation();
@@ -43,107 +64,152 @@ export default function CreateLoanPage() {
   const isValid = form.name && p > 0 && r >= 0 && n > 0 && form.startDate;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('loans.new_loan')} showBack />
-      <div className="flex-1 pb-8 p-4 flex flex-col gap-4">
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 flex flex-col gap-4">
-          {/* Name */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('loans.loan_name')}</label>
+      <div style={{
+        flex: 1,
+        paddingBottom: 'calc(100px + env(safe-area-inset-bottom))',
+        padding: 16,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
+
+        <SurfaceCard style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Loan name */}
+          <div>
+            <label style={labelStyle}>{t('loans.loan_name')}</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="e.g. Car Loan, Home Loan"
-              className="px-3 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+              style={inputStyle}
             />
           </div>
 
           {/* Principal */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('loans.principal_amount', 'Principal amount')}</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₹</span>
+          <div>
+            <label style={labelStyle}>{t('loans.principal_amount', 'Principal amount')}</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{
+                position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                color: '#B0B8C4', fontSize: 15, pointerEvents: 'none',
+              }}>₹</span>
               <input
                 type="number"
                 inputMode="decimal"
                 value={form.principal}
                 onChange={(e) => set('principal', e.target.value)}
-                placeholder="e.g. 500000"
-                className="w-full pl-7 pr-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                placeholder="500000"
+                style={{ ...inputStyle, paddingLeft: 28 }}
               />
             </div>
           </div>
 
           {/* Interest rate */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('loans.interest_rate')}</label>
-            <div className="relative">
+          <div>
+            <label style={labelStyle}>{t('loans.interest_rate')}</label>
+            <div style={{ position: 'relative' }}>
               <input
                 type="number"
                 inputMode="decimal"
                 value={form.interestRate}
                 onChange={(e) => set('interestRate', e.target.value)}
-                placeholder="e.g. 8.5"
-                className="w-full pr-8 pl-3 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                placeholder="8.5"
+                style={{ ...inputStyle, paddingRight: 36 }}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+              <span style={{
+                position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                color: '#B0B8C4', fontSize: 15, pointerEvents: 'none',
+              }}>%</span>
             </div>
           </div>
 
           {/* Tenure */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('loans.tenure')}</label>
-            <div className="relative">
+          <div>
+            <label style={labelStyle}>{t('loans.tenure')}</label>
+            <div style={{ position: 'relative' }}>
               <input
                 type="number"
                 inputMode="numeric"
                 value={form.tenureMonths}
                 onChange={(e) => set('tenureMonths', e.target.value)}
-                placeholder="e.g. 60"
-                className="w-full pr-16 pl-3 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                placeholder="60"
+                style={{ ...inputStyle, paddingRight: 70 }}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{t('loans.months')}</span>
+              <span style={{
+                position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                color: '#B0B8C4', fontSize: 13, pointerEvents: 'none',
+              }}>{t('loans.months')}</span>
             </div>
           </div>
 
           {/* Start date */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('loans.start_date')}</label>
+          <div>
+            <label style={labelStyle}>{t('loans.start_date')}</label>
             <input
               type="date"
               value={form.startDate}
               onChange={(e) => set('startDate', e.target.value)}
-              className="px-3 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-xl text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+              style={inputStyle}
             />
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* EMI preview */}
         {previewEMI && (
-          <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-700 rounded-2xl px-4 py-4 flex flex-col gap-2">
-            <p className="text-xs font-semibold text-primary-700 dark:text-primary-300 uppercase tracking-wider">{t('loans.emi_preview')}</p>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-300">{t('loans.monthly_emi')}</span>
-              <span className="text-sm font-bold text-primary-700 dark:text-primary-300">{fmt(previewEMI)}</span>
+          <div style={{
+            background: '#E6FAF9',
+            borderRadius: 16,
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}>
+            <p style={{
+              fontSize: 11, fontWeight: 700, color: '#009E90',
+              textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0,
+            }}>
+              {t('loans.emi_preview')}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, color: '#374151' }}>{t('loans.monthly_emi')}</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: '#00C2B2' }}>{fmt(previewEMI)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-300">{t('loans.total_payable')}</span>
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{fmt(totalPayable)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, color: '#374151' }}>{t('loans.total_payable')}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14' }}>{fmt(totalPayable)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-300">{t('loans.total_interest')}</span>
-              <span className="text-sm font-semibold text-red-500">{fmt(totalInterest)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 14, color: '#374151' }}>{t('loans.total_interest')}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#E11D48' }}>{fmt(totalInterest)}</span>
             </div>
           </div>
         )}
 
-        <Button variant="primary" disabled={!isValid || create.isPending} onClick={handleSubmit}>
+        {/* Submit */}
+        <button
+          onClick={handleSubmit}
+          disabled={!isValid || create.isPending}
+          style={{
+            width: '100%',
+            padding: '15px 0',
+            background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: isValid && !create.isPending ? 'pointer' : 'not-allowed',
+            opacity: isValid && !create.isPending ? 1 : 0.5,
+          }}
+        >
           {create.isPending ? t('common.saving') : t('loans.add')}
-        </Button>
+        </button>
       </div>
-      <BottomNav />
     </div>
   );
 }

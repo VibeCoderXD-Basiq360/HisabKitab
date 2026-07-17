@@ -7,10 +7,12 @@ import {
   AreaChart, Area, Cell,
 } from 'recharts';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
 import { useAnalytics, useTrend } from '../../hooks/useExpenses';
 import { useBudgets } from '../../hooks/useBudgets';
 import { useInsights } from '../../hooks/useInsights';
+import HeroCard from '../../components/ui/HeroCard';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import ProgressBar from '../../components/ui/ProgressBar';
 
 const now = new Date();
 
@@ -90,7 +92,17 @@ function ChangeBadge({ curr, prev, label }) {
   const pct = Math.round(((curr - prev) / prev) * 100);
   const up = pct > 0;
   return (
-    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${up ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 4,
+      padding: '2px 8px',
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 600,
+      color: up ? '#E11D48' : '#059669',
+      background: up ? 'rgba(225,29,72,0.15)' : 'rgba(5,150,105,0.15)',
+    }}>
       <span>{up ? '▲' : '▼'}</span>
       <span>{Math.abs(pct)}% vs {label}</span>
     </div>
@@ -99,11 +111,21 @@ function ChangeBadge({ curr, prev, label }) {
 
 function StatMini({ icon, label, value, sub }) {
   return (
-    <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl p-3 flex flex-col gap-1 shadow-sm min-w-0">
+    <div style={{
+      flex: 1,
+      background: '#fff',
+      borderRadius: 16,
+      padding: 14,
+      boxShadow: '0 2px 14px rgba(0,0,0,0.05)',
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 4,
+    }}>
       <span className="text-lg">{icon}</span>
-      <p className="text-xs text-gray-400 dark:text-gray-500 leading-tight truncate">{label}</p>
-      <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{value}</p>
-      {sub && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{sub}</p>}
+      <p style={{ color: '#B0B8C4', fontSize: 12, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</p>
+      <p style={{ color: '#0A0D14', fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+      {sub && <p style={{ color: '#B0B8C4', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</p>}
     </div>
   );
 }
@@ -111,7 +133,7 @@ function StatMini({ icon, label, value, sub }) {
 function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, budget }) {
   const { t } = useTranslation();
   const pct = grandTotal > 0 ? Math.round((total / grandTotal) * 100) : 0;
-  const barColor = color || '#6366f1';
+  const barColor = color || '#00C2B2';
   const Tag = onClick ? 'button' : 'div';
 
   const budgetOver = budget && budget.pct >= 100;
@@ -121,18 +143,18 @@ function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, bu
     <Tag onClick={onClick} className={`flex flex-col gap-1.5 w-full text-left ${onClick ? 'active:opacity-60' : ''}`}>
       <div className="flex items-center gap-2">
         <span className="text-base shrink-0">{icon || '💳'}</span>
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1 truncate">{name}</span>
-        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+        <span style={{ color: '#0A0D14', fontSize: 14, fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+        <span style={{ color: '#B0B8C4', fontSize: 12, flexShrink: 0 }}>
           {count !== 1 ? t('analytics.txn_other', { n: count }) : t('analytics.txn_one', { n: count })}
         </span>
-        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 shrink-0 w-8 text-right">{pct}%</span>
-        <span className="text-sm font-bold text-gray-900 dark:text-white shrink-0">{fmt(total)}</span>
-        {onClick && <span className="text-gray-300 dark:text-gray-600 text-base shrink-0">›</span>}
+        <span style={{ color: '#B0B8C4', fontSize: 12, fontWeight: 600, flexShrink: 0, width: 32, textAlign: 'right' }}>{pct}%</span>
+        <span style={{ color: '#0A0D14', fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{fmt(total)}</span>
+        {onClick && <span style={{ color: '#B0B8C4', fontSize: 16, flexShrink: 0 }}>›</span>}
       </div>
 
       {/* Spend share bar */}
-      <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+      <div style={{ height: 6, borderRadius: 3, background: '#F0F2F7', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 3 }} />
       </div>
 
       {/* Budget bar — only when limit is set */}
@@ -148,12 +170,7 @@ function BreakdownRow({ name, icon, color, total, count, grandTotal, onClick, bu
                 : t('analytics.budget_left', { amount: fmt(budget.limit - budget.spent) })}
             </span>
           </div>
-          <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(budget.pct, 100)}%`, backgroundColor: barProgressColor(budget.pct) }}
-            />
-          </div>
+          <ProgressBar pct={budget.pct} height={5} />
         </div>
       )}
     </Tag>
@@ -245,7 +262,7 @@ export default function AnalyticsPage() {
   async function handleShare() {
     const lines = [
       `💸 HisabKitab — ${period.label}`,
-      `━━━━━━━━━━━━━━━━━━━━`,
+      `────────────────────`,
       `Total Spent: ${fmt(total)}`,
       `Transactions: ${txnCount}`,
     ];
@@ -278,28 +295,46 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <TopBar title={t('analytics.title')} showBack />
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <TopBar title="Analytics" />
 
       {/* Period selector */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 pt-2 pb-2 sticky top-0 z-10">
+      <div style={{ background: '#F0F2F7', padding: '8px 16px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
           {PERIODS.map((p, i) => (
             <button
               key={p.labelKey}
               onClick={() => setPeriodIdx(i)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0 ${
-                periodIdx === i ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-              }`}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 999,
+                fontSize: 12,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                flexShrink: 0,
+                background: periodIdx === i ? '#00C2B2' : '#E9ECF0',
+                color: periodIdx === i ? '#fff' : '#B0B8C4',
+                transition: 'background 0.15s, color 0.15s',
+              }}
             >
               {t(`analytics.${p.labelKey}`)}
             </button>
           ))}
           <button
             onClick={() => setPeriodIdx(CUSTOM_IDX)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0 ${
-              isCustom ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-            }`}
+            style={{
+              padding: '6px 12px',
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              flexShrink: 0,
+              background: isCustom ? '#00C2B2' : '#E9ECF0',
+              color: isCustom ? '#fff' : '#B0B8C4',
+              transition: 'background 0.15s, color 0.15s',
+            }}
           >
             {t('analytics.custom')}
           </button>
@@ -310,25 +345,25 @@ export default function AnalyticsPage() {
               type="date"
               value={customFrom}
               onChange={(e) => setCustomFrom(e.target.value)}
-              className="flex-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-primary-400"
+              style={{ flex: 1, fontSize: 13, background: '#fff', border: '1.5px solid #E9ECF0', borderRadius: 12, padding: '10px 12px', outline: 'none' }}
             />
-            <span className="text-xs text-gray-400 dark:text-gray-500 self-center">to</span>
+            <span style={{ fontSize: 12, color: '#B0B8C4', alignSelf: 'center' }}>to</span>
             <input
               type="date"
               value={customTo}
               onChange={(e) => setCustomTo(e.target.value)}
-              className="flex-1 text-xs border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-primary-400"
+              style={{ flex: 1, fontSize: 13, background: '#fff', border: '1.5px solid #E9ECF0', borderRadius: 12, padding: '10px 12px', outline: 'none' }}
             />
           </div>
         )}
       </div>
 
-      <div className="flex-1 p-4 pb-28 flex flex-col gap-4">
+      <div style={{ flex: 1, padding: '0 16px', paddingTop: 12, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
         {/* 6-Month Trend */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
+        <SurfaceCard>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('analytics.trend')}</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14' }}>{t('analytics.trend')}</p>
             {trendData && (
               <p className="text-xs text-gray-400">
                 {t('analytics.total', { amount: fmt(trendData.reduce((s, m) => s + m.total, 0)) })}
@@ -337,7 +372,7 @@ export default function AnalyticsPage() {
           </div>
           {!trendData ? (
             <div className="h-40 flex items-center justify-center">
-              <p className="text-xs text-gray-400 dark:text-gray-500">{t('common.loading')}</p>
+              <p className="text-xs text-gray-400">{t('common.loading')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={160}>
@@ -347,22 +382,22 @@ export default function AnalyticsPage() {
                 <Tooltip content={<TrendTooltip />} cursor={{ fill: '#f3f4f6', radius: 6 }} />
                 <Bar dataKey="total" radius={[5, 5, 0, 0]}>
                   {trendData.map((entry, i) => (
-                    <Cell key={i} fill={entry.isCurrent ? '#6366f1' : '#e0e7ff'} />
+                    <Cell key={i} fill={entry.isCurrent ? '#00C2B2' : 'rgba(0,194,178,0.18)'} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
-        </div>
+        </SurfaceCard>
 
         {isLoading ? (
-          <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-8">{t('common.loading')}</p>
+          <p style={{ textAlign: 'center', fontSize: 14, color: '#B0B8C4', padding: '32px 0' }}>{t('common.loading')}</p>
         ) : (
           <>
             {/* Hero summary */}
-            <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl p-5 text-white shadow-sm">
+            <HeroCard>
               <div className="flex items-start justify-between mb-1">
-                <p className="text-xs font-medium opacity-70">{period.label}</p>
+                <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}>{period.label}</p>
                 <div className="flex items-center gap-2">
                   {comparison && comparison.prev > 0 && (
                     <ChangeBadge curr={comparison.curr} prev={comparison.prev} label={comparison.label} />
@@ -370,7 +405,8 @@ export default function AnalyticsPage() {
                   {total > 0 && (
                     <button
                       onClick={handleShare}
-                      className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-sm hover:bg-white/30 transition-colors"
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-colors"
+                      style={{ background: 'rgba(255,255,255,0.2)' }}
                       title="Share summary"
                     >
                       📤
@@ -378,13 +414,13 @@ export default function AnalyticsPage() {
                   )}
                 </div>
               </div>
-              <p className="text-4xl font-bold tracking-tight mt-1">{fmt(total)}</p>
-              <div className="flex items-center gap-4 mt-3 opacity-80">
-                <p className="text-xs">{t('analytics.transactions', { n: txnCount })}</p>
-                <p className="text-xs">·</p>
-                <p className="text-xs">{t('analytics.avg_txn', { amount: fmt(avgPerTxn) })}</p>
+              <p style={{ fontSize: 34, fontWeight: 800, color: '#fff', marginTop: 4 }}>{fmt(total)}</p>
+              <div className="flex items-center gap-4 mt-3" style={{ opacity: 0.8 }}>
+                <p className="text-xs text-white">{t('analytics.transactions', { n: txnCount })}</p>
+                <p className="text-xs text-white">·</p>
+                <p className="text-xs text-white">{t('analytics.avg_txn', { amount: fmt(avgPerTxn) })}</p>
               </div>
-            </div>
+            </HeroCard>
 
             {/* 3-stat row */}
             <div className="flex gap-3">
@@ -395,7 +431,7 @@ export default function AnalyticsPage() {
                 sub={topCategory ? fmt(topCategory.total) : null}
               />
               <StatMini
-                icon="🔝"
+                icon="🔔"
                 label={t('analytics.biggest')}
                 value={topExpense ? fmt(topExpense.amount) : '—'}
                 sub={topExpense?.title || topExpense?.category?.name || null}
@@ -410,27 +446,27 @@ export default function AnalyticsPage() {
 
             {/* Spending insights — only for This Month */}
             {periodIdx === 0 && insights.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">💡 Spending Insights</h2>
+              <SurfaceCard>
+                <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', marginBottom: 12 }}>💡 Spending Insights</h2>
                 <div className="flex flex-col gap-2.5">
                   {insights.map((ins, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <span className="text-base shrink-0 mt-0.5">{ins.icon}</span>
-                      <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{ins.message}</p>
+                      <p style={{ fontSize: 12, color: '#0A0D14', lineHeight: 1.6 }}>{ins.message}</p>
                     </div>
                   ))}
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* Source breakdown — manual vs tab vs reimbursements */}
             {data?.bySource && (data.bySource.tab > 0 || data.bySource.reimbursements > 0) && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">🤝 {t('analytics.by_source')}</h2>
+              <SurfaceCard>
+                <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', marginBottom: 12 }}>🤝 {t('analytics.by_source')}</h2>
                 <div className="flex flex-col gap-3">
                   {[
-                    { label: t('analytics.source_manual'), value: data.bySource.manual, color: '#6366f1', icon: '✏️' },
-                    { label: t('analytics.source_tab'), value: data.bySource.tab, color: '#0d9488', icon: '🤝' },
+                    { label: t('analytics.source_manual'), value: data.bySource.manual, color: '#00C2B2', icon: '✏️' },
+                    { label: t('analytics.source_tab'), value: data.bySource.tab, color: '#6366F1', icon: '🤝' },
                     { label: t('analytics.source_reimbursements'), value: data.bySource.reimbursements, color: '#22c55e', icon: '↩' },
                   ].filter((r) => r.value > 0).map((row) => {
                     const gross = data.bySource.manual + data.bySource.tab;
@@ -439,50 +475,50 @@ export default function AnalyticsPage() {
                       <div key={row.label} className="flex flex-col gap-1.5">
                         <div className="flex items-center gap-2">
                           <span className="text-base shrink-0">{row.icon}</span>
-                          <span className="text-sm font-medium text-gray-800 dark:text-gray-200 flex-1">{row.label}</span>
-                          {row.icon !== '↩' && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{pct}%</span>}
-                          <span className="text-sm font-bold text-gray-900 dark:text-white">
+                          <span style={{ fontSize: 14, fontWeight: 500, color: '#0A0D14', flex: 1 }}>{row.label}</span>
+                          {row.icon !== '↩' && <span style={{ fontSize: 12, fontWeight: 600, color: '#B0B8C4', flexShrink: 0 }}>{pct}%</span>}
+                          <span style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', flexShrink: 0 }}>
                             {row.icon === '↩' ? `−${fmt(row.value)}` : fmt(row.value)}
                           </span>
                         </div>
                         {row.icon !== '↩' && (
-                          <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: row.color }} />
+                          <div style={{ height: 6, borderRadius: 3, background: '#F0F2F7', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: row.color, borderRadius: 3, transition: 'width 0.7s' }} />
                           </div>
                         )}
                       </div>
                     );
                   })}
-                  <div className="border-t border-gray-100 dark:border-gray-700 pt-2 mt-1 flex justify-between items-center">
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.source_net')}</span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                  <div style={{ borderTop: '1px solid #F0F2F7', paddingTop: 8, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#B0B8C4' }}>{t('analytics.source_net')}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }}>
                       {fmt(data.bySource.manual + data.bySource.tab - data.bySource.reimbursements)}
                     </span>
                   </div>
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* Daily spend chart */}
             {period.showDaily && dailyData.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">{t('analytics.daily_spend')}</p>
+              <SurfaceCard>
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', marginBottom: 12 }}>{t('analytics.daily_spend')}</p>
                 <ResponsiveContainer width="100%" height={90}>
                   <BarChart data={dailyData} barCategoryGap="20%" margin={{ top: 2, right: 2, left: 0, bottom: 0 }}>
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#d1d5db' }} interval={4} />
                     <Tooltip content={<DailyTooltip />} cursor={{ fill: '#f9fafb', radius: 4 }} />
-                    <Bar dataKey="total" fill="#c7d2fe" radius={[3, 3, 0, 0]} activeBar={{ fill: '#6366f1' }} />
+                    <Bar dataKey="total" fill="rgba(0,194,178,0.25)" radius={[3, 3, 0, 0]} activeBar={{ fill: '#00C2B2' }} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* Category breakdown */}
             {data?.byCategory?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
+              <SurfaceCard>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">🗂️ {t('analytics.by_category')}</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.tap_see')}</p>
+                  <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14' }}>🗂️ {t('analytics.by_category')}</h2>
+                  <p style={{ fontSize: 12, color: '#B0B8C4' }}>{t('analytics.tap_see')}</p>
                 </div>
                 <div className="flex flex-col gap-4">
                   {data.byCategory.map((item, i) => (
@@ -499,15 +535,15 @@ export default function AnalyticsPage() {
                     />
                   ))}
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* Payment method breakdown */}
             {data?.byPaymentType?.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
+              <SurfaceCard>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">💳 {t('analytics.by_payment')}</h2>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{t('analytics.tap_see')}</p>
+                  <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14' }}>💳 {t('analytics.by_payment')}</h2>
+                  <p style={{ fontSize: 12, color: '#B0B8C4' }}>{t('analytics.tap_see')}</p>
                 </div>
                 <div className="flex flex-col gap-4">
                   {data.byPaymentType.map((item, i) => (
@@ -523,7 +559,7 @@ export default function AnalyticsPage() {
                     />
                   ))}
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {!data?.byCategory?.length && !data?.byPaymentType?.length && (
@@ -536,29 +572,15 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* Net worth entry point */}
-      <div className="mx-4 mb-2">
-        <button
-          onClick={() => navigate('/net-worth')}
-          className="w-full flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-100 dark:border-emerald-800 rounded-2xl px-4 py-3"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">💎</span>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">Net Worth Dashboard</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Assets · Liabilities · Snapshot</p>
-            </div>
-          </div>
-          <span className="text-gray-400 text-sm">→</span>
-        </button>
-      </div>
 
       {shareToast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none animate-fade-in">
+        <div
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 text-sm font-medium px-4 py-2 rounded-full shadow-lg pointer-events-none animate-fade-in"
+          style={{ background: '#0A0D14', color: '#fff' }}
+        >
           {shareToast}
         </div>
       )}
-      <BottomNav />
     </div>
   );
 }

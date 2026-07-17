@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness, useInventoryItems, useCustomers, useCreateCustomer, useCreateJob } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 
 const n = v => Number(v) || 0;
 
@@ -30,6 +31,13 @@ function computeCosts({ gramsUsed, filamentCostPerKg, printTimeHr, printerCostRs
 }
 
 const inr = v => `₹${Math.round(Math.abs(n(v))).toLocaleString('en-IN')}`;
+
+const inputStyle = {
+  width:'100%', padding:'11px 14px', background:'#F0F2F7', border:'none',
+  borderRadius:10, fontSize:13, color:'#0A0D14', outline:'none', boxSizing:'border-box',
+};
+const labelStyle = { fontSize:11, fontWeight:600, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.06em', display:'block', marginBottom:5 };
+const sectionHeaderStyle = { fontSize:11, fontWeight:700, color:'#B0B8C4', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12 };
 
 export default function NewJobPage() {
   const navigate  = useNavigate();
@@ -133,220 +141,258 @@ export default function NewJobPage() {
     }
   }
 
-  const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 text-sm';
-  const labelCls = 'text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1 block';
-  const sectionCls = 'bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm space-y-3';
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-10">
+    <div style={{ minHeight:'100vh', background:'#F0F2F7', paddingBottom:'calc(100px + env(safe-area-inset-bottom))' }}>
       <TopBar title="New Job" onBack={() => navigate('/business/jobs')} />
 
-      <form onSubmit={handleSubmit} className="px-4 pt-4 space-y-4">
+      <form onSubmit={handleSubmit} style={{ padding:'16px 16px 0', display:'flex', flexDirection:'column', gap:14 }}>
 
         {/* Basic info */}
-        <div className={sectionCls}>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Job Info</p>
-          <div><label className={labelCls}>Title *</label>
-            <input className={inputCls} required value={form.title} onChange={e => setF('title', e.target.value)} placeholder="e.g. Custom phone stand" />
+        <SurfaceCard>
+          <p style={sectionHeaderStyle}>Job Info</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div>
+              <label style={labelStyle}>Title *</label>
+              <input style={inputStyle} required value={form.title} onChange={e => setF('title', e.target.value)} placeholder="e.g. Custom phone stand" />
+            </div>
+            <div>
+              <label style={labelStyle}>Location</label>
+              <select style={inputStyle} value={form.locationId} onChange={e => setF('locationId', e.target.value)}>
+                {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Customer</label>
+              {newCustMode ? (
+                <div style={{ display:'flex', gap:8 }}>
+                  <input style={{ ...inputStyle, flex:1 }} placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
+                  <button type="button" onClick={() => setNewCustMode(false)} style={{ background:'none', border:'none', fontSize:12, color:'#B0B8C4', cursor:'pointer', padding:'0 8px' }}>Cancel</button>
+                </div>
+              ) : (
+                <div style={{ display:'flex', gap:8 }}>
+                  <select style={{ ...inputStyle, flex:1 }} value={form.customerId} onChange={e => setF('customerId', e.target.value)}>
+                    <option value="">— No customer —</option>
+                    {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <button type="button" onClick={() => setNewCustMode(true)} style={{ background:'none', border:'none', fontSize:12, color:'#00C2B2', fontWeight:700, cursor:'pointer', padding:'0 8px', whiteSpace:'nowrap' }}>+ New</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label style={labelStyle}>Order date</label>
+              <input style={inputStyle} type="date" value={form.orderDate} onChange={e => setF('orderDate', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Notes (optional)</label>
+              <textarea style={{ ...inputStyle, resize:'vertical', minHeight:60 }} rows={2} value={form.note} onChange={e => setF('note', e.target.value)} />
+            </div>
           </div>
-          <div><label className={labelCls}>Location</label>
-            <select className={inputCls} value={form.locationId} onChange={e => setF('locationId', e.target.value)}>
-              {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Customer</label>
-            {newCustMode ? (
-              <div className="flex gap-2">
-                <input className={`${inputCls} flex-1`} placeholder="Customer name" value={newCustName} onChange={e => setNewCustName(e.target.value)} />
-                <button type="button" onClick={() => setNewCustMode(false)} className="text-xs text-gray-400 px-2">Cancel</button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <select className={`${inputCls} flex-1`} value={form.customerId} onChange={e => setF('customerId', e.target.value)}>
-                  <option value="">— No customer —</option>
-                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <button type="button" onClick={() => setNewCustMode(true)} className="text-xs text-primary-600 dark:text-primary-400 font-semibold px-2 shrink-0">+ New</button>
-              </div>
-            )}
-          </div>
-          <div><label className={labelCls}>Order date</label>
-            <input className={inputCls} type="date" value={form.orderDate} onChange={e => setF('orderDate', e.target.value)} />
-          </div>
-          <div><label className={labelCls}>Notes (optional)</label>
-            <textarea className={inputCls} rows={2} value={form.note} onChange={e => setF('note', e.target.value)} />
-          </div>
-        </div>
+        </SurfaceCard>
 
         {/* Material + print */}
-        <div className={sectionCls}>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Material &amp; Print</p>
-          <div>
-            <label className={labelCls}>Filament</label>
-            <select className={inputCls} value={form.filamentItemId} onChange={e => onFilamentChange(e.target.value)}>
-              <option value="">— manual entry —</option>
-              {filamentItems.map(i => <option key={i.id} value={i.id}>{i.name} · ₹{(i.unit === 'KG' ? n(i.costPrice) : n(i.costPrice) * 1000).toFixed(0)}/kg</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelCls}>₹/kg filament</label>
-              <input className={inputCls} type="number" value={form.filamentCostPerKg} onChange={e => setF('filamentCostPerKg', e.target.value)} placeholder="1000" />
+        <SurfaceCard>
+          <p style={sectionHeaderStyle}>Material &amp; Print</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div>
+              <label style={labelStyle}>Filament</label>
+              <select style={inputStyle} value={form.filamentItemId} onChange={e => onFilamentChange(e.target.value)}>
+                <option value="">— manual entry —</option>
+                {filamentItems.map(i => <option key={i.id} value={i.id}>{i.name} · ₹{(i.unit === 'KG' ? n(i.costPrice) : n(i.costPrice) * 1000).toFixed(0)}/kg</option>)}
+              </select>
             </div>
-            <div><label className={labelCls}>Grams used</label>
-              <input className={inputCls} type="number" value={form.gramsUsed} onChange={e => setF('gramsUsed', e.target.value)} placeholder="50" />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>Print time</label>
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <input className={inputCls} type="number" min="0" value={form.printTimeHr} onChange={e => setF('printTimeHr', e.target.value)} />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">hr</span>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div>
+                <label style={labelStyle}>₹/kg filament</label>
+                <input style={inputStyle} type="number" value={form.filamentCostPerKg} onChange={e => setF('filamentCostPerKg', e.target.value)} placeholder="1000" />
               </div>
-              <div className="flex-1 relative">
-                <input className={inputCls} type="number" min="0" max="59" value={form.printTimeMin} onChange={e => setF('printTimeMin', e.target.value)} />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">min</span>
+              <div>
+                <label style={labelStyle}>Grams used</label>
+                <input style={inputStyle} type="number" value={form.gramsUsed} onChange={e => setF('gramsUsed', e.target.value)} placeholder="50" />
               </div>
             </div>
+            <div>
+              <label style={labelStyle}>Print time</label>
+              <div style={{ display:'flex', gap:8 }}>
+                <div style={{ flex:1, position:'relative' }}>
+                  <input style={inputStyle} type="number" min="0" value={form.printTimeHr} onChange={e => setF('printTimeHr', e.target.value)} />
+                  <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, color:'#B0B8C4' }}>hr</span>
+                </div>
+                <div style={{ flex:1, position:'relative' }}>
+                  <input style={inputStyle} type="number" min="0" max="59" value={form.printTimeMin} onChange={e => setF('printTimeMin', e.target.value)} />
+                  <span style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', fontSize:11, color:'#B0B8C4' }}>min</span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Delivery / courier (₹)</label>
+              <input style={inputStyle} type="number" value={form.deliveryCost} onChange={e => setF('deliveryCost', e.target.value)} />
+            </div>
           </div>
-          <div><label className={labelCls}>Delivery / courier (₹)</label>
-            <input className={inputCls} type="number" value={form.deliveryCost} onChange={e => setF('deliveryCost', e.target.value)} />
-          </div>
-        </div>
+        </SurfaceCard>
 
         {/* Add-ons & packaging */}
-        <div className={sectionCls}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Add-ons &amp; Packaging</p>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => addJobItem('PACKAGING')} className="text-xs text-primary-600 dark:text-primary-400 font-semibold">+ Packaging</button>
-              <button type="button" onClick={() => addJobItem('ADDON')} className="text-xs text-primary-600 dark:text-primary-400 font-semibold">+ Add-on</button>
+        <SurfaceCard>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <p style={sectionHeaderStyle}>Add-ons &amp; Packaging</p>
+            <div style={{ display:'flex', gap:8 }}>
+              <button type="button" onClick={() => addJobItem('PACKAGING')} style={{ background:'none', border:'none', fontSize:12, color:'#00C2B2', fontWeight:700, cursor:'pointer' }}>+ Packaging</button>
+              <button type="button" onClick={() => addJobItem('ADDON')} style={{ background:'none', border:'none', fontSize:12, color:'#00C2B2', fontWeight:700, cursor:'pointer' }}>+ Add-on</button>
             </div>
           </div>
-          {jobItems.map((item, i) => (
-            <div key={i} className="flex gap-2 items-start">
-              <div className="flex-1 space-y-1.5">
-                <select className={inputCls} value={item.itemId} onChange={e => onItemSelect(i, e.target.value)}>
-                  <option value="">Custom item…</option>
-                  {items.filter(x => x.category !== 'FILAMENT' && x.isActive).map(x =>
-                    <option key={x.id} value={x.id}>{x.name}</option>)}
-                </select>
-                {!item.itemId && <input className={inputCls} placeholder="Item name" value={item.name} onChange={e => updateJobItem(i, { name: e.target.value })} />}
-                <div className="flex gap-2">
-                  <input className={inputCls} type="number" placeholder="Qty" value={item.quantity}
-                    onChange={e => updateJobItem(i, { quantity: e.target.value })} />
-                  <input className={inputCls} type="number" placeholder="Unit cost ₹" value={item.unitCost}
-                    onChange={e => updateJobItem(i, { unitCost: e.target.value })} />
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {jobItems.map((item, i) => (
+              <div key={i} style={{ display:'flex', gap:8, alignItems:'flex-start' }}>
+                <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
+                  <select style={inputStyle} value={item.itemId} onChange={e => onItemSelect(i, e.target.value)}>
+                    <option value="">Custom item…</option>
+                    {items.filter(x => x.category !== 'FILAMENT' && x.isActive).map(x =>
+                      <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
+                  {!item.itemId && <input style={inputStyle} placeholder="Item name" value={item.name} onChange={e => updateJobItem(i, { name: e.target.value })} />}
+                  <div style={{ display:'flex', gap:6 }}>
+                    <input style={{ ...inputStyle, flex:1 }} type="number" placeholder="Qty" value={item.quantity} onChange={e => updateJobItem(i, { quantity: e.target.value })} />
+                    <input style={{ ...inputStyle, flex:1 }} type="number" placeholder="Unit cost ₹" value={item.unitCost} onChange={e => updateJobItem(i, { unitCost: e.target.value })} />
+                  </div>
+                  <p style={{ fontSize:11, color:'#B0B8C4' }}>{item.type} · ₹{(n(item.quantity) * n(item.unitCost)).toFixed(0)}</p>
                 </div>
-                <p className="text-xs text-gray-400">{item.type} · ₹{(n(item.quantity) * n(item.unitCost)).toFixed(0)}</p>
-              </div>
-              <button type="button" onClick={() => removeJobItem(i)} className="text-red-400 text-lg mt-1">✕</button>
-            </div>
-          ))}
-        </div>
-
-        {/* Machine & power */}
-        <div className={sectionCls}>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Machine &amp; Power</p>
-          <div className="grid grid-cols-2 gap-3">
-            {[['Printer cost (₹)', 'printerCostRs'], ['Printer life (hr)', 'printerLifeHr'],
-              ['Power (W)', 'printerPowerW'], ['Electricity ₹/kWh', 'electricityRateKwh']].map(([label, key]) => (
-              <div key={key}><label className={labelCls}>{label}</label>
-                <input className={inputCls} type="number" value={form[key]} onChange={e => setF(key, e.target.value)} />
+                <button type="button" onClick={() => removeJobItem(i)} style={{ background:'none', border:'none', color:'#E11D48', fontSize:18, cursor:'pointer', marginTop:2, padding:0 }}>✕</button>
               </div>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
+
+        {/* Machine & power */}
+        <SurfaceCard>
+          <p style={sectionHeaderStyle}>Machine &amp; Power</p>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            {[['Printer cost (₹)', 'printerCostRs'], ['Printer life (hr)', 'printerLifeHr'],
+              ['Power (W)', 'printerPowerW'], ['Electricity ₹/kWh', 'electricityRateKwh']].map(([label, key]) => (
+              <div key={key}>
+                <label style={labelStyle}>{label}</label>
+                <input style={inputStyle} type="number" value={form[key]} onChange={e => setF(key, e.target.value)} />
+              </div>
+            ))}
+          </div>
+        </SurfaceCard>
 
         {/* Labour */}
-        <div className={sectionCls}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Labour</p>
-            <button type="button" onClick={() => setF('labourOn', !form.labourOn)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${form.labourOn ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300' : 'bg-gray-100 text-gray-400 dark:bg-gray-700'}`}>
+        <SurfaceCard>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <p style={sectionHeaderStyle}>Labour</p>
+            <button
+              type="button"
+              onClick={() => setF('labourOn', !form.labourOn)}
+              style={{
+                padding:'5px 14px', borderRadius:20, border:'none', cursor:'pointer',
+                background: form.labourOn ? '#E6FAF8' : '#F3F4F6',
+                color: form.labourOn ? '#00C2B2' : '#9CA3AF',
+                fontSize:12, fontWeight:700,
+              }}
+            >
               {form.labourOn ? 'On' : 'Off'}
             </button>
           </div>
           {form.labourOn && (
-            <div className="grid grid-cols-2 gap-3">
-              <div><label className={labelCls}>Rate ₹/hr</label>
-                <input className={inputCls} type="number" value={form.labourRateHr} onChange={e => setF('labourRateHr', e.target.value)} />
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div>
+                <label style={labelStyle}>Rate ₹/hr</label>
+                <input style={inputStyle} type="number" value={form.labourRateHr} onChange={e => setF('labourRateHr', e.target.value)} />
               </div>
-              <div><label className={labelCls}>Hands-on (min)</label>
-                <input className={inputCls} type="number" value={form.labourHandsOnMin} onChange={e => setF('labourHandsOnMin', e.target.value)} />
+              <div>
+                <label style={labelStyle}>Hands-on (min)</label>
+                <input style={inputStyle} type="number" value={form.labourHandsOnMin} onChange={e => setF('labourHandsOnMin', e.target.value)} />
               </div>
             </div>
           )}
-        </div>
+        </SurfaceCard>
 
         {/* Rates */}
-        <div className={sectionCls}>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Rates</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div><label className={labelCls}>Failure %</label>
-              <input className={inputCls} type="number" min="0" max="50" value={form.failureRatePct} onChange={e => setF('failureRatePct', e.target.value)} />
+        <SurfaceCard>
+          <p style={sectionHeaderStyle}>Rates</p>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+            <div>
+              <label style={labelStyle}>Failure %</label>
+              <input style={inputStyle} type="number" min="0" max="50" value={form.failureRatePct} onChange={e => setF('failureRatePct', e.target.value)} />
             </div>
-            <div><label className={labelCls}>Margin %</label>
-              <input className={inputCls} type="number" min="0" max="90" value={form.targetMarginPct} onChange={e => setF('targetMarginPct', e.target.value)} />
+            <div>
+              <label style={labelStyle}>Margin %</label>
+              <input style={inputStyle} type="number" min="0" max="90" value={form.targetMarginPct} onChange={e => setF('targetMarginPct', e.target.value)} />
             </div>
-            <div><label className={labelCls}>Payment fee %</label>
-              <input className={inputCls} type="number" min="0" value={form.paymentFeePct} onChange={e => setF('paymentFeePct', e.target.value)} />
+            <div>
+              <label style={labelStyle}>Payment fee %</label>
+              <input style={inputStyle} type="number" min="0" value={form.paymentFeePct} onChange={e => setF('paymentFeePct', e.target.value)} />
             </div>
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* Live cost sheet */}
-        <div className="bg-gray-900 dark:bg-gray-950 rounded-2xl p-4 shadow-sm text-white">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Cost Sheet</p>
-          <div className="space-y-1.5 font-mono text-sm">
+        <div style={{ background:'linear-gradient(135deg,#0D1B2A 0%,#1B2E45 100%)', borderRadius:22, padding:'20px', boxShadow:'0 6px 28px rgba(13,27,42,0.25)' }}>
+          <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:14 }}>Cost Sheet</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:8, fontFamily:'monospace', fontSize:13 }}>
             {[
               ['Material', costs.material], ['Electricity', costs.electricity],
               ['Depreciation', costs.depreciation], ['Labour', costs.labour],
               ['Packaging', costs.packagingCost], ['Failure markup', costs.failureMarkup],
               ['Add-ons', costs.addOnsCost], ['Delivery', n(form.deliveryCost)],
             ].map(([label, val]) => val > 0.01 && (
-              <div key={label} className="flex justify-between">
-                <span className="text-gray-400">{label}</span>
-                <span>{inr(val)}</span>
+              <div key={label} style={{ display:'flex', justifyContent:'space-between' }}>
+                <span style={{ color:'rgba(255,255,255,0.45)' }}>{label}</span>
+                <span style={{ color:'rgba(255,255,255,0.8)' }}>{inr(val)}</span>
               </div>
             ))}
-            <div className="border-t border-gray-700 pt-2 mt-2 flex justify-between">
-              <span className="text-gray-300">True cost</span><span className="font-bold">{inr(costs.trueCost)}</span>
+            <div style={{ borderTop:'1px solid rgba(255,255,255,0.12)', paddingTop:10, marginTop:4, display:'flex', justifyContent:'space-between' }}>
+              <span style={{ color:'rgba(255,255,255,0.6)' }}>True cost</span>
+              <span style={{ color:'#fff', fontWeight:700 }}>{inr(costs.trueCost)}</span>
             </div>
-            <div className="flex justify-between text-green-400">
-              <span>Suggested price</span><span className="font-bold text-lg">{inr(costs.suggestedPrice)}</span>
+            <div style={{ display:'flex', justifyContent:'space-between' }}>
+              <span style={{ color:'#00C2B2' }}>Suggested price</span>
+              <span style={{ color:'#00C2B2', fontWeight:800, fontSize:18 }}>{inr(costs.suggestedPrice)}</span>
             </div>
-            <div className="flex justify-between text-gray-400 text-xs">
-              <span>Profit @ {Math.round(costs.marginPct)}% margin</span><span>{inr(costs.profit)}</span>
+            <div style={{ display:'flex', justifyContent:'space-between' }}>
+              <span style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>Profit @ {Math.round(costs.marginPct)}% margin</span>
+              <span style={{ color:'rgba(255,255,255,0.35)', fontSize:11 }}>{inr(costs.profit)}</span>
             </div>
           </div>
 
           {/* Actual price */}
-          <div className="mt-4 pt-4 border-t border-gray-700">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-2">What did you charge?</label>
-            <input className="w-full px-3 py-2.5 rounded-xl bg-gray-800 border border-gray-600 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-green-400"
-              type="number" placeholder={`Suggested: ₹${Math.round(costs.suggestedPrice)}`}
-              value={form.actualPrice} onChange={e => setF('actualPrice', e.target.value)} />
+          <div style={{ marginTop:20, paddingTop:18, borderTop:'1px solid rgba(255,255,255,0.12)' }}>
+            <label style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.08em', display:'block', marginBottom:10 }}>
+              What did you charge?
+            </label>
+            <input
+              style={{ width:'100%', padding:'11px 14px', borderRadius:10, background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)', color:'#fff', fontWeight:700, fontSize:18, outline:'none', boxSizing:'border-box' }}
+              type="number"
+              placeholder={`Suggested: ₹${Math.round(costs.suggestedPrice)}`}
+              value={form.actualPrice}
+              onChange={e => setF('actualPrice', e.target.value)}
+            />
             {actualP > 0 && (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <div className="bg-gray-800 rounded-xl p-2 text-center">
-                  <p className="text-xs text-gray-400">Actual profit</p>
-                  <p className={`font-bold text-sm ${actualProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>{inr(actualProfit)}</p>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginTop:10 }}>
+                <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:10, padding:'10px 8px', textAlign:'center' }}>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Actual profit</p>
+                  <p style={{ fontSize:13, fontWeight:700, color: actualProfit >= 0 ? '#059669' : '#E11D48' }}>{inr(actualProfit)}</p>
                 </div>
-                <div className="bg-gray-800 rounded-xl p-2 text-center">
-                  <p className="text-xs text-gray-400">Actual margin</p>
-                  <p className={`font-bold text-sm ${actualMargin >= 20 ? 'text-green-400' : actualMargin >= 0 ? 'text-yellow-400' : 'text-red-400'}`}>{Math.round(actualMargin)}%</p>
+                <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:10, padding:'10px 8px', textAlign:'center' }}>
+                  <p style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:4 }}>Actual margin</p>
+                  <p style={{ fontSize:13, fontWeight:700, color: actualMargin >= 20 ? '#059669' : actualMargin >= 0 ? '#F59E0B' : '#E11D48' }}>{Math.round(actualMargin)}%</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {err && <p className="text-sm text-red-500 text-center">{err}</p>}
+        {err && <p style={{ fontSize:13, color:'#E11D48', textAlign:'center' }}>{err}</p>}
 
-        <button type="submit" disabled={createJob.isPending || !form.title.trim()}
-          className="w-full py-4 rounded-xl bg-primary-600 text-white font-bold text-base disabled:opacity-60 shadow-lg">
+        <button
+          type="submit"
+          disabled={createJob.isPending || !form.title.trim()}
+          style={{
+            width:'100%', padding:'16px', borderRadius:12, border:'none', cursor: (createJob.isPending || !form.title.trim()) ? 'not-allowed' : 'pointer',
+            background: (createJob.isPending || !form.title.trim()) ? '#E5E7EB' : 'linear-gradient(135deg,#00C2B2,#009E91)',
+            color: (createJob.isPending || !form.title.trim()) ? '#9CA3AF' : '#fff',
+            fontWeight:800, fontSize:15, boxShadow:'0 4px 18px rgba(0,194,178,0.3)',
+          }}
+        >
           {createJob.isPending ? 'Creating…' : '🖨️ Create Job'}
         </button>
       </form>

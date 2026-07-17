@@ -12,7 +12,7 @@ const getBalances = async (req, res) => {
       where: { expense: { userId: myId }, status: { in: ACTIVE } },
       include: {
         person: true,
-        expense: true,
+        expense: { select: { id: true, title: true, amount: true, expenseDate: true, currency: true } },
         paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
@@ -22,7 +22,7 @@ const getBalances = async (req, res) => {
       where: { person: { linkedUserId: myId }, status: { in: ACTIVE } },
       include: {
         person: true,
-        expense: { include: { user: { select: { id: true, name: true, email: true } } } },
+        expense: { select: { id: true, title: true, amount: true, expenseDate: true, currency: true, userId: true, user: { select: { id: true, name: true, email: true } } } },
         paymentRequests: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },

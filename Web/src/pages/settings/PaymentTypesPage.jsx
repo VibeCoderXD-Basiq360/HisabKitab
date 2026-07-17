@@ -11,6 +11,7 @@ import {
 import { useCardDelegations, useCreateDelegation } from '../../hooks/useCardDelegation';
 import { useAccounts } from '../../hooks/useAccounts';
 import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 
 const DAY_OPTIONS = Array.from({ length: 28 }, (_, i) => i + 1);
 const REMINDER_OPTIONS = [1, 2, 3, 5, 7, 10];
@@ -26,6 +27,27 @@ const EMPTY_FORM = {
   cardHolderName: '',
   cardExpiry: '',
   linkedAccountId: '',
+};
+
+const inputStyle = {
+  background: '#F0F2F7',
+  border: 'none',
+  borderRadius: 10,
+  padding: '11px 14px',
+  fontSize: 14,
+  color: '#0A0D14',
+  outline: 'none',
+  width: '100%',
+  minHeight: 44,
+  boxSizing: 'border-box',
+};
+
+const labelStyle = {
+  fontSize: 12,
+  fontWeight: 500,
+  color: '#B0B8C4',
+  marginBottom: 4,
+  display: 'block',
 };
 
 function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
@@ -52,33 +74,36 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(10,13,20,0.55)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
+        style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 4, margin: '0 auto' }} />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>
           {initial ? `${t('common.edit')} ${t('expense.payment_type').toLowerCase()}` : `New ${t('expense.payment_type').toLowerCase()}`}
         </h2>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Name */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Name</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={labelStyle}>Name</label>
             <input
               type="text"
               value={form.name}
               onChange={field('name')}
               placeholder="e.g. HDFC Credit Card"
-              className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+              style={inputStyle}
             />
           </div>
 
           {/* Card type */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Type</label>
-            <div className="flex gap-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={labelStyle}>Type</label>
+            <div style={{ display: 'flex', gap: 8 }}>
               {[
                 { value: '', label: 'Generic', icon: '💰' },
                 { value: 'DEBIT_CARD', label: 'Debit', icon: '💳' },
@@ -88,13 +113,24 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
                   type="button"
                   key={opt.value}
                   onClick={() => setForm((f) => ({ ...f, cardType: opt.value }))}
-                  className={`flex-1 py-2.5 rounded-xl text-xs font-medium border transition-colors flex flex-col items-center gap-1 ${
-                    form.cardType === opt.value
-                      ? 'bg-primary-500 text-white border-primary-500'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                  }`}
+                  style={{
+                    flex: 1,
+                    padding: '10px 4px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4,
+                    background: form.cardType === opt.value ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#F0F2F7',
+                    color: form.cardType === opt.value ? '#fff' : '#6B7280',
+                    transition: 'all 0.15s ease',
+                  }}
                 >
-                  <span className="text-lg">{opt.icon}</span>
+                  <span style={{ fontSize: 18 }}>{opt.icon}</span>
                   {opt.label}
                 </button>
               ))}
@@ -104,27 +140,27 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
           {/* Credit card fields */}
           {isCC && (
             <>
-              <div className="h-px bg-gray-100 dark:bg-gray-700" />
-              <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 -mb-1">
+              <div style={{ height: 1, background: '#F0F2F7' }} />
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#00C2B2', margin: 0 }}>
                 Card Identity
               </p>
 
               {/* Cardholder name */}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Cardholder name</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={labelStyle}>Cardholder name</label>
                 <input
                   type="text"
                   value={form.cardHolderName}
                   onChange={field('cardHolderName')}
                   placeholder="Name printed on card"
-                  className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                  style={inputStyle}
                 />
               </div>
 
               {/* Last 4 digits + expiry */}
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Last 4 digits</label>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={labelStyle}>Last 4 digits</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -132,11 +168,11 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
                     onChange={(e) => setForm((f) => ({ ...f, cardLastFour: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
                     placeholder="1234"
                     maxLength={4}
-                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400 tracking-widest"
+                    style={{ ...inputStyle, letterSpacing: '0.15em' }}
                   />
                 </div>
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Expiry (MM/YY)</label>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={labelStyle}>Expiry (MM/YY)</label>
                   <input
                     type="text"
                     inputMode="numeric"
@@ -148,26 +184,24 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
                     }}
                     placeholder="08/27"
                     maxLength={5}
-                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                    style={inputStyle}
                   />
                 </div>
               </div>
 
-              <div className="h-px bg-gray-100 dark:bg-gray-700" />
-              <p className="text-xs font-semibold text-primary-600 dark:text-primary-400 -mb-1">
+              <div style={{ height: 1, background: '#F0F2F7' }} />
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#00C2B2', margin: 0 }}>
                 Billing &amp; Reminders
               </p>
 
               {/* Billing cycle & due day */}
-              <div className="flex gap-3">
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Billing cycle starts
-                  </label>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={labelStyle}>Billing cycle starts</label>
                   <select
                     value={form.billingCycleDay}
                     onChange={field('billingCycleDay')}
-                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                    style={inputStyle}
                   >
                     <option value="">{t('expense.select')}</option>
                     {DAY_OPTIONS.map((d) => (
@@ -178,14 +212,12 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
                   </select>
                 </div>
 
-                <div className="flex-1 flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Payment due on
-                  </label>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={labelStyle}>Payment due on</label>
                   <select
                     value={form.paymentDueDay}
                     onChange={field('paymentDueDay')}
-                    className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                    style={inputStyle}
                   >
                     <option value="">{t('expense.select')}</option>
                     {DAY_OPTIONS.map((d) => (
@@ -198,48 +230,70 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
               </div>
 
               {/* Reminders */}
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F0F2F7', borderRadius: 12, padding: '12px 14px' }}>
                 <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Due date reminders</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Push + email before due date</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#0A0D14', margin: 0 }}>Due date reminders</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: '2px 0 0' }}>Push + email before due date</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, reminderEnabled: !f.reminderEnabled }))}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${
-                    form.reminderEnabled ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                  }`}
+                  style={{
+                    width: 46,
+                    height: 26,
+                    borderRadius: 13,
+                    background: form.reminderEnabled ? '#00C2B2' : '#D1D5DB',
+                    border: 'none',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    flexShrink: 0,
+                    transition: 'background 0.2s ease',
+                    padding: 0,
+                  }}
                 >
                   <span
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                      form.reminderEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    style={{
+                      position: 'absolute',
+                      top: 3,
+                      left: form.reminderEnabled ? 'calc(100% - 23px)' : 3,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                      transition: 'left 0.2s ease',
+                      display: 'block',
+                    }}
                   />
                 </button>
               </div>
 
               {form.reminderEnabled && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                    Remind me this many days before due date
-                  </label>
-                  <div className="flex gap-2 flex-wrap">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={labelStyle}>Remind me this many days before due date</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {REMINDER_OPTIONS.map((d) => (
                       <button
                         type="button"
                         key={d}
                         onClick={() => setForm((f) => ({ ...f, reminderDaysBefore: d }))}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                          Number(form.reminderDaysBefore) === d
-                            ? 'bg-primary-500 text-white border-primary-500'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700'
-                        }`}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          border: 'none',
+                          cursor: 'pointer',
+                          background: Number(form.reminderDaysBefore) === d ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#F0F2F7',
+                          color: Number(form.reminderDaysBefore) === d ? '#fff' : '#6B7280',
+                          transition: 'all 0.15s ease',
+                        }}
                       >
                         {d} day{d > 1 ? 's' : ''}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>
                     You'll also get a reminder on the due day itself.
                   </p>
                 </div>
@@ -248,14 +302,14 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
           )}
 
           {accounts.length > 0 && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                🔗 Link to account <span className="font-normal">(optional — auto-tracks balance)</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label style={labelStyle}>
+                🔗 Link to account <span style={{ fontWeight: 400 }}>(optional — auto-tracks balance)</span>
               </label>
               <select
                 value={form.linkedAccountId}
                 onChange={field('linkedAccountId')}
-                className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+                style={inputStyle}
               >
                 <option value="">No account linked</option>
                 {accounts.map((a) => (
@@ -265,7 +319,7 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
                 ))}
               </select>
               {form.linkedAccountId && (
-                <p className="text-xs text-primary-600 dark:text-primary-400">
+                <p style={{ fontSize: 11, color: '#00C2B2', margin: 0 }}>
                   Expenses paid with this method will auto-deduct from this account
                 </p>
               )}
@@ -275,7 +329,19 @@ function PaymentTypeSheet({ initial, onSave, onClose, isPending, accounts }) {
           <button
             type="submit"
             disabled={!form.name.trim() || isPending}
-            className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50 mt-1"
+            style={{
+              width: '100%',
+              padding: '13px 0',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 14,
+              border: 'none',
+              cursor: !form.name.trim() || isPending ? 'not-allowed' : 'pointer',
+              opacity: !form.name.trim() || isPending ? 0.5 : 1,
+              marginTop: 4,
+            }}
           >
             {isPending ? t('common.saving') : initial ? t('common.save') : `${t('common.add')} ${t('expense.payment_type').toLowerCase()}`}
           </button>
@@ -330,35 +396,52 @@ function DelegateSheet({ paymentType, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-t-3xl px-4 pt-5 pb-8 flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto" />
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(10,13,20,0.55)' }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: '#fff', borderRadius: '22px 22px 0 0', padding: '20px 16px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 4, margin: '0 auto' }} />
         <div>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Link {paymentType.name} to card owner</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>Link {paymentType.name} to card owner</h2>
+          <p style={{ fontSize: 12, color: '#B0B8C4', margin: '4px 0 0' }}>
             Expenses on this card will be logged by you but the owner will be notified. You can mark specific ones as "to repay."
           </p>
         </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Card owner's email (must have HisabKitab account)</label>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={labelStyle}>Card owner's email (must have HisabKitab account)</label>
             <input
               type="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setActionToken(null); }}
               placeholder="dad@email.com"
-              className="min-h-[44px] px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white outline-none focus:border-primary-400"
+              style={inputStyle}
             />
           </div>
           {actionToken && (
-            <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+            <p style={{ fontSize: 12, color: '#059669', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
               ✓ Identity verified — ready to send
             </p>
           )}
           <button
             type="submit"
             disabled={!email.trim() || createDelegation.isPending}
-            className="w-full py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm disabled:opacity-50"
+            style={{
+              width: '100%',
+              padding: '13px 0',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 14,
+              border: 'none',
+              cursor: !email.trim() || createDelegation.isPending ? 'not-allowed' : 'pointer',
+              opacity: !email.trim() || createDelegation.isPending ? 0.5 : 1,
+            }}
           >
             {createDelegation.isPending ? 'Sending request…' : actionToken ? 'Send delegation request' : 'Verify identity & send'}
           </button>
@@ -418,82 +501,127 @@ export default function PaymentTypesPage() {
   const isPending = create.isPending || update.isPending;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       <TopBar title={translate('settings.payment_types')} showBack />
-      <div className="flex-1 p-4 flex flex-col gap-4">
+
+      <div style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+        {/* Add button */}
         <button
           onClick={openNew}
-          className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-600 text-sm font-medium text-primary-600 dark:text-primary-400 bg-white dark:bg-gray-800"
+          style={{
+            width: '100%',
+            padding: '13px 0',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg,#00C2B2,#009E90)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: 14,
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           + {translate('common.add')} {translate('expense.payment_type').toLowerCase()}
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
-          {isLoading && <p className="px-4 py-6 text-sm text-gray-400 text-center">{translate('common.loading')}</p>}
-          {!isLoading && types.length === 0 && (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">No payment types yet</p>
+        {/* List */}
+        <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+          {isLoading && (
+            <p style={{ padding: '24px 16px', fontSize: 13, color: '#B0B8C4', textAlign: 'center' }}>
+              {translate('common.loading')}
+            </p>
           )}
-          {types.map((t) => {
+          {!isLoading && types.length === 0 && (
+            <p style={{ padding: '24px 16px', fontSize: 13, color: '#B0B8C4', textAlign: 'center' }}>
+              No payment types yet
+            </p>
+          )}
+          {types.map((t, idx) => {
             const info = t.cardType === 'CREDIT_CARD' ? dueDateInfo(t.paymentDueDay, t.billingCycleDay) : null;
             const urgency = info
               ? info.days === 0 ? 'red' : info.days <= 3 ? 'orange' : info.days <= 7 ? 'yellow' : 'green'
               : null;
             const delegation = t.cardType === 'CREDIT_CARD' ? getDelegation(t.id) : null;
             return (
-              <div key={t.id} className="flex items-start px-4 py-3 gap-3">
+              <div
+                key={t.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  padding: '12px 14px',
+                  gap: 12,
+                  background: '#fff',
+                  borderRadius: idx === 0 ? '14px 14px 0 0' : idx === types.length - 1 ? '0 0 14px 14px' : 0,
+                  borderBottom: idx < types.length - 1 ? '1px solid #F0F2F7' : 'none',
+                }}
+              >
+                {/* Icon box */}
                 <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 mt-0.5"
-                  style={{ backgroundColor: t.color ? `${t.color}25` : '#f3f4f6' }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: '#E6FAF9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }}
                 >
                   {t.icon || '💰'}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{t.name}</span>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14' }} className="truncate">{t.name}</span>
                     {t.cardType === 'CREDIT_CARD' && (
-                      <span className="text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-full shrink-0">
+                      <span style={{ fontSize: 10, fontWeight: 700, background: '#EEF2FF', color: '#6366F1', padding: '2px 7px', borderRadius: 20, flexShrink: 0 }}>
                         CREDIT
                       </span>
                     )}
                     {t.cardType === 'DEBIT_CARD' && (
-                      <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full shrink-0">
+                      <span style={{ fontSize: 10, fontWeight: 700, background: '#EFF6FF', color: '#3B82F6', padding: '2px 7px', borderRadius: 20, flexShrink: 0 }}>
                         DEBIT
                       </span>
                     )}
                   </div>
                   {(t.cardLastFour || t.cardHolderName) && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 font-mono">
+                    <p style={{ fontSize: 11, color: '#B0B8C4', margin: '2px 0 0', fontFamily: 'monospace' }}>
                       {t.cardLastFour ? `•••• ${t.cardLastFour}` : ''}
                       {t.cardHolderName ? `  ${t.cardHolderName}` : ''}
                       {t.cardExpiry ? `  ${t.cardExpiry}` : ''}
                     </p>
                   )}
                   {t.linkedAccount && (
-                    <p className="text-xs text-primary-600 dark:text-primary-400 mt-0.5">
+                    <p style={{ fontSize: 11, color: '#00C2B2', margin: '2px 0 0' }}>
                       🔗 Auto-tracks: {t.linkedAccount.name}
                     </p>
                   )}
                   {info && (
-                    <div className="mt-0.5 flex flex-col gap-0.5">
-                      <p className={`text-xs font-medium ${
-                        urgency === 'red' ? 'text-red-500' :
-                        urgency === 'orange' ? 'text-orange-500' :
-                        urgency === 'yellow' ? 'text-yellow-600' : 'text-gray-400 dark:text-gray-500'
-                      }`}>
+                    <div style={{ marginTop: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <p style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        margin: 0,
+                        color: urgency === 'red' ? '#EF4444' : urgency === 'orange' ? '#F97316' : urgency === 'yellow' ? '#CA8A04' : '#B0B8C4',
+                      }}>
                         {info.days === 0 ? '⚠️ Due today!' :
                          info.days === 1 ? '⚠️ Due tomorrow' :
                          `Due in ${info.days} days · ${info.dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`}
                       </p>
                       {info.cycleText && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">Cycle: {info.cycleText}</p>
+                        <p style={{ fontSize: 11, color: '#B0B8C4', margin: 0 }}>Cycle: {info.cycleText}</p>
                       )}
                     </div>
                   )}
                   {delegation && (
-                    <p className={`text-xs font-medium mt-0.5 ${
-                      delegation.status === 'ACTIVE' ? 'text-green-600' :
-                      delegation.status === 'PENDING' ? 'text-amber-600' : 'text-gray-400'
-                    }`}>
+                    <p style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      margin: '2px 0 0',
+                      color: delegation.status === 'ACTIVE' ? '#059669' : delegation.status === 'PENDING' ? '#F59E0B' : '#B0B8C4',
+                    }}>
                       {delegation.status === 'ACTIVE' ? `🔗 Linked to ${delegation.owner?.name || 'owner'}` :
                        delegation.status === 'PENDING' ? '⏳ Awaiting owner approval' : ''}
                     </p>
@@ -501,30 +629,40 @@ export default function PaymentTypesPage() {
                   {t.cardType === 'CREDIT_CARD' && !delegation && (
                     <button
                       onClick={() => setDelegateSheet(t)}
-                      className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 text-left"
+                      style={{ fontSize: 11, color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2, textAlign: 'left' }}
                     >
                       + Link to card owner
                     </button>
                   )}
                 </div>
-                <div className="flex gap-1 shrink-0">
+
+                {/* Edit / Delete */}
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                   <button
                     onClick={() => openEdit(t)}
-                    className="text-xs text-primary-600 dark:text-primary-400 px-2 py-1 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px' }}
                   >
-                    {translate('common.edit')}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
                   </button>
                   <button
                     onClick={() => remove.mutate(t.id)}
-                    className="text-xs text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px' }}
                   >
-                    {translate('common.delete')}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B0B8C4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                    </svg>
                   </button>
                 </div>
               </div>
             );
           })}
-        </div>
+        </SurfaceCard>
       </div>
 
       {sheet && (

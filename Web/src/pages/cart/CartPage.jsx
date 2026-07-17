@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 import { useCartStore } from '../../store/cartStore';
 import { useCategories } from '../../hooks/useCategories';
 import { usePaymentTypes } from '../../hooks/usePaymentTypes';
@@ -41,51 +43,78 @@ function CheckoutSheet({ onClose }) {
     navigate('/home');
   }
 
+  const inputStyle = {
+    width: '100%',
+    background: '#F0F2F7',
+    border: 'none',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontSize: 14,
+    color: '#0A0D14',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle = {
+    fontSize: 11,
+    fontWeight: 700,
+    color: '#B0B8C4',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    display: 'block',
+    marginBottom: 6,
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50" onClick={onClose}>
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.45)' }}
+      onClick={onClose}
+    >
       <div
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-4 pb-8 flex flex-col gap-4 max-h-[85vh] overflow-y-auto"
+        style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '85vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto" />
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">Checkout</h2>
-          <div className="bg-primary-50 dark:bg-primary-900/30 px-3 py-1 rounded-full">
-            <span className="text-sm font-bold text-primary-600 dark:text-primary-400">{fmt(total)}</span>
-            <span className="text-xs text-primary-400 ml-1">· {items.length} items</span>
+        {/* Drag pill */}
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 99, margin: '0 auto' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Checkout</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Badge variant="active" label={`${items.length} items`} />
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#00C2B2' }}>{fmt(total)}</span>
           </div>
         </div>
 
         {/* Expense title */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Expense Title</label>
+          <label style={labelStyle}>Expense Title</label>
           <input
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Sabzi Mandi, Grocery Run"
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            style={inputStyle}
           />
         </div>
 
         {/* Date */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
+          <label style={labelStyle}>Date</label>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            style={inputStyle}
           />
         </div>
 
         {/* Category */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Category <span className="font-normal text-gray-400">(optional)</span></label>
+          <label style={labelStyle}>Category <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
           <select
             value={catId}
             onChange={(e) => setCatId(e.target.value)}
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            style={inputStyle}
           >
             <option value="">No category</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -94,12 +123,12 @@ function CheckoutSheet({ onClose }) {
 
         {/* Payment type */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Payment Method *</label>
+          <label style={labelStyle}>Payment Method *</label>
           <select
             value={ptId}
             onChange={(e) => setPtId(e.target.value)}
             required
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+            style={inputStyle}
           >
             <option value="">Select…</option>
             {paymentTypes.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -109,11 +138,11 @@ function CheckoutSheet({ onClose }) {
         {/* Account */}
         {accounts.length > 0 && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">🏦 Deduct from Account <span className="font-normal text-gray-400">(optional)</span></label>
+            <label style={labelStyle}>🏦 Deduct from Account <span style={{ fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
             <select
               value={accId}
               onChange={(e) => setAccId(e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400"
+              style={inputStyle}
             >
               <option value="">No account</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -122,13 +151,24 @@ function CheckoutSheet({ onClose }) {
         )}
 
         {createExpense.error && (
-          <p className="text-xs text-red-500">Failed to save expense. Please try again.</p>
+          <p style={{ fontSize: 12, color: '#E11D48', margin: 0 }}>Failed to save expense. Please try again.</p>
         )}
 
         <button
           onClick={handleCheckout}
           disabled={!ptId || createExpense.isPending}
-          className="w-full h-12 rounded-xl bg-primary-500 text-white font-bold text-sm disabled:opacity-40"
+          style={{
+            width: '100%',
+            height: 48,
+            borderRadius: 12,
+            border: 'none',
+            background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+            color: '#fff',
+            fontWeight: 800,
+            fontSize: 15,
+            cursor: !ptId || createExpense.isPending ? 'not-allowed' : 'pointer',
+            opacity: !ptId || createExpense.isPending ? 0.4 : 1,
+          }}
         >
           {createExpense.isPending ? 'Saving…' : `Save as Expense · ${fmt(total)}`}
         </button>
@@ -170,14 +210,13 @@ export default function CartPage() {
       if (itemName.trim() && itemAmount && Number(itemAmount) > 0) {
         handleAdd();
       } else if (itemName.trim() && !itemAmount) {
-        // Move focus to amount
         document.getElementById('cart-item-amount')?.focus();
       }
     }
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar
         title="🛒 Cart"
         showBack
@@ -185,7 +224,7 @@ export default function CartPage() {
           items.length > 0 && (
             <button
               onClick={() => { if (window.confirm('Clear all items?')) clearCart(); }}
-              className="text-xs text-red-400 font-semibold px-3 py-1 rounded-lg"
+              style={{ fontSize: 12, color: '#E11D48', fontWeight: 600, padding: '4px 10px', border: 'none', background: 'transparent', cursor: 'pointer', borderRadius: 8 }}
             >
               Clear
             </button>
@@ -193,45 +232,64 @@ export default function CartPage() {
         }
       />
 
-      {/* Cart name */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3">
+      {/* Cart name input */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #F0F2F7', padding: '12px 16px' }}>
         <input
           value={name}
           onChange={(e) => setField('name', e.target.value)}
           placeholder="Cart name (e.g. Sabzi Mandi, DMart run)"
-          className="w-full text-base font-semibold text-gray-900 dark:text-white bg-transparent outline-none placeholder-gray-300 dark:placeholder-gray-600"
+          style={{
+            width: '100%',
+            fontSize: 15,
+            fontWeight: 700,
+            color: '#0A0D14',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+          }}
         />
       </div>
 
       {/* Running total strip */}
-      <div className="bg-primary-500 px-4 py-3 flex items-center justify-between">
-        <span className="text-white/80 text-sm font-medium">{items.length} item{items.length !== 1 ? 's' : ''}</span>
-        <span className="text-white text-xl font-bold">{fmt(total)}</span>
+      <div style={{
+        background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+        padding: '10px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500 }}>
+          {items.length} item{items.length !== 1 ? 's' : ''}
+        </span>
+        <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{fmt(total)}</span>
       </div>
 
       {/* Items list */}
-      <div className="flex-1 overflow-y-auto pb-40">
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-6">
-            <span className="text-5xl">🛒</span>
-            <p className="text-gray-400 dark:text-gray-500 text-sm">Your cart is empty</p>
-            <p className="text-gray-300 dark:text-gray-600 text-xs">Add items using the bar below</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 24px', gap: 12, textAlign: 'center' }}>
+            <span style={{ fontSize: 52 }}>🛒</span>
+            <p style={{ color: '#B0B8C4', fontSize: 14, margin: 0 }}>Your cart is empty</p>
+            <p style={{ color: '#B0B8C4', fontSize: 12, margin: 0 }}>Add items using the bar below</p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 16px' }}>
             {items.map((item, i) => (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-gray-300 dark:text-gray-600 text-xs font-mono w-5 shrink-0">{i + 1}</span>
-                <div className="flex-1 min-w-0">
+              <div
+                key={item.id}
+                style={{ borderRadius: 14, padding: '12px 14px', background: '#fff', boxShadow: '0 1px 6px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}
+              >
+                <span style={{ color: '#B0B8C4', fontSize: 11, fontFamily: 'monospace', width: 18, flexShrink: 0 }}>{i + 1}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   {editingId === item.id ? (
-                    <div className="flex gap-2">
+                    <div style={{ display: 'flex', gap: 8 }}>
                       <input
                         autoFocus
                         value={item.name}
                         onChange={(e) => updateItem(item.id, { name: e.target.value })}
                         onBlur={() => setEditingId(null)}
                         onKeyDown={(e) => e.key === 'Enter' && setEditingId(null)}
-                        className="flex-1 text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1 outline-none"
+                        style={{ flex: 1, fontSize: 13, color: '#0A0D14', background: '#F0F2F7', borderRadius: 8, padding: '4px 8px', border: 'none', outline: 'none' }}
                       />
                       <input
                         type="number"
@@ -239,19 +297,22 @@ export default function CartPage() {
                         onChange={(e) => updateItem(item.id, { amount: Number(e.target.value) })}
                         onBlur={() => setEditingId(null)}
                         onKeyDown={(e) => e.key === 'Enter' && setEditingId(null)}
-                        className="w-20 text-sm text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-1 outline-none text-right"
+                        style={{ width: 72, fontSize: 13, color: '#0A0D14', background: '#F0F2F7', borderRadius: 8, padding: '4px 8px', border: 'none', outline: 'none', textAlign: 'right' }}
                       />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between" onClick={() => setEditingId(item.id)}>
-                      <p className="text-sm text-gray-900 dark:text-white truncate">{item.name}</p>
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0 ml-2">{fmt(item.amount)}</p>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                      onClick={() => setEditingId(item.id)}
+                    >
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</p>
+                      <p style={{ fontSize: 14, fontWeight: 800, color: '#0A0D14', margin: 0, flexShrink: 0, marginLeft: 8 }}>{fmt(item.amount)}</p>
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => removeItem(item.id)}
-                  className="w-7 h-7 flex items-center justify-center text-gray-300 dark:text-gray-600 hover:text-red-400 text-sm shrink-0"
+                  style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#E9ECF0', borderRadius: 8, border: 'none', cursor: 'pointer', color: '#B0B8C4', fontSize: 12, flexShrink: 0 }}
                 >
                   ✕
                 </button>
@@ -262,15 +323,33 @@ export default function CartPage() {
       </div>
 
       {/* Quick-add bar (fixed bottom) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 flex flex-col gap-2 z-20">
-        <div className="flex gap-2">
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: '#fff',
+        borderTop: '1px solid #E9ECF0',
+        padding: '12px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        zIndex: 20,
+      }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <input
             ref={nameRef}
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Item name (e.g. Tomatoes)"
-            className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400 placeholder-gray-400"
+            style={{
+              flex: 1,
+              background: '#F0F2F7',
+              border: 'none',
+              borderRadius: 10,
+              padding: '11px 14px',
+              fontSize: 13,
+              color: '#0A0D14',
+              outline: 'none',
+            }}
           />
           <input
             id="cart-item-amount"
@@ -280,12 +359,33 @@ export default function CartPage() {
             onChange={(e) => setItemAmount(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="₹"
-            className="w-20 bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-primary-400 text-center"
+            style={{
+              width: 72,
+              background: '#F0F2F7',
+              border: 'none',
+              borderRadius: 10,
+              padding: '11px 10px',
+              fontSize: 13,
+              color: '#0A0D14',
+              outline: 'none',
+              textAlign: 'center',
+            }}
           />
           <button
             onClick={handleAdd}
             disabled={!itemName.trim() || !itemAmount || Number(itemAmount) <= 0}
-            className="bg-primary-500 text-white text-sm font-bold px-4 rounded-xl disabled:opacity-40 shrink-0"
+            style={{
+              background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 800,
+              padding: '0 16px',
+              borderRadius: 10,
+              border: 'none',
+              cursor: !itemName.trim() || !itemAmount || Number(itemAmount) <= 0 ? 'not-allowed' : 'pointer',
+              opacity: !itemName.trim() || !itemAmount || Number(itemAmount) <= 0 ? 0.4 : 1,
+              flexShrink: 0,
+            }}
           >
             Add
           </button>
@@ -294,7 +394,17 @@ export default function CartPage() {
         {items.length > 0 && (
           <button
             onClick={() => setShowCheckout(true)}
-            className="w-full h-11 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm"
+            style={{
+              width: '100%',
+              height: 44,
+              background: 'linear-gradient(135deg, #00C2B2 0%, #009E90 100%)',
+              color: '#fff',
+              fontWeight: 800,
+              fontSize: 15,
+              borderRadius: 12,
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
             Checkout · {fmt(total)}
           </button>

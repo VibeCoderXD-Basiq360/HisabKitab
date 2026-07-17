@@ -12,7 +12,10 @@ export default function LanguageSwitcher() {
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide px-1">
+      <p
+        className="uppercase tracking-wide px-1"
+        style={{ color: '#B0B8C4', fontSize: 12, fontWeight: 600 }}
+      >
         {t('lang.label')}
       </p>
       <div className="flex gap-2">
@@ -20,20 +23,22 @@ export default function LanguageSwitcher() {
           <button
             key={l.code}
             onClick={() => setLang(l.code)}
-            className={`flex-1 flex items-center gap-2 px-4 py-3 rounded-2xl border-2 transition-all active:scale-95 ${
-              lang === l.code
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
-            }`}
+            className="flex-1 flex items-center gap-2 px-4 py-3 transition-all active:scale-95"
+            style={{
+              borderRadius: 16,
+              border: lang === l.code ? '2px solid #00C2B2' : '2px solid #E9ECF0',
+              background: lang === l.code ? '#E6FAF9' : '#fff',
+            }}
           >
             <span className="text-xl">{l.flag}</span>
-            <span className={`text-sm font-semibold ${
-              lang === l.code ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'
-            }`}>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: lang === l.code ? '#00C2B2' : '#374151' }}
+            >
               {l.label}
             </span>
             {lang === l.code && (
-              <span className="ml-auto text-primary-500 text-xs">✓</span>
+              <span className="ml-auto text-xs" style={{ color: '#00C2B2' }}>✓</span>
             )}
           </button>
         ))}

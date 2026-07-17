@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness, useCreateBusiness, useBusinessPL, usePartnerInvites, useAcceptPartner, useDeclinePartner } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
+import HeroCard from '../../components/ui/HeroCard';
+import ProgressBar from '../../components/ui/ProgressBar';
+import MenuRow from '../../components/ui/MenuRow';
 
 const fmt = n => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
 
@@ -19,52 +23,66 @@ function SetupFlow({ onCreate }) {
     onCreate();
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 -mb-2">
-          ← Back
-        </button>
-        <div className="text-center">
-          <div className="text-4xl mb-2">🏭</div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Set up your business</h1>
-          <p className="text-sm text-gray-400 mt-1">One-time setup — takes 30 seconds</p>
-        </div>
+  const inputStyle = {
+    width: '100%',
+    background: '#F0F2F7',
+    border: 'none',
+    borderRadius: 10,
+    padding: '11px 14px',
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#0A0D14',
+    outline: 'none',
+    boxSizing: 'border-box',
+  };
 
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Business name</label>
-            <input className="w-full mt-1 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
-              value={name} onChange={e => setName(e.target.value)} />
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        <SurfaceCard style={{ padding: 24 }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#B0B8C4', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}>
+            ← Back
+          </button>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🏭</div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Set up your business</h1>
+            <p style={{ fontSize: 13, color: '#B0B8C4', margin: '6px 0 0' }}>One-time setup — takes 30 seconds</p>
           </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Tagline</label>
-            <input className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400"
-              value={tagline} onChange={e => setTagline(e.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Locations</label>
-            <div className="mt-1 space-y-2">
-              {locations.map((l, i) => (
-                <div key={i} className="flex gap-2">
-                  <input className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400"
-                    value={l.name} onChange={e => setLocations(ls => ls.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-                  {locations.length > 1 && (
-                    <button onClick={() => setLocations(ls => ls.filter((_, j) => j !== i))}
-                      className="px-3 py-2 rounded-xl bg-red-50 text-red-500 text-sm">✕</button>
-                  )}
-                </div>
-              ))}
-              <button onClick={() => setLocations(ls => [...ls, { name: '' }])}
-                className="text-sm text-primary-600 dark:text-primary-400 font-semibold">+ Add location</button>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Business name</label>
+              <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Tagline</label>
+              <input style={inputStyle} value={tagline} onChange={e => setTagline(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Locations</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {locations.map((l, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8 }}>
+                    <input style={{ ...inputStyle, flex: 1 }} value={l.name} onChange={e => setLocations(ls => ls.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                    {locations.length > 1 && (
+                      <button onClick={() => setLocations(ls => ls.filter((_, j) => j !== i))}
+                        style={{ padding: '8px 12px', borderRadius: 10, background: '#FFF1F3', color: '#E11D48', border: 'none', cursor: 'pointer', fontSize: 13 }}>✕</button>
+                    )}
+                  </div>
+                ))}
+                <button onClick={() => setLocations(ls => [...ls, { name: '' }])}
+                  style={{ fontSize: 13, fontWeight: 700, color: '#00C2B2', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '4px 0' }}>
+                  + Add location
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <button onClick={handleSubmit} disabled={create.isPending || !name.trim()}
-          className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold text-base disabled:opacity-60">
-          {create.isPending ? 'Creating…' : 'Create Business →'}
-        </button>
+          <button onClick={handleSubmit} disabled={create.isPending || !name.trim()}
+            style={{ width: '100%', marginTop: 20, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontWeight: 800, fontSize: 15, border: 'none', cursor: create.isPending || !name.trim() ? 'not-allowed' : 'pointer', opacity: create.isPending || !name.trim() ? 0.6 : 1 }}>
+            {create.isPending ? 'Creating…' : 'Create Business →'}
+          </button>
+        </SurfaceCard>
       </div>
     </div>
   );
@@ -79,49 +97,51 @@ function PendingInviteCard({ invite, onAccepted }) {
   if (declined) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg space-y-5">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 -mb-2">
-          ← Back
-        </button>
-        <div className="text-center">
-          <div className="text-4xl mb-2">🏭</div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Business Invite</h1>
-          <p className="text-sm text-gray-400 mt-1">You've been invited to join a business</p>
-        </div>
-
-        <div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-2xl p-4 text-center">
-          <p className="text-2xl font-bold text-primary-700 dark:text-primary-300">{invite.business.name}</p>
-          {invite.business.tagline && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{invite.business.tagline}</p>}
-          <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            {(() => {
-              const owner = invite.business?.partners?.[0]?.user;
-              return (
-                <>
-                  <div className="w-7 h-7 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300">
-                    {owner?.name?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <span>Invited by <strong className="text-gray-700 dark:text-gray-200">{owner?.name || owner?.email || 'Business Owner'}</strong></span>
-                </>
-              );
-            })()}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 440 }}>
+        <SurfaceCard style={{ padding: 24 }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#B0B8C4', background: 'none', border: 'none', cursor: 'pointer', marginBottom: 8 }}>
+            ← Back
+          </button>
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🏭</div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Business Invite</h1>
+            <p style={{ fontSize: 13, color: '#B0B8C4', margin: '6px 0 0' }}>You've been invited to join a business</p>
           </div>
-        </div>
 
-        <div className="flex gap-3">
-          <button
-            onClick={async () => { await decline.mutateAsync(invite.id); navigate('/'); }}
-            disabled={decline.isPending || accept.isPending}
-            className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm font-semibold disabled:opacity-50">
-            {decline.isPending ? '…' : 'Decline'}
-          </button>
-          <button
-            onClick={async () => { await accept.mutateAsync(invite.id); onAccepted(); }}
-            disabled={accept.isPending || decline.isPending}
-            className="flex-1 py-3 rounded-xl bg-primary-600 text-white text-sm font-bold disabled:opacity-50">
-            {accept.isPending ? 'Joining…' : 'Accept & Join'}
-          </button>
-        </div>
+          <div style={{ background: 'rgba(0,194,178,0.06)', border: '1px solid rgba(0,194,178,0.2)', borderRadius: 16, padding: 16, textAlign: 'center', marginBottom: 20 }}>
+            <p style={{ fontSize: 22, fontWeight: 800, color: '#00C2B2', margin: 0 }}>{invite.business.name}</p>
+            {invite.business.tagline && <p style={{ fontSize: 13, color: '#6B7280', margin: '4px 0 0' }}>{invite.business.tagline}</p>}
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, color: '#6B7280' }}>
+              {(() => {
+                const owner = invite.business?.partners?.[0]?.user;
+                return (
+                  <>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,194,178,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#00C2B2' }}>
+                      {owner?.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <span>Invited by <strong style={{ color: '#0A0D14' }}>{owner?.name || owner?.email || 'Business Owner'}</strong></span>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={async () => { await decline.mutateAsync(invite.id); navigate('/'); }}
+              disabled={decline.isPending || accept.isPending}
+              style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1.5px solid #E9ECF0', background: '#fff', color: '#6B7280', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: decline.isPending || accept.isPending ? 0.5 : 1 }}>
+              {decline.isPending ? '…' : 'Decline'}
+            </button>
+            <button
+              onClick={async () => { await accept.mutateAsync(invite.id); onAccepted(); }}
+              disabled={accept.isPending || decline.isPending}
+              style={{ flex: 1, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer', opacity: accept.isPending || decline.isPending ? 0.5 : 1 }}>
+              {accept.isPending ? 'Joining…' : 'Accept & Join'}
+            </button>
+          </div>
+        </SurfaceCard>
       </div>
     </div>
   );
@@ -134,8 +154,8 @@ export default function BusinessDashboard() {
   const { data: pl } = useBusinessPL({}, { enabled: !isLoading && !!business });
 
   if (isLoading || invitesLoading) return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-      <p className="text-gray-400">Loading…</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#B0B8C4', fontSize: 15 }}>Loading…</p>
     </div>
   );
 
@@ -146,75 +166,108 @@ export default function BusinessDashboard() {
   if (!business) return <SetupFlow onCreate={() => refetch()} />;
 
   const recentJobs = pl?.jobs?.slice(0, 5) || [];
+  const revenue = pl?.revenue || 0;
+  const expenses = (pl?.revenue || 0) - (pl?.netProfit || 0);
+  const profit = pl?.netProfit || 0;
+
+  const navItems = [
+    { icon: '🖨️', iconBg: 'linear-gradient(135deg, #6366F1, #8B5CF6)', label: 'Jobs', sublabel: `${pl?.jobCount || 0} this month`, to: '/business/jobs' },
+    { icon: '📦', iconBg: 'linear-gradient(135deg, #F59E0B, #FBBF24)', label: 'Inventory', to: '/business/inventory' },
+    { icon: '👤', iconBg: 'linear-gradient(135deg, #3B82F6, #60A5FA)', label: 'Customers', to: '/business/customers' },
+    { icon: '📊', iconBg: 'linear-gradient(135deg, #00C2B2, #00D896)', label: 'P&L Report', to: '/business/pl' },
+    { icon: '💸', iconBg: 'linear-gradient(135deg, #F43F5E, #FB7185)', label: 'Expenses', to: '/business/expenses' },
+    { icon: '⚙️', iconBg: 'linear-gradient(135deg, #6B7280, #9CA3AF)', label: 'Settings', to: '/business/settings' },
+  ];
+
+  const jobStatusVariant = s =>
+    s === 'DELIVERED' ? 'active' :
+    s === 'IN_PROGRESS' ? 'requested' :
+    s === 'PRINTED' ? 'purple' : 'neutral';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
-      <TopBar title={business.name} subtitle={business.tagline} showBack />
+    <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <TopBar title="Business" showBack />
 
-      <div className="px-4 pt-4 space-y-4">
-        {/* P&L Summary */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: 'Revenue (MTD)', value: fmt(pl?.revenue), color: 'text-green-600 dark:text-green-400' },
-            { label: 'Net Profit', value: fmt(pl?.netProfit), color: pl?.netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500' },
-            { label: 'Jobs this month', value: pl?.jobCount || 0, color: 'text-primary-600 dark:text-primary-400' },
-            { label: 'Avg Margin', value: `${Math.round(pl?.avgMarginPct || 0)}%`, color: 'text-primary-600 dark:text-primary-400' },
-          ].map(s => (
-            <div key={s.label} className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs text-gray-400 mb-1">{s.label}</p>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+      <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Hero card */}
+        <HeroCard>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.55)', margin: '0 0 2px' }}>
+            {business.tagline || 'Business Dashboard'}
+          </p>
+          <p style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 6px', lineHeight: 1.2 }}>
+            {business.name}
+          </p>
+          <p style={{ fontSize: 36, fontWeight: 800, color: '#fff', margin: '0 0 4px', lineHeight: 1 }}>
+            {fmt(revenue)}
+          </p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#00C2B2', margin: 0 }}>
+            Revenue this month · {pl?.jobCount || 0} jobs
+          </p>
+
+          {revenue > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <ProgressBar pct={Math.round(((profit) / revenue) * 100)} height={4} />
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: '5px 0 0' }}>
+                {Math.round(pl?.avgMarginPct || 0)}% avg margin
+              </p>
             </div>
+          )}
+        </HeroCard>
+
+        {/* Stats strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          {[
+            { label: 'Revenue', value: fmt(revenue), color: '#059669' },
+            { label: 'Expenses', value: fmt(expenses), color: '#E11D48' },
+            { label: 'Profit', value: fmt(profit), color: '#00C2B2' },
+          ].map(s => (
+            <SurfaceCard key={s.label} style={{ padding: '12px 10px', textAlign: 'center' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', margin: '0 0 4px' }}>{s.label}</p>
+              <p style={{ fontSize: 15, fontWeight: 800, color: s.color, margin: 0, lineHeight: 1 }}>{s.value}</p>
+            </SurfaceCard>
           ))}
         </div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { icon: '🖨️', label: 'New Job', to: '/business/jobs/new' },
-            { icon: '📦', label: 'Inventory', to: '/business/inventory' },
-            { icon: '👤', label: 'Customers', to: '/business/customers' },
-            { icon: '📊', label: 'P&L Report', to: '/business/pl' },
-            { icon: '💸', label: 'Expenses', to: '/business/expenses' },
-            { icon: '⚙️', label: 'Settings', to: '/business/settings' },
-          ].map(a => (
-            <button key={a.label} onClick={() => navigate(a.to)}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm flex flex-col items-center gap-2 active:scale-[0.97] transition-transform">
-              <span className="text-3xl">{a.icon}</span>
-              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{a.label}</span>
-            </button>
+        {/* Nav menu */}
+        <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+          {navItems.map((item, i) => (
+            <MenuRow
+              key={item.label}
+              icon={item.icon}
+              iconBg={item.iconBg}
+              label={item.label}
+              sublabel={item.sublabel}
+              onClick={() => navigate(item.to)}
+              isFirst={i === 0}
+            />
           ))}
-        </div>
+        </SurfaceCard>
 
         {/* Recent jobs */}
         {recentJobs.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">Recent Jobs</p>
-              <button onClick={() => navigate('/business/jobs')} className="text-xs text-primary-600 dark:text-primary-400 font-semibold">See all →</button>
+          <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
+              <p style={{ fontSize: 14, fontWeight: 800, color: '#0A0D14', margin: 0 }}>Recent Jobs</p>
+              <button onClick={() => navigate('/business/jobs')} style={{ fontSize: 12, fontWeight: 700, color: '#00C2B2', background: 'none', border: 'none', cursor: 'pointer' }}>See all →</button>
             </div>
-            <div className="divide-y divide-gray-50 dark:divide-gray-700">
-              {recentJobs.map(j => (
-                <div key={j.id} onClick={() => navigate(`/business/jobs/${j.id}`)}
-                  className="flex items-center justify-between px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700 cursor-pointer">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{j.title}</p>
-                    <p className="text-xs text-gray-400">{j.customer?.name || 'No customer'} · {j.location?.name}</p>
-                  </div>
-                  <div className="text-right ml-3 shrink-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">{fmt(j.actualPrice || j.suggestedPrice)}</p>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                      j.status === 'DELIVERED' ? 'bg-green-100 text-green-600' :
-                      j.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-600' :
-                      j.status === 'PRINTED' ? 'bg-purple-100 text-purple-600' :
-                      'bg-gray-100 text-gray-500'}`}>{j.status}</span>
-                  </div>
+            {recentJobs.map((j, i) => (
+              <div key={j.id} onClick={() => navigate(`/business/jobs/${j.id}`)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid #F0F2F7', cursor: 'pointer' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.title}</p>
+                  <p style={{ fontSize: 12, color: '#B0B8C4', margin: '2px 0 0' }}>{j.customer?.name || 'No customer'} · {j.location?.name}</p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <div style={{ textAlign: 'right', marginLeft: 12, flexShrink: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: '#0A0D14', margin: '0 0 4px' }}>{fmt(j.actualPrice || j.suggestedPrice)}</p>
+                  <Badge variant={jobStatusVariant(j.status)} label={j.status} />
+                </div>
+              </div>
+            ))}
+          </SurfaceCard>
         )}
+
       </div>
-      <BottomNav />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, isSameMonth } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
 import { useIncome, useCreateIncome, useUpdateIncome, useDeleteIncome } from '../../hooks/useIncome';
 import { useAccounts } from '../../hooks/useAccounts';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import Badge from '../../components/ui/Badge';
 
 const now = new Date();
 
@@ -11,7 +12,7 @@ const CATEGORIES = [
   { value: 'SALARY',     label: 'Salary',      icon: '💼' },
   { value: 'FREELANCE',  label: 'Freelance',   icon: '💻' },
   { value: 'RENTAL',     label: 'Rental',      icon: '🏠' },
-  { value: 'BUSINESS',   label: 'Business',    icon: '🏪' },
+  { value: 'BUSINESS',   label: 'Business',    icon: '🪪' },
   { value: 'INVESTMENT', label: 'Investment',  icon: '📈' },
   { value: 'GIFT',       label: 'Gift',        icon: '🎁' },
   { value: 'REFUND',     label: 'Refund',      icon: '↩️' },
@@ -33,26 +34,26 @@ function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
       <form
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white dark:bg-gray-900 rounded-t-3xl px-5 pt-5 pb-8 flex flex-col gap-4"
+        style={{ background: '#FFFFFF', borderRadius: '24px 24px 0 0', padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}
       >
-        <div className="w-10 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-1" />
-        <h2 className="text-base font-bold text-gray-900 dark:text-white">
+        <div style={{ width: 40, height: 4, background: '#E9ECF0', borderRadius: 999, margin: '0 auto 4px' }} />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14', margin: 0 }}>
           {initial ? 'Edit Income' : 'Add Income'}
         </h2>
 
         {/* Amount */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Amount (₹)</label>
+          <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Amount (₹)</label>
           <input
             type="number"
             value={form.amount}
             onChange={(e) => set('amount', e.target.value)}
             placeholder="0"
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 text-lg font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+            style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '12px 16px', fontSize: 18, fontWeight: 700, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             required
             autoFocus
           />
@@ -60,31 +61,40 @@ function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
 
         {/* Title */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Title</label>
+          <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Title</label>
           <input
             type="text"
             value={form.title}
             onChange={(e) => set('title', e.target.value)}
             placeholder="e.g. June Salary"
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+            style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '10px 16px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             required
           />
         </div>
 
         {/* Category */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Category</label>
-          <div className="flex flex-wrap gap-2">
+          <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Category</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {CATEGORIES.map((c) => (
               <button
                 key={c.value}
                 type="button"
                 onClick={() => set('category', c.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                  form.category === c.value
-                    ? 'bg-emerald-500 text-white border-emerald-500'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                }`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: form.category === c.value ? '#00C2B2' : '#E9ECF0',
+                  color: form.category === c.value ? '#FFFFFF' : '#374151',
+                  transition: 'background 0.15s',
+                }}
               >
                 {c.icon} {c.label}
               </button>
@@ -93,24 +103,24 @@ function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
         </div>
 
         {/* Source + Date row */}
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Source (optional)</label>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Source (optional)</label>
             <input
               type="text"
               value={form.source}
               onChange={(e) => set('source', e.target.value)}
               placeholder="e.g. Infosys"
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+              style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
-          <div className="flex-1">
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Date</label>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Date</label>
             <input
               type="date"
               value={form.incomeDate}
               onChange={(e) => set('incomeDate', e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+              style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
               required
             />
           </div>
@@ -118,23 +128,23 @@ function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
 
         {/* Note */}
         <div>
-          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Note (optional)</label>
+          <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>Note (optional)</label>
           <input
             type="text"
             value={form.note}
             onChange={(e) => set('note', e.target.value)}
             placeholder="Any note…"
-            className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+            style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '10px 16px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
 
         {accounts.length > 0 && (
           <div>
-            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 block">🏦 Add to Account <span className="font-normal text-gray-400">(optional)</span></label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#B0B8C4', display: 'block', marginBottom: 4 }}>🏦 Add to Account <span style={{ fontWeight: 400 }}>(optional)</span></label>
             <select
               value={form.accountId}
               onChange={(e) => set('accountId', e.target.value)}
-              className="w-full bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-400"
+              style={{ width: '100%', background: '#E9ECF0', borderRadius: 12, padding: '10px 12px', fontSize: 14, color: '#0A0D14', border: 'none', outline: 'none', boxSizing: 'border-box' }}
             >
               <option value="">No account</option>
               {accounts.map((a) => (
@@ -147,7 +157,19 @@ function IncomeForm({ initial, onSave, onClose, saving, accounts = [] }) {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 text-white font-bold py-3 rounded-2xl text-sm transition-colors"
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)',
+            border: 'none',
+            borderRadius: 16,
+            color: '#FFFFFF',
+            fontWeight: 700,
+            fontSize: 14,
+            padding: '14px 0',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            opacity: saving ? 0.6 : 1,
+            transition: 'opacity 0.15s',
+          }}
         >
           {saving ? 'Saving…' : 'Save Income'}
         </button>
@@ -209,96 +231,140 @@ export default function IncomePage() {
   const saving = create.isPending || update.isPending;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title="Income" showBack />
 
-      {/* Month nav */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex items-center justify-between shrink-0">
-        <button
-          onClick={() => setViewMonth((m) => subMonths(m, 1))}
-          className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xl"
-        >‹</button>
-        <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{format(viewMonth, 'MMMM yyyy')}</span>
-        <button
-          onClick={() => setViewMonth((m) => addMonths(m, 1))}
-          disabled={isCurrentMonth}
-          className="w-9 h-9 flex items-center justify-center rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 text-xl disabled:opacity-25 disabled:pointer-events-none"
-        >›</button>
+      {/* Month selector */}
+      <div style={{ padding: '12px 16px', background: '#F0F2F7', flexShrink: 0 }}>
+        <div style={{ background: '#E9ECF0', borderRadius: 12, padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <button
+            onClick={() => setViewMonth((m) => subMonths(m, 1))}
+            style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#374151', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >‹</button>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0A0D14' }}>{format(viewMonth, 'MMMM yyyy')}</span>
+          <button
+            onClick={() => setViewMonth((m) => addMonths(m, 1))}
+            disabled={isCurrentMonth}
+            style={{ width: 36, height: 36, borderRadius: 8, border: 'none', background: 'transparent', color: '#374151', fontSize: 18, cursor: isCurrentMonth ? 'default' : 'pointer', opacity: isCurrentMonth ? 0.25 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          >›</button>
+        </div>
       </div>
 
       {/* Hero total */}
-      <div className="mx-4 mt-4 mb-2 bg-emerald-500 rounded-2xl px-5 py-4 text-white shrink-0">
-        <p className="text-xs font-medium opacity-70 mb-1">{format(viewMonth, 'MMMM yyyy')} · {incomes.length} entr{incomes.length !== 1 ? 'ies' : 'y'}</p>
-        <p className="text-3xl font-bold tracking-tight">₹{totalIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
-        <p className="text-xs opacity-60 mt-1">Total income</p>
+      <div style={{ margin: '0 16px 16px', background: 'linear-gradient(140deg, #0B1A38 0%, #0A2B38 55%, #0B2A28 100%)', borderRadius: 22, padding: 20, flexShrink: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
+          {format(viewMonth, 'MMMM yyyy')} · {incomes.length} entr{incomes.length !== 1 ? 'ies' : 'y'}
+        </p>
+        <p style={{ fontSize: 34, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1, margin: '0 0 4px' }}>
+          ₹{totalIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+        </p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0 }}>Total income</p>
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto pb-28">
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
         {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-gray-300 dark:text-gray-600 text-sm">Loading…</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 0', color: '#B0B8C4', fontSize: 14 }}>Loading…</div>
         ) : incomes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 px-6">
-            <span className="text-4xl">💰</span>
-            <p className="text-gray-400 dark:text-gray-500 text-sm text-center">No income recorded for {format(viewMonth, 'MMMM yyyy')}</p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px', gap: 12 }}>
+            <span style={{ fontSize: 40, color: '#00C2B2' }}>💰</span>
+            <p style={{ color: '#B0B8C4', fontSize: 14, textAlign: 'center', margin: 0 }}>No income recorded for {format(viewMonth, 'MMMM yyyy')}</p>
             <button
               onClick={() => setShowForm(true)}
-              className="bg-emerald-500 text-white text-sm font-semibold px-5 py-2.5 rounded-xl"
+              style={{ background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#FFFFFF', fontSize: 14, fontWeight: 600, padding: '10px 20px', borderRadius: 999, border: 'none', cursor: 'pointer' }}
             >
               + Log Income
             </button>
           </div>
         ) : (
-          Object.entries(grouped).map(([date, items]) => (
-            <div key={date}>
-              <div className="px-4 pt-4 pb-1 flex items-center justify-between">
-                <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{date}</p>
-                <p className="text-xs font-semibold text-emerald-600">
-                  +₹{items.reduce((s, i) => s + Number(i.amount), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                </p>
-              </div>
-              <div className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                {items.map((income) => {
-                  const cat = CAT_MAP[income.category] || CAT_MAP.OTHER;
-                  return (
-                    <div
-                      key={income.id}
-                      className="flex items-center gap-3 px-4 py-3 active:bg-gray-50 dark:active:bg-gray-700"
-                    >
-                      <span className="text-2xl shrink-0">{cat.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{income.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-emerald-600 font-medium">{cat.label}</span>
-                          {income.source && <span className="text-xs text-gray-400">· {income.source}</span>}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, padding: '0 16px' }}>
+            {Object.entries(grouped).map(([date, items]) => (
+              <div key={date} style={{ marginBottom: 12 }}>
+                {/* Date header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 4px 6px' }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B8C4', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>{date}</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#059669', margin: 0 }}>
+                    +₹{items.reduce((s, i) => s + Number(i.amount), 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+
+                {/* Income items */}
+                <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+                  {items.map((income, idx) => {
+                    const cat = CAT_MAP[income.category] || CAT_MAP.OTHER;
+                    return (
+                      <div
+                        key={income.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '12px 14px',
+                          borderTop: idx > 0 ? '1px solid #E9ECF0' : 'none',
+                        }}
+                      >
+                        {/* Emoji icon box */}
+                        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#E6FAF9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                          {cat.icon}
+                        </div>
+
+                        {/* Title + meta */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 14, fontWeight: 600, color: '#0A0D14', margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{income.title}</p>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 12, color: '#00C2B2', fontWeight: 500 }}>{cat.label}</span>
+                            {income.source && <span style={{ fontSize: 12, color: '#B0B8C4' }}>· {income.source}</span>}
+                            {income.isRecurring && <Badge variant="recurring" label="Recurring" />}
+                          </div>
+                        </div>
+
+                        {/* Amount */}
+                        <p style={{ fontSize: 14, fontWeight: 800, color: '#059669', flexShrink: 0, margin: 0 }}>
+                          +₹{Number(income.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                        </p>
+
+                        {/* Actions */}
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <button
+                            onClick={() => openEdit(income)}
+                            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: 'none', background: 'transparent', color: '#B0B8C4', cursor: 'pointer', fontSize: 14 }}
+                          >✏️</button>
+                          <button
+                            onClick={() => handleDelete(income.id)}
+                            style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: 'none', background: 'transparent', color: '#B0B8C4', cursor: 'pointer', fontSize: 14 }}
+                          >🗑️</button>
                         </div>
                       </div>
-                      <p className="text-sm font-bold text-emerald-600 shrink-0">
-                        +₹{Number(income.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                      </p>
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          onClick={() => openEdit(income)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                        >✏️</button>
-                        <button
-                          onClick={() => handleDelete(income.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm"
-                        >🗑️</button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </SurfaceCard>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       {/* FAB */}
       <button
         onClick={() => { setEditing(null); setShowForm(true); }}
-        className="fixed bottom-20 right-5 w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-30 active:scale-95 transition-transform"
+        style={{
+          position: 'fixed',
+          bottom: 88,
+          right: 20,
+          width: 56,
+          height: 56,
+          background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)',
+          border: 'none',
+          borderRadius: 999,
+          color: '#FFFFFF',
+          fontSize: 28,
+          boxShadow: '0 4px 20px rgba(0,194,178,0.40)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          zIndex: 30,
+        }}
         aria-label="Add income"
       >
         +
@@ -321,8 +387,6 @@ export default function IncomePage() {
           accounts={accounts}
         />
       )}
-
-      <BottomNav />
     </div>
   );
 }

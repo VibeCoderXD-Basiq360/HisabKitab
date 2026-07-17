@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, format, isSameMonth, isToday, addMonths, subMonths, isSameDay } from 'date-fns';
 import { useExpenses } from '../../hooks/useExpenses';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
-import ExpenseCard from '../../components/ExpenseCard';
+import SurfaceCard from '../../components/ui/SurfaceCard';
+import TransactionRow from '../../components/ui/TransactionRow';
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
 
@@ -34,7 +34,7 @@ export default function CalendarPage() {
     return map;
   }, [expenses]);
 
-  // Build calendar grid — Mon-Sun weeks
+  // Build calendar grid – Mon-Sun weeks
   const gridDays = useMemo(() => {
     const start = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
     const end = endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
@@ -47,36 +47,95 @@ export default function CalendarPage() {
 
   const DOW = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  function dotColor(total) {
-    if (total > 2000) return 'bg-red-400';
-    if (total > 500) return 'bg-amber-400';
-    return 'bg-green-400';
-  }
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={t('settings.calendar')} showBack />
 
       {/* Month navigation */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between px-4 py-3">
-        <button onClick={() => { setMonth((m) => subMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-400 text-lg rounded-xl active:bg-gray-100 dark:active:bg-gray-700">‹</button>
-        <div className="text-center">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{format(month, 'MMMM yyyy')}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">{fmt(monthTotal)} · {expenses.length} expenses</p>
+      <div style={{
+        background: '#FFFFFF',
+        borderBottom: '1px solid #E9ECF0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 16px',
+      }}>
+        <button
+          onClick={() => { setMonth((m) => subMonths(m, 1)); setSelected(null); }}
+          style={{
+            background: '#fff',
+            borderRadius: 10,
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid #E9ECF0',
+            cursor: 'pointer',
+            fontSize: 18,
+            color: '#374151',
+          }}
+        >
+          ‹
+        </button>
+
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ fontWeight: 800, color: '#0A0D14', fontSize: 16, margin: 0 }}>
+            {format(month, 'MMMM yyyy')}
+          </p>
+          <p style={{ fontSize: 12, color: '#B0B8C4', margin: '2px 0 0' }}>
+            {fmt(monthTotal)} · {expenses.length} expenses
+          </p>
         </div>
-        <button onClick={() => { setMonth((m) => addMonths(m, 1)); setSelected(null); }} className="w-9 h-9 flex items-center justify-center text-gray-500 dark:text-gray-400 text-lg rounded-xl active:bg-gray-100 dark:active:bg-gray-700">›</button>
+
+        <button
+          onClick={() => { setMonth((m) => addMonths(m, 1)); setSelected(null); }}
+          style={{
+            background: '#fff',
+            borderRadius: 10,
+            width: 36,
+            height: 36,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid #E9ECF0',
+            cursor: 'pointer',
+            fontSize: 18,
+            color: '#374151',
+          }}
+        >
+          ›
+        </button>
       </div>
 
-      <div className="flex-1 overflow-auto pb-28">
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
         {/* Day of week headers */}
-        <div className="grid grid-cols-7 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          background: '#FFFFFF',
+          borderBottom: '1px solid #E9ECF0',
+        }}>
           {DOW.map((d) => (
-            <div key={d} className="py-2 text-center text-xs font-semibold text-gray-400 dark:text-gray-500">{d}</div>
+            <div key={d} style={{
+              padding: '8px 0',
+              textAlign: 'center',
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#B0B8C4',
+            }}>
+              {d}
+            </div>
           ))}
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          background: '#FFFFFF',
+          borderBottom: '1px solid #E9ECF0',
+        }}>
           {gridDays.map((day) => {
             const key = format(day, 'yyyy-MM-dd');
             const info = dayMap[key];
@@ -88,19 +147,53 @@ export default function CalendarPage() {
               <button
                 key={key}
                 onClick={() => setSelected(isSelected ? null : day)}
-                className={`relative min-h-[64px] flex flex-col items-center pt-2 pb-1 border-b border-r border-gray-50 dark:border-gray-700 transition-colors ${
-                  isSelected ? 'bg-primary-50 dark:bg-primary-900/20' : 'active:bg-gray-50 dark:active:bg-gray-700'
-                } ${!inMonth ? 'opacity-30' : ''}`}
+                style={{
+                  position: 'relative',
+                  minHeight: 64,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  paddingTop: 8,
+                  paddingBottom: 4,
+                  background: isSelected ? '#E6FAF9' : '#FFFFFF',
+                  opacity: inMonth ? 1 : 0.3,
+                  cursor: 'pointer',
+                  border: 'none',
+                  borderBottom: '1px solid #E9ECF0',
+                  borderRight: '1px solid #E9ECF0',
+                  transition: 'background 0.15s',
+                }}
               >
-                <span className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                  today ? 'bg-primary-500 text-white' : isSelected ? 'text-primary-600' : 'text-gray-700 dark:text-gray-300'
-                }`}>
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: today && !isSelected ? 800 : 600,
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  background: isSelected ? '#00C2B2' : 'transparent',
+                  color: isSelected ? '#fff' : today ? '#00C2B2' : '#374151',
+                }}>
                   {format(day, 'd')}
                 </span>
+
                 {info && inMonth && (
                   <>
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1 ${dotColor(info.total)}`} />
-                    <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 leading-none">
+                    <div style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: '50%',
+                      background: '#00C2B2',
+                      marginTop: 4,
+                    }} />
+                    <span style={{
+                      fontSize: 9,
+                      color: '#B0B8C4',
+                      marginTop: 2,
+                      lineHeight: 1,
+                    }}>
                       {info.total >= 1000 ? `${(info.total / 1000).toFixed(1)}k` : Math.round(info.total)}
                     </span>
                   </>
@@ -112,26 +205,55 @@ export default function CalendarPage() {
 
         {/* Selected day expenses */}
         {selected && (
-          <div className="mt-3 px-4 mb-3">
-            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
-              {format(selected, 'd MMMM')} · {selectedData ? `${selectedData.count} expense${selectedData.count !== 1 ? 's' : ''} · ${fmt(selectedData.total)}` : 'No expenses'}
+          <div style={{ marginTop: 12, padding: '0 16px 12px' }}>
+            <p style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: '#B0B8C4',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              marginBottom: 8,
+            }}>
+              {format(selected, 'd MMMM')} ·{' '}
+              {selectedData
+                ? `${selectedData.count} expense${selectedData.count !== 1 ? 's' : ''} · `
+                : 'No expenses'}
+              {selectedData && (
+                <span style={{ color: '#0A0D14', fontWeight: 800 }}>{fmt(selectedData.total)}</span>
+              )}
             </p>
+
             {selectedData ? (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
-                {selectedData.expenses.map((e) => (
-                  <ExpenseCard key={e.id} expense={e} onClick={() => navigate(`/expense/${e.id}`)} />
+              <SurfaceCard style={{ padding: 0, overflow: 'hidden' }}>
+                {selectedData.expenses.map((e, idx) => (
+                  <TransactionRow
+                    key={e.id}
+                    icon={e.category?.icon || '💸'}
+                    iconBg={e.category?.color || '#F0F2F7'}
+                    title={e.description || e.category?.name || 'Expense'}
+                    subtitle={e.category?.name}
+                    amount={fmt(e.amount)}
+                    isLast={idx === selectedData.expenses.length - 1}
+                    onClick={() => navigate(`/expense/${e.id}`)}
+                  />
                 ))}
-              </div>
+              </SurfaceCard>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center py-8">
-                <p className="text-sm text-gray-400 dark:text-gray-500">No expenses on this day</p>
-              </div>
+              <SurfaceCard>
+                <p style={{
+                  fontSize: 14,
+                  color: '#B0B8C4',
+                  textAlign: 'center',
+                  padding: '24px 0',
+                  margin: 0,
+                }}>
+                  No expenses on this day
+                </p>
+              </SurfaceCard>
             )}
           </div>
         )}
       </div>
-
-      <BottomNav />
     </div>
   );
 }

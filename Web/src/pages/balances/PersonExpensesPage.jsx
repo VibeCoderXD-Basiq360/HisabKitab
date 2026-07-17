@@ -2,17 +2,37 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { format } from 'date-fns';
 import TopBar from '../../components/TopBar';
-import BottomNav from '../../components/BottomNav';
-import Button from '../../components/ui/Button';
+import SurfaceCard from '../../components/ui/SurfaceCard';
 import { usePaidForPerson, useRequestPayment, useAcceptPayment, useRejectPayment } from '../../hooks/useSplits';
 
 function StatusBadge({ status }) {
   const { t } = useTranslation();
   if (status === 'CONFIRMED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">{t('balance.settled')}</span>;
+    return (
+      <span style={{
+        fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+        background: '#D1FAE5', color: '#059669',
+      }}>
+        {t('balance.settled')}
+      </span>
+    );
   if (status === 'PAYMENT_REQUESTED')
-    return <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t('balance.claimed_paid')}</span>;
-  return <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">{t('balance.pending')}</span>;
+    return (
+      <span style={{
+        fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+        background: '#FEF3C7', color: '#D97706',
+      }}>
+        {t('balance.claimed_paid')}
+      </span>
+    );
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+      background: '#F0F2F7', color: '#B0B8C4',
+    }}>
+      {t('balance.pending')}
+    </span>
+  );
 }
 
 export default function PersonExpensesPage() {
@@ -37,39 +57,100 @@ export default function PersonExpensesPage() {
     return split?.status === 'CONFIRMED' ? sum + Number(e.amount) : sum;
   }, 0);
 
+  const initials = personName.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <TopBar title={personName} showBack />
 
-      {/* Summary strip */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-4 py-3 flex gap-4">
-        {totalOutstanding > 0 && (
-          <div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.outstanding')}</p>
-            <p className="text-base font-bold text-amber-600">₹{totalOutstanding.toFixed(2)}</p>
-          </div>
-        )}
-        {totalSettled > 0 && (
-          <div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">{t('balance.settled')}</p>
-            <p className="text-base font-bold text-green-600">₹{totalSettled.toFixed(2)}</p>
-          </div>
-        )}
-        {expenses.length === 0 && !isLoading && (
-          <p className="text-sm text-gray-400">No expenses yet</p>
-        )}
-      </div>
+      <div style={{ flex: 1, padding: '16px', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      <div className="flex-1 p-4 pb-28 flex flex-col gap-3">
-        {isLoading && <p className="text-center text-sm text-gray-400 mt-12">{t('common.loading')}</p>}
+        {/* Hero card with person + balance summary */}
+        <div style={{
+          background: 'linear-gradient(135deg, #0A0D14 0%, #1a2340 100%)',
+          borderRadius: 20,
+          padding: '20px 20px 22px',
+        }}>
+          {/* Person row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+            <div style={{
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              background: 'linear-gradient(135deg, #00C2B2, #0097a7)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#FFFFFF',
+              flexShrink: 0,
+            }}>
+              {initials || '👤'}
+            </div>
+            <div>
+              <p style={{ fontSize: 18, fontWeight: 700, color: '#FFFFFF', margin: 0 }}>{personName}</p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>
+                {expenses.length} expense{expenses.length !== 1 ? 's' : ''} together
+              </p>
+            </div>
+          </div>
 
+          {/* Balance summary pills */}
+          {(totalOutstanding > 0 || totalSettled > 0) && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              {totalOutstanding > 0 && (
+                <div style={{
+                  flex: 1,
+                  background: 'rgba(225,29,72,0.15)',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  border: '1px solid rgba(225,29,72,0.25)',
+                }}>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', margin: 0 }}>{t('balance.outstanding')}</p>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: '#E11D48', margin: '4px 0 0' }}>
+                    ₹{totalOutstanding.toFixed(2)}
+                  </p>
+                </div>
+              )}
+              {totalSettled > 0 && (
+                <div style={{
+                  flex: 1,
+                  background: 'rgba(5,150,105,0.15)',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  border: '1px solid rgba(5,150,105,0.25)',
+                }}>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', margin: 0 }}>{t('balance.settled')}</p>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: '#059669', margin: '4px 0 0' }}>
+                    ₹{totalSettled.toFixed(2)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {expenses.length === 0 && !isLoading && (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0 }}>No expenses yet</p>
+          )}
+        </div>
+
+        {/* Loading */}
+        {isLoading && (
+          <p style={{ textAlign: 'center', fontSize: 14, color: '#B0B8C4', paddingTop: 48 }}>
+            {t('common.loading')}
+          </p>
+        )}
+
+        {/* Empty state */}
         {!isLoading && expenses.length === 0 && (
-          <div className="flex flex-col items-center justify-center mt-16 gap-2">
-            <span className="text-5xl">🧾</span>
-            <p className="text-sm text-gray-400">No expenses paid for {personName}</p>
-          </div>
+          <SurfaceCard style={{ padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 44 }}>🧾</span>
+            <p style={{ fontSize: 14, color: '#B0B8C4', margin: 0 }}>No expenses paid for {personName}</p>
+          </SurfaceCard>
         )}
 
+        {/* Expense cards */}
         {expenses.map((expense) => {
           const split = expense.splits?.[0];
           const status = split?.status || 'PENDING';
@@ -79,63 +160,87 @@ export default function PersonExpensesPage() {
             : '';
 
           return (
-            <div key={expense.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-              <div className="px-4 py-3 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+            <SurfaceCard key={expense.id} style={{ padding: 0, overflow: 'hidden' }}>
+              {/* Main row */}
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {expense.title || 'Expense'}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">{date}</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: '3px 0 0' }}>{date}</p>
                   {expense.category && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{expense.category.name}</p>
+                    <p style={{ fontSize: 11, color: '#B0B8C4', margin: '2px 0 0' }}>{expense.category.name}</p>
                   )}
                 </div>
-                <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">₹{amount.toFixed(2)}</span>
+                <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#0A0D14' }}>₹{amount.toFixed(2)}</span>
                   <StatusBadge status={status} />
                 </div>
               </div>
 
+              {/* Accept / Reject actions */}
               {split && status === 'PAYMENT_REQUESTED' && (
-                <div className="px-4 pb-3 flex gap-2">
-                  <Button
-                    variant="primary"
-                    className="flex-1 !min-h-[36px] text-xs"
+                <div style={{ padding: '0 16px 14px', display: 'flex', gap: 10 }}>
+                  <button
                     onClick={() => accept.mutate(split.id)}
                     disabled={isBusy}
+                    style={{
+                      flex: 1,
+                      height: 38,
+                      borderRadius: 12,
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #00C2B2, #0097a7)',
+                      color: '#FFFFFF',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: isBusy ? 'not-allowed' : 'pointer',
+                      opacity: isBusy ? 0.6 : 1,
+                    }}
                   >
                     {t('balance.accept')}
-                  </Button>
-                  <Button
-                    variant="danger"
-                    className="flex-1 !min-h-[36px] text-xs"
+                  </button>
+                  <button
                     onClick={() => reject.mutate(split.id)}
                     disabled={isBusy}
+                    style={{
+                      flex: 1,
+                      height: 38,
+                      borderRadius: 12,
+                      border: 'none',
+                      background: '#E11D48',
+                      color: '#FFFFFF',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: isBusy ? 'not-allowed' : 'pointer',
+                      opacity: isBusy ? 0.6 : 1,
+                    }}
                   >
                     {t('balance.reject')}
-                  </Button>
+                  </button>
                 </div>
               )}
 
+              {/* Waiting note */}
               {split && status === 'PENDING' && (
-                <div className="px-4 pb-3">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+                <div style={{ padding: '0 16px 12px', borderTop: '1px solid #F0F2F7' }}>
+                  <p style={{ fontSize: 12, color: '#B0B8C4', textAlign: 'center', margin: '10px 0 0' }}>
                     {t('balance.waiting')}
                   </p>
                 </div>
               )}
 
+              {/* Confirmed note */}
               {status === 'CONFIRMED' && (
-                <div className="px-4 pb-3">
-                  <p className="text-xs text-green-600 text-center">{t('balance.settled')}</p>
+                <div style={{ padding: '0 16px 12px', borderTop: '1px solid #F0F2F7' }}>
+                  <p style={{ fontSize: 12, color: '#059669', textAlign: 'center', margin: '10px 0 0', fontWeight: 600 }}>
+                    {t('balance.settled')}
+                  </p>
                 </div>
               )}
-            </div>
+            </SurfaceCard>
           );
         })}
       </div>
-
-      <BottomNav />
     </div>
   );
 }
