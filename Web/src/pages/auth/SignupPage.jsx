@@ -110,8 +110,10 @@ export default function SignupPage() {
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img src="/logo.jpg" alt="HisabKitab" style={{ width: 88, height: 88, borderRadius: 22, objectFit: 'cover', marginBottom: 14 }} />
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0A0D14', margin: '0 0 4px' }}>HisabKitab</h1>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <img src="/logo.jpg" alt="HisabKitab" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover' }} />
+            <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0A0D14', margin: 0 }}>HisabKitab</h1>
+          </div>
           <p style={{ fontSize: 14, color: '#B0B8C4', margin: 0 }}>{t('auth.tagline_signup')}</p>
         </div>
 

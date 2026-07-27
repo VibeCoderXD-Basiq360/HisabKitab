@@ -132,9 +132,9 @@ export default function TopBar({
   if (!hasBack) {
     return (
       <header style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
+        display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         padding: '14px 20px 10px',
         background: 'transparent',
       }}>
@@ -164,11 +164,8 @@ export default function TopBar({
           </div>
         </div>
 
-        {/* Center: logo */}
-        <img src="/logo.jpg" alt="HisabKitab" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }} />
-
         {/* Right: actions + bell */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {showSearch && (
             <button
               onClick={() => navigate('/search')}
