@@ -117,7 +117,7 @@ export default function InventoryPage() {
         category: 'FILAMENT',
         unit: 'GRAM',
         costPrice: costPerG,
-        lowStockThreshold: 100,
+        lowStockThreshold: 200,
         brand: filForm.brand,
         filamentType: filForm.type,
         colorName: filForm.colorName,
@@ -360,8 +360,43 @@ export default function InventoryPage() {
                 </div>
               </FormField>
 
+              {/* Location */}
+              {locations.length > 0 && (
+                <FormField label="📍 Location">
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {locations.map(l => (
+                      <button key={l.id} type="button" onClick={() => setFilForm(f => ({ ...f, locationId: l.id }))}
+                        style={{
+                          padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                          border: filForm.locationId === l.id ? '2px solid #00C2B2' : '1.5px solid #E9ECF0',
+                          background: filForm.locationId === l.id ? 'rgba(0,194,178,0.08)' : '#F8F9FB',
+                          color: filForm.locationId === l.id ? '#00A896' : '#374151',
+                        }}>
+                        {l.name}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+              )}
+
+              {/* Spool count */}
+              {filForm.locationId && (
+                <FormField label="Number of spools">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1.5px solid #E9ECF0', borderRadius: 10, overflow: 'hidden', width: 'fit-content' }}>
+                    <button type="button" onClick={() => setFilForm(f => ({ ...f, spoolCount: Math.max(1, f.spoolCount - 1) }))}
+                      style={{ padding: '10px 18px', background: '#F8F9FB', border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#374151' }}>−</button>
+                    <span style={{ padding: '10px 20px', fontSize: 16, fontWeight: 800, color: '#0A0D14', minWidth: 40, textAlign: 'center' }}>{filForm.spoolCount}</span>
+                    <button type="button" onClick={() => setFilForm(f => ({ ...f, spoolCount: f.spoolCount + 1 }))}
+                      style={{ padding: '10px 18px', background: '#F8F9FB', border: 'none', cursor: 'pointer', fontSize: 18, fontWeight: 700, color: '#374151' }}>+</button>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#6B7280', margin: '5px 0 0' }}>
+                    Will add {filForm.spoolCount * filForm.spoolG}g to {locations.find(l => l.id === filForm.locationId)?.name}
+                  </p>
+                </FormField>
+              )}
+
               {/* Price */}
-              <FormField label="Total price paid (₹)">
+              <FormField label="Total price paid (₹) per spool">
                 <input style={inputCls} type="number" step="0.01" required value={filForm.totalPrice}
                   onChange={e => setFilForm(f => ({ ...f, totalPrice: e.target.value }))} placeholder="e.g. 850" />
                 {filForm.totalPrice && (
@@ -370,33 +405,6 @@ export default function InventoryPage() {
                   </p>
                 )}
               </FormField>
-
-              {/* Initial stock */}
-              {locations.length > 0 && (
-                <FormField label="Add initial stock to">
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <select style={{ ...inputCls, flex: 1 }} value={filForm.locationId}
-                      onChange={e => setFilForm(f => ({ ...f, locationId: e.target.value }))}>
-                      <option value="">— skip for now —</option>
-                      {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                    </select>
-                    {filForm.locationId && (
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #E9ECF0', borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-                        <button type="button" onClick={() => setFilForm(f => ({ ...f, spoolCount: Math.max(1, f.spoolCount - 1) }))}
-                          style={{ padding: '8px 12px', background: '#F8F9FB', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700, color: '#374151' }}>−</button>
-                        <span style={{ padding: '8px 10px', fontSize: 14, fontWeight: 800, color: '#0A0D14', minWidth: 24, textAlign: 'center' }}>{filForm.spoolCount}</span>
-                        <button type="button" onClick={() => setFilForm(f => ({ ...f, spoolCount: f.spoolCount + 1 }))}
-                          style={{ padding: '8px 12px', background: '#F8F9FB', border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 700, color: '#374151' }}>+</button>
-                      </div>
-                    )}
-                  </div>
-                  {filForm.locationId && filForm.spoolG && (
-                    <p style={{ fontSize: 11, color: '#6B7280', margin: '4px 0 0' }}>
-                      Will add {filForm.spoolCount * filForm.spoolG}g to {locations.find(l => l.id === filForm.locationId)?.name}
-                    </p>
-                  )}
-                </FormField>
-              )}
 
               {/* Auto name preview */}
               <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(0,194,178,0.06)', border: '1px solid rgba(0,194,178,0.2)', marginBottom: 16 }}>
