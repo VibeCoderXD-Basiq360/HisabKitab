@@ -206,7 +206,6 @@ export default function TopBar({
       <BackButton onPress={handleBack} />
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <img src="/logo.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
         {title && (
           <h1 style={{
