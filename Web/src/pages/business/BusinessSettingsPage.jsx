@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites, useCreatePrinterProfile, useUpdatePrinterProfile, useDeletePrinterProfile } from '../../hooks/useBusiness';
+import { useBusiness, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites, useUpdateSettings, useCreatePrinterProfile, useUpdatePrinterProfile, useDeletePrinterProfile } from '../../hooks/useBusiness';
 import { usePeople } from '../../hooks/usePeople';
 import TopBar from '../../components/TopBar';
 import SurfaceCard from '../../components/ui/SurfaceCard';
+import Toggle from '../../components/ui/Toggle';
 
 function Section({ title, children }) {
   return (
@@ -55,9 +56,37 @@ export default function BusinessSettingsPage() {
   const addLocation = useAddLocation();
   const invitePartner = useInvitePartner();
   const updatePartner = useUpdatePartner();
+  const updateSettings = useUpdateSettings();
   const createProfile = useCreatePrinterProfile();
   const updateProfile = useUpdatePrinterProfile();
   const deleteProfile = useDeletePrinterProfile();
+
+  const settings = business?.settings;
+  const [s, setS] = useState({ labourRateHr: '', labourOn: true, failurePct: '', marginPct: '' });
+  const [settingsMsg, setSettingsMsg] = useState('');
+
+  useEffect(() => {
+    if (!settings) return;
+    setS({
+      labourRateHr: settings.defaultLabourRateHr ?? '',
+      labourOn: settings.labourOnByDefault ?? true,
+      failurePct: settings.defaultFailureRatePct ?? '',
+      marginPct: settings.defaultTargetMarginPct ?? '',
+    });
+  }, [settings]);
+
+  async function saveSettings() {
+    try {
+      await updateSettings.mutateAsync({
+        defaultLabourRateHr: Number(s.labourRateHr) || 0,
+        labourOnByDefault: s.labourOn,
+        defaultFailureRatePct: Number(s.failurePct) || 0,
+        defaultTargetMarginPct: Number(s.marginPct) || 0,
+      });
+      setSettingsMsg('Saved!');
+      setTimeout(() => setSettingsMsg(''), 2000);
+    } catch { setSettingsMsg('Error saving'); }
+  }
 
   const [sheet, setSheet] = useState(null);
   const [locName, setLocName] = useState('');
@@ -161,6 +190,39 @@ export default function BusinessSettingsPage() {
             style={{ width: '100%', padding: '12px 0', borderRadius: 12, border: '1.5px solid rgba(0,194,178,0.3)', background: 'rgba(0,194,178,0.04)', color: '#00C2B2', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
             + Add Printer Profile
           </button>
+        </Section>
+
+        {/* Job Defaults */}
+        <Section title="Job Defaults">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Labour rate (₹/hr)</label>
+                <input style={inputStyle} type="number" value={s.labourRateHr} onChange={e => setS(f => ({ ...f, labourRateHr: e.target.value }))} placeholder="100" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', paddingBottom: 2 }}>
+                <label style={labelStyle}>Labour on by default</label>
+                <Toggle value={s.labourOn} onChange={v => setS(f => ({ ...f, labourOn: v }))} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Default failure %</label>
+                <input style={inputStyle} type="number" value={s.failurePct} onChange={e => setS(f => ({ ...f, failurePct: e.target.value }))} placeholder="10" />
+              </div>
+              <div>
+                <label style={labelStyle}>Default margin %</label>
+                <input style={inputStyle} type="number" value={s.marginPct} onChange={e => setS(f => ({ ...f, marginPct: e.target.value }))} placeholder="30" />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
+              <button onClick={saveSettings} disabled={updateSettings.isPending}
+                style={{ flex: 1, padding: '13px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontWeight: 800, fontSize: 14, border: 'none', cursor: updateSettings.isPending ? 'not-allowed' : 'pointer', opacity: updateSettings.isPending ? 0.6 : 1 }}>
+                {updateSettings.isPending ? 'Saving…' : 'Save Defaults'}
+              </button>
+              {settingsMsg && <span style={{ fontSize: 13, fontWeight: 700, color: settingsMsg === 'Saved!' ? '#059669' : '#E11D48' }}>{settingsMsg}</span>}
+            </div>
+          </div>
         </Section>
 
         {/* Partners */}
