@@ -62,13 +62,13 @@ export default function BusinessSettingsPage() {
   const deleteProfile = useDeletePrinterProfile();
 
   const settings = business?.settings;
-  const [s, setS] = useState({ labourRateHr: '', labourOn: true, failurePct: '', marginPct: '' });
+  const [s, setS] = useState({ labourRateHr: 100, labourOn: true, failurePct: '', marginPct: '' });
   const [settingsMsg, setSettingsMsg] = useState('');
 
   useEffect(() => {
     if (!settings) return;
     setS({
-      labourRateHr: settings.defaultLabourRateHr ?? '',
+      labourRateHr: settings.defaultLabourRateHr || 100,
       labourOn: settings.labourOnByDefault ?? true,
       failurePct: settings.defaultFailureRatePct ?? '',
       marginPct: settings.defaultTargetMarginPct ?? '',
