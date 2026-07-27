@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useInventoryItems, useCreateItem, useAddStock, useAdjustStock, useTransferStock, useBusiness } from '../../hooks/useBusiness';
+import { useInventoryItems, useCreateItem, useAddStock, useAdjustStock, useTransferStock, useBusiness, useUpdateSettings } from '../../hooks/useBusiness';
 import TopBar from '../../components/TopBar';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import Badge from '../../components/ui/Badge';
@@ -59,16 +59,19 @@ function Sheet({ title, onClose, children }) {
   );
 }
 
-function FormField({ label, children, style }) {
+function FormField({ label, action, children, style }) {
   return (
     <div style={{ marginBottom: 14, ...style }}>
-      <label style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+        {action}
+      </div>
       {children}
     </div>
   );
 }
 
-const EMPTY_FIL = { brand: 'Bambu Lab', type: 'PLA', colorName: 'Black', colorHex: '#1C1C1C', spoolG: 1000, totalPrice: '', locationId: '', spoolCount: 1 };
+const EMPTY_FIL = { brand: 'Bambu Lab', type: 'PLA', colorName: 'Black', colorHex: '#1C1C1C', spoolG: 1000, currentWeightG: 1000, totalPrice: '', locationId: '', spoolCount: 1 };
 const EMPTY_ITEM = { name: '', sku: '', category: 'PACKAGING', unit: 'PIECE', costPrice: '', lowStockThreshold: '' };
 
 export default function InventoryPage() {
@@ -80,12 +83,21 @@ export default function InventoryPage() {
   const adjust     = useAdjustStock();
   const transfer   = useTransferStock();
 
+  const updateSettings = useUpdateSettings();
   const locations = business?.locations || [];
+  const settings  = business?.settings;
+  const brands    = settings?.filamentBrands ? JSON.parse(settings.filamentBrands) : FILAMENT_BRANDS;
+  const filTypes  = settings?.filamentTypes  ? JSON.parse(settings.filamentTypes)  : FILAMENT_TYPES;
+
   const [sheet, setSheet]       = useState(null);
   const [selItem, setSelItem]   = useState(null);
   const [filterCat, setFilterCat] = useState('');
   const [search, setSearch]     = useState('');
   const [newCat, setNewCat]     = useState('FILAMENT');
+  const [editBrands, setEditBrands] = useState(false);
+  const [editTypes,  setEditTypes]  = useState(false);
+  const [newBrand,   setNewBrand]   = useState('');
+  const [newType,    setNewType]    = useState('');
 
   const [filForm, setFilForm]   = useState({ ...EMPTY_FIL, locationId: locations[0]?.id || '' });
   const [itemForm, setItemForm] = useState({ ...EMPTY_ITEM });
@@ -97,6 +109,13 @@ export default function InventoryPage() {
   const filteredItems = items
     .filter(i => !filterCat || i.category === filterCat)
     .filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()));
+
+  function saveBrands(list) { updateSettings.mutate({ filamentBrands: list }); }
+  function saveTypes(list)  { updateSettings.mutate({ filamentTypes:  list }); }
+  function addBrand()  { const v = newBrand.trim(); if (v && !brands.includes(v))   { saveBrands([...brands,   v]); } setNewBrand(''); }
+  function addType()   { const v = newType.trim();  if (v && !filTypes.includes(v)) { saveTypes([...filTypes,  v]); } setNewType('');  }
+  function removeBrand(b) { saveBrands(brands.filter(x => x !== b)); if (filForm.brand === b) setFilForm(f => ({ ...f, brand: brands[0] || '' })); }
+  function removeType(t)  { saveTypes(filTypes.filter(x => x !== t)); if (filForm.type  === t) setFilForm(f => ({ ...f, type:  filTypes[0] || '' })); }
 
   function openNewItem() {
     setErr('');
@@ -127,7 +146,7 @@ export default function InventoryPage() {
         await addStock.mutateAsync({
           itemId: item.id,
           locationId: filForm.locationId,
-          quantity: Number(filForm.spoolG) * Number(filForm.spoolCount),
+          quantity: Number(filForm.currentWeightG) * Number(filForm.spoolCount),
           unitCost: costPerG,
         });
       }
@@ -296,28 +315,90 @@ export default function InventoryPage() {
 
           {newCat === 'FILAMENT' ? (
             <form onSubmit={handleCreateFilament}>
-              {/* Brand */}
-              <FormField label="Brand">
-                <select style={inputCls} value={filForm.brand} onChange={e => setFilForm(f => ({ ...f, brand: e.target.value }))}>
-                  {FILAMENT_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </FormField>
-
-              {/* Type chips */}
-              <FormField label="Filament type">
+              {/* Brand chips with edit mode */}
+              <FormField label="Brand" action={
+                <button type="button" onClick={() => { setEditBrands(e => !e); setNewBrand(''); }}
+                  style={{ fontSize: 11, fontWeight: 700, color: editBrands ? '#00A896' : '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  {editBrands ? 'Done' : '+ Edit'}
+                </button>
+              }>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {FILAMENT_TYPES.map(t => (
-                    <button key={t} type="button" onClick={() => setFilForm(f => ({ ...f, type: t }))}
-                      style={{
-                        padding: '7px 13px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                        border: filForm.type === t ? '2px solid #00C2B2' : '1.5px solid #E9ECF0',
-                        background: filForm.type === t ? 'rgba(0,194,178,0.08)' : '#F8F9FB',
-                        color: filForm.type === t ? '#00A896' : '#374151',
-                      }}>
-                      {t}
-                    </button>
+                  {brands.map(b => (
+                    <div key={b} style={{ display: 'flex', alignItems: 'stretch' }}>
+                      <button type="button" onClick={() => !editBrands && setFilForm(f => ({ ...f, brand: b }))}
+                        style={{
+                          padding: '7px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                          borderRadius: editBrands ? '8px 0 0 8px' : 8,
+                          border: !editBrands && filForm.brand === b ? '2px solid #00C2B2' : '1.5px solid #E9ECF0',
+                          borderRight: editBrands ? 'none' : undefined,
+                          background: !editBrands && filForm.brand === b ? 'rgba(0,194,178,0.08)' : '#F8F9FB',
+                          color: !editBrands && filForm.brand === b ? '#00A896' : '#374151',
+                        }}>
+                        {b}
+                      </button>
+                      {editBrands && (
+                        <button type="button" onClick={() => removeBrand(b)}
+                          style={{ padding: '7px 8px', borderRadius: '0 8px 8px 0', background: '#FEF2F2', border: '1.5px solid #FECACA', borderLeft: 'none', color: '#EF4444', fontSize: 14, fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>
+                          ×
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
+                {editBrands && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <input style={{ ...inputCls, flex: 1 }} placeholder="New brand…" value={newBrand}
+                      onChange={e => setNewBrand(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addBrand())} />
+                    <button type="button" onClick={addBrand}
+                      style={{ padding: '9px 16px', borderRadius: 10, background: '#00C2B2', color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: 13 }}>
+                      Add
+                    </button>
+                  </div>
+                )}
+              </FormField>
+
+              {/* Type chips with edit mode */}
+              <FormField label="Filament type" action={
+                <button type="button" onClick={() => { setEditTypes(e => !e); setNewType(''); }}
+                  style={{ fontSize: 11, fontWeight: 700, color: editTypes ? '#00A896' : '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  {editTypes ? 'Done' : '+ Edit'}
+                </button>
+              }>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {filTypes.map(t => (
+                    <div key={t} style={{ display: 'flex', alignItems: 'stretch' }}>
+                      <button type="button" onClick={() => !editTypes && setFilForm(f => ({ ...f, type: t }))}
+                        style={{
+                          padding: '7px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                          borderRadius: editTypes ? '8px 0 0 8px' : 8,
+                          border: !editTypes && filForm.type === t ? '2px solid #00C2B2' : '1.5px solid #E9ECF0',
+                          borderRight: editTypes ? 'none' : undefined,
+                          background: !editTypes && filForm.type === t ? 'rgba(0,194,178,0.08)' : '#F8F9FB',
+                          color: !editTypes && filForm.type === t ? '#00A896' : '#374151',
+                        }}>
+                        {t}
+                      </button>
+                      {editTypes && (
+                        <button type="button" onClick={() => removeType(t)}
+                          style={{ padding: '7px 8px', borderRadius: '0 8px 8px 0', background: '#FEF2F2', border: '1.5px solid #FECACA', borderLeft: 'none', color: '#EF4444', fontSize: 14, fontWeight: 800, cursor: 'pointer', lineHeight: 1 }}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {editTypes && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <input style={{ ...inputCls, flex: 1 }} placeholder="New type…" value={newType}
+                      onChange={e => setNewType(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addType())} />
+                    <button type="button" onClick={addType}
+                      style={{ padding: '9px 16px', borderRadius: 10, background: '#00C2B2', color: '#fff', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: 13 }}>
+                      Add
+                    </button>
+                  </div>
+                )}
               </FormField>
 
               {/* Color swatches */}
@@ -344,10 +425,10 @@ export default function InventoryPage() {
               </FormField>
 
               {/* Spool size chips */}
-              <FormField label="Spool size">
+              <FormField label="Spool size (full capacity)">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                   {SPOOL_SIZES.map(s => (
-                    <button key={s} type="button" onClick={() => setFilForm(f => ({ ...f, spoolG: s }))}
+                    <button key={s} type="button" onClick={() => setFilForm(f => ({ ...f, spoolG: s, currentWeightG: s }))}
                       style={{
                         padding: '11px 0', borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: 'pointer',
                         border: filForm.spoolG === s ? '2px solid #00C2B2' : '1.5px solid #E9ECF0',
@@ -358,6 +439,18 @@ export default function InventoryPage() {
                     </button>
                   ))}
                 </div>
+              </FormField>
+
+              {/* Current weight on spool */}
+              <FormField label="Filament left on this spool (g)">
+                <input style={inputCls} type="number" min="1" max={filForm.spoolG} value={filForm.currentWeightG}
+                  onChange={e => setFilForm(f => ({ ...f, currentWeightG: e.target.value }))} />
+                {Number(filForm.currentWeightG) < filForm.spoolG
+                  ? <p style={{ fontSize: 11, color: '#F59E0B', fontWeight: 700, margin: '5px 0 0' }}>
+                      Partial spool — {filForm.spoolG - Number(filForm.currentWeightG)}g already used
+                    </p>
+                  : <p style={{ fontSize: 11, color: '#10B981', fontWeight: 700, margin: '5px 0 0' }}>Full spool</p>
+                }
               </FormField>
 
               {/* Location */}

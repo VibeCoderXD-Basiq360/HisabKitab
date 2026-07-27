@@ -43,7 +43,8 @@ const createBusiness = async (req, res) => {
 // PUT /api/business/settings
 const updateSettings = async (req, res) => {
   const { printerCostRs, printerLifeHr, printerPowerW, electricityRateKwh,
-    defaultLabourRateHr, labourOnByDefault, defaultFailureRatePct, defaultTargetMarginPct, defaultPaymentFeePct } = req.body;
+    defaultLabourRateHr, labourOnByDefault, defaultFailureRatePct, defaultTargetMarginPct, defaultPaymentFeePct,
+    filamentBrands, filamentTypes } = req.body;
 
   const settings = await prisma.businessSettings.update({
     where: { businessId: req.businessId },
@@ -57,6 +58,8 @@ const updateSettings = async (req, res) => {
       ...(defaultFailureRatePct  !== undefined && { defaultFailureRatePct: Number(defaultFailureRatePct) }),
       ...(defaultTargetMarginPct !== undefined && { defaultTargetMarginPct: Number(defaultTargetMarginPct) }),
       ...(defaultPaymentFeePct   !== undefined && { defaultPaymentFeePct: Number(defaultPaymentFeePct) }),
+      ...(filamentBrands         !== undefined && { filamentBrands: Array.isArray(filamentBrands) ? JSON.stringify(filamentBrands) : null }),
+      ...(filamentTypes          !== undefined && { filamentTypes:  Array.isArray(filamentTypes)  ? JSON.stringify(filamentTypes)  : null }),
     },
   });
   res.json(settings);

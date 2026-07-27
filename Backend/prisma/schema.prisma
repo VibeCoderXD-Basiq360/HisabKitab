@@ -298,6 +298,8 @@ model BusinessSettings {
   defaultFailureRatePct  Decimal  @default(10)    @db.Decimal(5, 2)
   defaultTargetMarginPct Decimal  @default(50)    @db.Decimal(5, 2)
   defaultPaymentFeePct   Decimal  @default(0)     @db.Decimal(5, 2)
+  filamentBrands         String?
+  filamentTypes          String?
   updatedAt              DateTime @updatedAt
 }
 
