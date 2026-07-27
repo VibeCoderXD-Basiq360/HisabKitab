@@ -12,13 +12,17 @@ const listItems = async (req, res) => {
 };
 
 const createItem = async (req, res) => {
-  const { name, sku, category, unit, costPrice, lowStockThreshold } = req.body;
+  const { name, sku, category, unit, costPrice, lowStockThreshold, brand, filamentType, colorName, colorHex } = req.body;
   if (!name?.trim() || !category || !unit || costPrice === undefined)
     return res.status(400).json({ error: 'name, category, unit, costPrice required' });
 
   const item = await prisma.inventoryItem.create({
-    data: { businessId: req.businessId, name: name.trim(), sku: sku || null, category, unit,
-      costPrice: Number(costPrice), lowStockThreshold: lowStockThreshold ? Number(lowStockThreshold) : null },
+    data: {
+      businessId: req.businessId, name: name.trim(), sku: sku || null, category, unit,
+      costPrice: Number(costPrice), lowStockThreshold: lowStockThreshold ? Number(lowStockThreshold) : null,
+      brand: brand || null, filamentType: filamentType || null,
+      colorName: colorName || null, colorHex: colorHex || null,
+    },
   });
   res.status(201).json(item);
 };

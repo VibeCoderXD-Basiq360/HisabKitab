@@ -312,6 +312,10 @@ model InventoryItem {
   costPrice         Decimal      @db.Decimal(10, 4)
   lowStockThreshold Decimal?     @db.Decimal(10, 3)
   isActive          Boolean      @default(true)
+  brand             String?
+  filamentType      String?
+  colorName         String?
+  colorHex          String?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
