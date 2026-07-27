@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites } from '../../hooks/useBusiness';
+import { usePeople } from '../../hooks/usePeople';
 import TopBar from '../../components/TopBar';
 import SurfaceCard from '../../components/ui/SurfaceCard';
 import Toggle from '../../components/ui/Toggle';
@@ -52,6 +53,7 @@ export default function BusinessSettingsPage() {
   const navigate = useNavigate();
   const { data: business, isLoading, refetch } = useBusiness();
   const { data: sentInvites = [] } = usePartnerInvites();
+  const { data: people = [] } = usePeople();
   const updateSettings = useUpdateSettings();
   const addLocation = useAddLocation();
   const invitePartner = useInvitePartner();
@@ -250,32 +252,67 @@ export default function BusinessSettingsPage() {
         </Sheet>
       )}
 
-      {sheet === 'partner' && (
-        <Sheet title="Invite Partner" onClose={() => setSheet(null)}>
-          <form onSubmit={handleInvitePartner} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Partner's HisabKitab email *</label>
-              <input style={inputStyle} type="email" required value={partnerEmail} onChange={e => setPartnerEmail(e.target.value)} placeholder="partner@example.com" />
-            </div>
-            <div>
-              <label style={labelStyle}>Profit share %</label>
-              <input style={inputStyle} type="number" min="0" max="100" required value={partnerShare} onChange={e => setPartnerShare(e.target.value)} />
-            </div>
-            {err && <p style={{ fontSize: 13, color: '#E11D48', margin: 0 }}>{err}</p>}
-            <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>The user must already have a HisabKitab account. They will be added as a partner immediately.</p>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button type="button" onClick={() => setSheet(null)}
-                style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1.5px solid #E9ECF0', background: '#fff', color: '#6B7280', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button type="submit" disabled={invitePartner.isPending}
-                style={{ flex: 1, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontSize: 14, fontWeight: 800, border: 'none', cursor: invitePartner.isPending ? 'not-allowed' : 'pointer', opacity: invitePartner.isPending ? 0.6 : 1 }}>
-                {invitePartner.isPending ? '…' : 'Invite'}
-              </button>
-            </div>
-          </form>
-        </Sheet>
-      )}
+      {sheet === 'partner' && (() => {
+        const contactsWithEmail = people.filter(p => p.email);
+        return (
+          <Sheet title="Invite Partner" onClose={() => setSheet(null)}>
+            <form onSubmit={handleInvitePartner} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {contactsWithEmail.length > 0 && (
+                <div>
+                  <label style={labelStyle}>From your contacts</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+                    {contactsWithEmail.map(p => {
+                      const selected = partnerEmail === p.email;
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => setPartnerEmail(p.email)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: '9px 12px', borderRadius: 10, cursor: 'pointer',
+                            border: selected ? '1.5px solid #00C2B2' : '1.5px solid #F0F2F7',
+                            background: selected ? 'rgba(0,194,178,0.06)' : '#F8F9FB',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ width: 34, height: 34, borderRadius: '50%', background: selected ? 'linear-gradient(135deg,#00C2B2,#009E90)' : '#E4E7EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: selected ? '#fff' : '#6B7280', flexShrink: 0 }}>
+                            {p.name[0].toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#0A0D14', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</p>
+                            <p style={{ margin: 0, fontSize: 11, color: '#B0B8C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.email}</p>
+                          </div>
+                          {selected && <span style={{ fontSize: 16, flexShrink: 0 }}>✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label style={labelStyle}>{contactsWithEmail.length > 0 ? 'Or enter email manually' : 'Partner\'s HisabKitab email *'}</label>
+                <input style={inputStyle} type="email" required value={partnerEmail} onChange={e => setPartnerEmail(e.target.value)} placeholder="partner@example.com" />
+              </div>
+              <div>
+                <label style={labelStyle}>Profit share %</label>
+                <input style={inputStyle} type="number" min="0" max="100" required value={partnerShare} onChange={e => setPartnerShare(e.target.value)} />
+              </div>
+              {err && <p style={{ fontSize: 13, color: '#E11D48', margin: 0 }}>{err}</p>}
+              <p style={{ fontSize: 12, color: '#B0B8C4', margin: 0 }}>The user must already have a HisabKitab account. They will be added as a partner immediately.</p>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button type="button" onClick={() => setSheet(null)}
+                  style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1.5px solid #E9ECF0', background: '#fff', color: '#6B7280', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={invitePartner.isPending}
+                  style={{ flex: 1, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontSize: 14, fontWeight: 800, border: 'none', cursor: invitePartner.isPending ? 'not-allowed' : 'pointer', opacity: invitePartner.isPending ? 0.6 : 1 }}>
+                  {invitePartner.isPending ? '…' : 'Invite'}
+                </button>
+              </div>
+            </form>
+          </Sheet>
+        );
+      })()}
     </div>
   );
 }
