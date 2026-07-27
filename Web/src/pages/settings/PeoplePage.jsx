@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePeople, useCreatePerson, useUpdatePerson, useDeletePerson } from '../../hooks/usePeople';
 import {
   useContactRequests,
@@ -12,6 +13,7 @@ import SurfaceCard from '../../components/ui/SurfaceCard';
 
 export default function PeoplePage() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const { data: people = [], isLoading } = usePeople();
   const { data: requests = { received: [], sent: [] } } = useContactRequests();
   const create = useCreatePerson();
@@ -25,6 +27,7 @@ export default function PeoplePage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [editId, setEditId] = useState(null);
+  const [contactRequestMsg, setContactRequestMsg] = useState('');
 
   // Invite flow
   const [inviteEmail, setInviteEmail] = useState('');
@@ -35,11 +38,19 @@ export default function PeoplePage() {
 
   const handleSave = async () => {
     if (!name.trim()) return;
+    setContactRequestMsg('');
     if (editId) {
       await update.mutateAsync({ id: editId, name: name.trim(), email: email.trim() || undefined });
       setEditId(null);
     } else {
-      await create.mutateAsync({ name: name.trim(), email: email.trim() || undefined });
+      const result = await create.mutateAsync({ name: name.trim(), email: email.trim() || undefined });
+      if (result?.contactRequest) {
+        await qc.invalidateQueries({ queryKey: ['contact-requests'] });
+        setContactRequestMsg(t('people.request_sent_user', { email: email.trim() }));
+        setName('');
+        setEmail('');
+        return;
+      }
     }
     setName('');
     setEmail('');
@@ -169,7 +180,7 @@ export default function PeoplePage() {
                 style={inputStyle}
                 placeholder={editId ? t('people.edit_name') : t('people.name_placeholder')}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); setContactRequestMsg(''); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
               />
               <input
@@ -196,6 +207,9 @@ export default function PeoplePage() {
                   {editId ? t('people.save_changes') : t('people.add_person')}
                 </button>
               </div>
+              {contactRequestMsg && (
+                <p style={{ margin: 0, fontSize: 12, color: '#00C2B2', fontWeight: 600 }}>{contactRequestMsg}</p>
+              )}
             </SurfaceCard>
 
             {/* Connected contacts */}
