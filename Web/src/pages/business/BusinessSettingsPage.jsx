@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites, useCreatePrinterProfile, useUpdatePrinterProfile, useDeletePrinterProfile } from '../../hooks/useBusiness';
+import { useBusiness, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites, useCreatePrinterProfile, useUpdatePrinterProfile, useDeletePrinterProfile } from '../../hooks/useBusiness';
 import { usePeople } from '../../hooks/usePeople';
 import TopBar from '../../components/TopBar';
 import SurfaceCard from '../../components/ui/SurfaceCard';
-import Toggle from '../../components/ui/Toggle';
-import MenuRow from '../../components/ui/MenuRow';
 
 function Section({ title, children }) {
   return (
@@ -54,7 +52,6 @@ export default function BusinessSettingsPage() {
   const { data: business, isLoading, refetch } = useBusiness();
   const { data: sentInvites = [] } = usePartnerInvites();
   const { data: people = [] } = usePeople();
-  const updateSettings = useUpdateSettings();
   const addLocation = useAddLocation();
   const invitePartner = useInvitePartner();
   const updatePartner = useUpdatePartner();
@@ -62,28 +59,6 @@ export default function BusinessSettingsPage() {
   const updateProfile = useUpdatePrinterProfile();
   const deleteProfile = useDeletePrinterProfile();
 
-  const settings = business?.settings;
-  const [s, setS] = useState({
-    printerCostRs: '', printerLifeHr: '', printerPowerW: '', electricityRateKwh: '',
-    labourRateHr: '', labourOn: true, defaultFailureRatePct: '', defaultTargetMarginPct: '',
-  });
-
-  useEffect(() => {
-    if (settings) {
-      setS({
-        printerCostRs: settings.printerCostRs || '',
-        printerLifeHr: settings.printerLifeHr || '',
-        printerPowerW: settings.printerPowerW || '',
-        electricityRateKwh: settings.electricityRateKwh || '',
-        labourRateHr: settings.labourRateHr || '',
-        labourOn: settings.labourOn ?? true,
-        defaultFailureRatePct: settings.defaultFailureRatePct || '',
-        defaultTargetMarginPct: settings.defaultTargetMarginPct || '',
-      });
-    }
-  }, [settings]);
-
-  const [settingsMsg, setSettingsMsg] = useState('');
   const [sheet, setSheet] = useState(null);
   const [locName, setLocName] = useState('');
   const [partnerEmail, setPartnerEmail] = useState('');
@@ -112,15 +87,6 @@ export default function BusinessSettingsPage() {
       }
       setSheet(null);
     } catch (ex) { setErr(ex.response?.data?.error || 'Error'); }
-  }
-
-  async function saveSettings() {
-    setSettingsMsg('');
-    try {
-      await updateSettings.mutateAsync(s);
-      setSettingsMsg('Saved!');
-      setTimeout(() => setSettingsMsg(''), 2000);
-    } catch (ex) { setSettingsMsg('Error saving'); }
   }
 
   async function handleAddLocation(e) {
@@ -154,64 +120,6 @@ export default function BusinessSettingsPage() {
       <TopBar title="Business Settings" showBack onBack={() => navigate('/business')} />
 
       <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-        {/* Calculator Settings */}
-        <Section title="Default Calculator Settings">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Printer cost (₹)</label>
-                <input style={inputStyle} type="number" value={s.printerCostRs} onChange={e => setS(f => ({ ...f, printerCostRs: e.target.value }))} placeholder="25000" />
-              </div>
-              <div>
-                <label style={labelStyle}>Printer life (hr)</label>
-                <input style={inputStyle} type="number" value={s.printerLifeHr} onChange={e => setS(f => ({ ...f, printerLifeHr: e.target.value }))} placeholder="2000" />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Power (W)</label>
-                <input style={inputStyle} type="number" value={s.printerPowerW} onChange={e => setS(f => ({ ...f, printerPowerW: e.target.value }))} placeholder="200" />
-              </div>
-              <div>
-                <label style={labelStyle}>Electricity (₹/kWh)</label>
-                <input style={inputStyle} type="number" step="0.01" value={s.electricityRateKwh} onChange={e => setS(f => ({ ...f, electricityRateKwh: e.target.value }))} placeholder="8" />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Labour rate (₹/hr)</label>
-                <input style={inputStyle} type="number" value={s.labourRateHr} onChange={e => setS(f => ({ ...f, labourRateHr: e.target.value }))} placeholder="100" />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                <MenuRow
-                  icon="⚙️"
-                  iconBg="linear-gradient(135deg, #6B7280, #9CA3AF)"
-                  label="Labour on"
-                  noBorder
-                  rightSlot={<Toggle value={s.labourOn} onChange={v => setS(f => ({ ...f, labourOn: v }))} />}
-                />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div>
-                <label style={labelStyle}>Default failure %</label>
-                <input style={inputStyle} type="number" value={s.defaultFailureRatePct} onChange={e => setS(f => ({ ...f, defaultFailureRatePct: e.target.value }))} placeholder="10" />
-              </div>
-              <div>
-                <label style={labelStyle}>Default margin %</label>
-                <input style={inputStyle} type="number" value={s.defaultTargetMarginPct} onChange={e => setS(f => ({ ...f, defaultTargetMarginPct: e.target.value }))} placeholder="30" />
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-            <button onClick={saveSettings} disabled={updateSettings.isPending}
-              style={{ flex: 1, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontWeight: 800, fontSize: 15, border: 'none', cursor: updateSettings.isPending ? 'not-allowed' : 'pointer', opacity: updateSettings.isPending ? 0.6 : 1 }}>
-              {updateSettings.isPending ? 'Saving…' : 'Save Settings'}
-            </button>
-            {settingsMsg && <span style={{ fontSize: 13, fontWeight: 700, color: settingsMsg === 'Saved!' ? '#059669' : '#E11D48' }}>{settingsMsg}</span>}
-          </div>
-        </Section>
 
         {/* Locations */}
         <Section title="Locations">
