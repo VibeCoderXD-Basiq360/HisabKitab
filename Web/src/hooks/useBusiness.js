@@ -50,6 +50,24 @@ export const useUpdatePartner = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['business'] }) });
 };
 
+export const useCreatePrinterProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: d => api.post('/business/printer-profiles', d).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['business'] }) });
+};
+
+export const useUpdatePrinterProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, ...d }) => api.put(`/business/printer-profiles/${id}`, d).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['business'] }) });
+};
+
+export const useDeletePrinterProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: id => api.delete(`/business/printer-profiles/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['business'] }) });
+};
+
 // ── Inventory ─────────────────────────────────────────────────────────────────
 export const useInventoryItems = () =>
   useQuery({ queryKey: ['inventory-items'], queryFn: () => api.get('/inventory/items').then(r => r.data) });

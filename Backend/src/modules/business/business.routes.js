@@ -13,4 +13,9 @@ router.post('/partners/:id/accept',       auth, c.acceptInvite);
 router.post('/partners/:id/decline',      auth, c.declineInvite);
 router.put('/partners/:partnerId',        auth, businessAuth, c.updatePartner);
 
+router.get('/printer-profiles',           auth, businessAuth, c.listPrinterProfiles);
+router.post('/printer-profiles',          auth, businessAuth, c.createPrinterProfile);
+router.put('/printer-profiles/:id',       auth, businessAuth, c.updatePrinterProfile);
+router.delete('/printer-profiles/:id',    auth, businessAuth, c.deletePrinterProfile);
+
 module.exports = router;

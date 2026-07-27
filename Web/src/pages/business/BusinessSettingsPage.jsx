@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites } from '../../hooks/useBusiness';
+import { useBusiness, useUpdateSettings, useAddLocation, useInvitePartner, useUpdatePartner, usePartnerInvites, useCreatePrinterProfile, useUpdatePrinterProfile, useDeletePrinterProfile } from '../../hooks/useBusiness';
 import { usePeople } from '../../hooks/usePeople';
 import TopBar from '../../components/TopBar';
 import SurfaceCard from '../../components/ui/SurfaceCard';
@@ -58,6 +58,9 @@ export default function BusinessSettingsPage() {
   const addLocation = useAddLocation();
   const invitePartner = useInvitePartner();
   const updatePartner = useUpdatePartner();
+  const createProfile = useCreatePrinterProfile();
+  const updateProfile = useUpdatePrinterProfile();
+  const deleteProfile = useDeletePrinterProfile();
 
   const settings = business?.settings;
   const [s, setS] = useState({
@@ -86,6 +89,30 @@ export default function BusinessSettingsPage() {
   const [partnerEmail, setPartnerEmail] = useState('');
   const [partnerShare, setPartnerShare] = useState('50');
   const [err, setErr] = useState('');
+
+  const emptyProfile = { name: '', printerCostRs: '', printerLifeHr: '', printerPowerW: '', electricityRateKwh: '' };
+  const [profileForm, setProfileForm] = useState(emptyProfile);
+  const [editProfileId, setEditProfileId] = useState(null);
+
+  function openCreateProfile() {
+    setEditProfileId(null); setProfileForm(emptyProfile); setErr(''); setSheet('profile');
+  }
+  function openEditProfile(p) {
+    setEditProfileId(p.id);
+    setProfileForm({ name: p.name, printerCostRs: p.printerCostRs, printerLifeHr: p.printerLifeHr, printerPowerW: p.printerPowerW, electricityRateKwh: p.electricityRateKwh });
+    setErr(''); setSheet('profile');
+  }
+  async function handleSaveProfile(e) {
+    e.preventDefault(); setErr('');
+    try {
+      if (editProfileId) {
+        await updateProfile.mutateAsync({ id: editProfileId, ...profileForm });
+      } else {
+        await createProfile.mutateAsync(profileForm);
+      }
+      setSheet(null);
+    } catch (ex) { setErr(ex.response?.data?.error || 'Error'); }
+  }
 
   async function saveSettings() {
     setSettingsMsg('');
@@ -120,6 +147,7 @@ export default function BusinessSettingsPage() {
 
   const partners = business?.partners || [];
   const locations = business?.locations || [];
+  const printerProfiles = business?.printerProfiles || [];
 
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
@@ -200,6 +228,33 @@ export default function BusinessSettingsPage() {
           </button>
         </Section>
 
+        {/* Printer Profiles */}
+        <Section title="Printer Profiles">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 12 }}>
+            {printerProfiles.map((p, i) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < printerProfiles.length - 1 ? '1px solid #F0F2F7' : 'none' }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0A0D14', margin: 0 }}>🖨️ {p.name}</p>
+                  <p style={{ fontSize: 11, color: '#B0B8C4', margin: '2px 0 0' }}>
+                    ₹{Number(p.printerCostRs).toLocaleString('en-IN')} · {Number(p.printerLifeHr)}hr · {Number(p.printerPowerW)}W · ₹{Number(p.electricityRateKwh)}/kWh
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button onClick={() => openEditProfile(p)} style={{ background: 'none', border: 'none', padding: '6px 8px', cursor: 'pointer', color: '#B0B8C4', fontSize: 13, fontWeight: 600 }}>Edit</button>
+                  <button onClick={() => deleteProfile.mutate(p.id)} style={{ background: 'none', border: 'none', padding: '6px 8px', cursor: 'pointer', color: '#FF4D4F', fontSize: 13, fontWeight: 600 }}>Delete</button>
+                </div>
+              </div>
+            ))}
+            {printerProfiles.length === 0 && (
+              <p style={{ fontSize: 13, color: '#B0B8C4', margin: '0 0 4px' }}>No profiles yet — add your machines below.</p>
+            )}
+          </div>
+          <button onClick={openCreateProfile}
+            style={{ width: '100%', padding: '12px 0', borderRadius: 12, border: '1.5px solid rgba(0,194,178,0.3)', background: 'rgba(0,194,178,0.04)', color: '#00C2B2', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            + Add Printer Profile
+          </button>
+        </Section>
+
         {/* Partners */}
         <Section title="Partners">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 12 }}>
@@ -229,6 +284,46 @@ export default function BusinessSettingsPage() {
         </Section>
 
       </div>
+
+      {sheet === 'profile' && (
+        <Sheet title={editProfileId ? 'Edit Printer Profile' : 'Add Printer Profile'} onClose={() => setSheet(null)}>
+          <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Profile name *</label>
+              <input style={inputStyle} required value={profileForm.name} onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Ender 3, Bambu X1" />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style={labelStyle}>Printer cost (₹)</label>
+                <input style={inputStyle} type="number" required value={profileForm.printerCostRs} onChange={e => setProfileForm(f => ({ ...f, printerCostRs: e.target.value }))} placeholder="80000" />
+              </div>
+              <div>
+                <label style={labelStyle}>Printer life (hr)</label>
+                <input style={inputStyle} type="number" required value={profileForm.printerLifeHr} onChange={e => setProfileForm(f => ({ ...f, printerLifeHr: e.target.value }))} placeholder="6000" />
+              </div>
+              <div>
+                <label style={labelStyle}>Power (W)</label>
+                <input style={inputStyle} type="number" required value={profileForm.printerPowerW} onChange={e => setProfileForm(f => ({ ...f, printerPowerW: e.target.value }))} placeholder="160" />
+              </div>
+              <div>
+                <label style={labelStyle}>Electricity (₹/kWh)</label>
+                <input style={inputStyle} type="number" required value={profileForm.electricityRateKwh} onChange={e => setProfileForm(f => ({ ...f, electricityRateKwh: e.target.value }))} placeholder="10" />
+              </div>
+            </div>
+            {err && <p style={{ fontSize: 13, color: '#E11D48', margin: 0 }}>{err}</p>}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button type="button" onClick={() => setSheet(null)}
+                style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1.5px solid #E9ECF0', background: '#fff', color: '#6B7280', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={createProfile.isPending || updateProfile.isPending}
+                style={{ flex: 1, padding: '14px 0', borderRadius: 12, background: 'linear-gradient(135deg, #00C2B2 0%, #00A896 100%)', color: '#fff', fontSize: 14, fontWeight: 800, border: 'none', cursor: 'pointer' }}>
+                {(createProfile.isPending || updateProfile.isPending) ? '…' : editProfileId ? 'Save' : 'Add'}
+              </button>
+            </div>
+          </form>
+        </Sheet>
+      )}
 
       {sheet === 'location' && (
         <Sheet title="Add Location" onClose={() => setSheet(null)}>

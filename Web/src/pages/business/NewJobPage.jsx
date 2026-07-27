@@ -49,6 +49,7 @@ export default function NewJobPage() {
 
   const s = business?.settings || {};
   const locations = business?.locations || [];
+  const printerProfiles = business?.printerProfiles || [];
 
   const [form, setForm] = useState({
     title: '', description: '', locationId: locations[0]?.id || '', customerId: '',
@@ -70,6 +71,7 @@ export default function NewJobPage() {
     deliveryDate: '', note: '',
   });
   const [jobItems, setJobItems] = useState([]);
+  const [selectedProfileId, setSelectedProfileId] = useState('');
   const [newCustMode, setNewCustMode] = useState(false);
   const [newCustName, setNewCustName] = useState('');
   const [err, setErr] = useState('');
@@ -91,6 +93,14 @@ export default function NewJobPage() {
   const actualMargin = actualP > 0 ? (actualProfit / actualP) * 100 : null;
 
   function setF(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  function applyProfile(profileId) {
+    setSelectedProfileId(profileId);
+    if (!profileId) return;
+    const p = printerProfiles.find(x => x.id === profileId);
+    if (!p) return;
+    setForm(f => ({ ...f, printerCostRs: Number(p.printerCostRs), printerLifeHr: Number(p.printerLifeHr), printerPowerW: Number(p.printerPowerW), electricityRateKwh: Number(p.electricityRateKwh) }));
+  }
 
   function onFilamentChange(itemId) {
     const item = items.find(i => i.id === itemId);
@@ -264,6 +274,15 @@ export default function NewJobPage() {
         {/* Machine & power */}
         <SurfaceCard>
           <p style={sectionHeaderStyle}>Machine &amp; Power</p>
+          {printerProfiles.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={labelStyle}>Printer profile</label>
+              <select style={inputStyle} value={selectedProfileId} onChange={e => applyProfile(e.target.value)}>
+                <option value="">— custom / manual —</option>
+                {printerProfiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
             {[['Printer cost (₹)', 'printerCostRs'], ['Printer life (hr)', 'printerLifeHr'],
               ['Power (W)', 'printerPowerW'], ['Electricity ₹/kWh', 'electricityRateKwh']].map(([label, key]) => (

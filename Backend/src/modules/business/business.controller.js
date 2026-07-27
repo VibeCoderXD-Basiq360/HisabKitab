@@ -11,6 +11,7 @@ const getMyBusiness = async (req, res) => {
           settings: true,
           locations: { where: { isActive: true }, orderBy: { name: 'asc' } },
           partners: { where: { status: 'ACTIVE' }, include: { user: { select: { id: true, name: true, email: true, photoUrl: true } } } },
+          printerProfiles: { orderBy: { name: 'asc' } },
         },
       },
     },
@@ -187,4 +188,56 @@ const updatePartner = async (req, res) => {
   res.json(p);
 };
 
-module.exports = { getMyBusiness, createBusiness, updateSettings, addLocation, invitePartner, listInvites, acceptInvite, declineInvite, updatePartner };
+// GET /api/business/printer-profiles
+const listPrinterProfiles = async (req, res) => {
+  const profiles = await prisma.printerProfile.findMany({
+    where: { businessId: req.businessId },
+    orderBy: { name: 'asc' },
+  });
+  res.json(profiles);
+};
+
+// POST /api/business/printer-profiles
+const createPrinterProfile = async (req, res) => {
+  const { name, printerCostRs, printerLifeHr, printerPowerW, electricityRateKwh } = req.body;
+  if (!name?.trim()) return res.status(400).json({ error: 'name is required' });
+  const profile = await prisma.printerProfile.create({
+    data: {
+      businessId: req.businessId,
+      name: name.trim(),
+      printerCostRs: Number(printerCostRs) || 80000,
+      printerLifeHr: Number(printerLifeHr) || 6000,
+      printerPowerW: Number(printerPowerW) || 160,
+      electricityRateKwh: Number(electricityRateKwh) || 10,
+    },
+  });
+  res.status(201).json(profile);
+};
+
+// PUT /api/business/printer-profiles/:id
+const updatePrinterProfile = async (req, res) => {
+  const existing = await prisma.printerProfile.findFirst({ where: { id: req.params.id, businessId: req.businessId } });
+  if (!existing) return res.status(404).json({ error: 'Profile not found' });
+  const { name, printerCostRs, printerLifeHr, printerPowerW, electricityRateKwh } = req.body;
+  const profile = await prisma.printerProfile.update({
+    where: { id: req.params.id },
+    data: {
+      ...(name !== undefined && { name: name.trim() }),
+      ...(printerCostRs !== undefined && { printerCostRs: Number(printerCostRs) }),
+      ...(printerLifeHr !== undefined && { printerLifeHr: Number(printerLifeHr) }),
+      ...(printerPowerW !== undefined && { printerPowerW: Number(printerPowerW) }),
+      ...(electricityRateKwh !== undefined && { electricityRateKwh: Number(electricityRateKwh) }),
+    },
+  });
+  res.json(profile);
+};
+
+// DELETE /api/business/printer-profiles/:id
+const deletePrinterProfile = async (req, res) => {
+  const existing = await prisma.printerProfile.findFirst({ where: { id: req.params.id, businessId: req.businessId } });
+  if (!existing) return res.status(404).json({ error: 'Profile not found' });
+  await prisma.printerProfile.delete({ where: { id: req.params.id } });
+  res.status(204).end();
+};
+
+module.exports = { getMyBusiness, createBusiness, updateSettings, addLocation, invitePartner, listInvites, acceptInvite, declineInvite, updatePartner, listPrinterProfiles, createPrinterProfile, updatePrinterProfile, deletePrinterProfile };
