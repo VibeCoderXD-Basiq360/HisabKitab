@@ -12,30 +12,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 187.127.130.99 >> ~/.ssh/known_hosts
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
+        run: ssh-keyscan -H 187.127.130.99 >> ~/.ssh/known_hosts
 
       - name: Package & upload
         run: |
           git archive HEAD --format=tar.gz -o /tmp/hk.tar.gz
           scp /tmp/hk.tar.gz root@187.127.130.99:/tmp/
-        env:
-          GIT_SSH_COMMAND: "ssh -i ~/.ssh/id_ed25519"
 
       - name: Upload backend env
         env:
           BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
         run: |
           printf '%s' "$BACKEND_ENV" > /tmp/hk_backend_env
-          scp -i ~/.ssh/id_ed25519 /tmp/hk_backend_env root@187.127.130.99:/tmp/hk_backend_env
+          scp /tmp/hk_backend_env root@187.127.130.99:/tmp/hk_backend_env
 
       - name: Extract, rebuild & restart
         run: |
-          ssh -i ~/.ssh/id_ed25519 root@187.127.130.99 '
+          ssh root@187.127.130.99 '
             set -e
             mkdir -p /opt/hisabkitab
             tar -xzf /tmp/hk.tar.gz -C /opt/hisabkitab
