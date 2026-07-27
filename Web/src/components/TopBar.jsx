@@ -132,9 +132,9 @@ export default function TopBar({
   if (!hasBack) {
     return (
       <header style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
-        justifyContent: 'space-between',
         padding: '14px 20px 10px',
         background: 'transparent',
       }}>
@@ -164,8 +164,11 @@ export default function TopBar({
           </div>
         </div>
 
+        {/* Center: logo */}
+        <img src="/logo.jpg" alt="HisabKitab" style={{ width: 36, height: 36, borderRadius: 10, objectFit: 'cover' }} />
+
         {/* Right: actions + bell */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, justifyContent: 'flex-end' }}>
           {showSearch && (
             <button
               onClick={() => navigate('/search')}
@@ -205,7 +208,9 @@ export default function TopBar({
     }}>
       <BackButton onPress={handleBack} />
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/logo.jpg" alt="" style={{ width: 28, height: 28, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+        <div style={{ minWidth: 0 }}>
         {title && (
           <h1 style={{
             fontSize: 17,
@@ -225,6 +230,7 @@ export default function TopBar({
             {subtitle}
           </p>
         )}
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
