@@ -1,5 +1,6 @@
 import { parseMoney, formatRupees } from '../money.js';
 import { parseDay } from '../days.js';
+import { isId, unknownFieldError } from '../fields.js';
 import {
   listActiveAccounts,
   findAccount,
@@ -11,7 +12,8 @@ import {
 
 const KINDS = ['bank', 'cash', 'wallet', 'credit_card'];
 const CARD_FIELDS = ['billingDay', 'dueDay', 'lastFour'];
-const ID_PATTERN = /^\d{1,18}$/;
+const EDITABLE_FIELDS = ['name', 'openingBalance', 'openingOutstanding', ...CARD_FIELDS];
+const CREATE_FIELDS = ['kind', 'openingDate', ...EDITABLE_FIELDS];
 const LEDGER_PAGE_SIZE = 50;
 
 function isDayOfMonth(value) {
@@ -82,7 +84,7 @@ function nonZeroBalanceMessage(account) {
 
 // Sends the 404 itself, so callers only need to stop when this returns nothing.
 async function loadAccount(req, res) {
-  const account = ID_PATTERN.test(req.params.id) ? await findAccount(req.params.id, req.user.id) : undefined;
+  const account = isId(req.params.id) ? await findAccount(req.params.id, req.user.id) : undefined;
   if (!account) res.status(404).json({ error: 'Account not found' });
   return account;
 }
@@ -93,7 +95,9 @@ export async function listAccounts(req, res) {
 }
 
 export async function createAccount(req, res) {
-  const fields = readAccountFields(req.body ?? {});
+  const unknown = unknownFieldError(req.body ?? {}, CREATE_FIELDS);
+  if (unknown) return res.status(400).json(unknown);
+  const fields = readAccountFields(req.body);
   if (fields.error) return res.status(400).json({ error: fields.error });
 
   try {
@@ -121,6 +125,8 @@ export async function editAccount(req, res) {
   if ('kind' in changes || 'openingDate' in changes) {
     return res.status(400).json({ error: 'kind and openingDate cannot be changed' });
   }
+  const unknown = unknownFieldError(changes, EDITABLE_FIELDS);
+  if (unknown) return res.status(400).json(unknown);
   const fields = readAccountFields({ ...toPublicAccount(account), ...changes });
   if (fields.error) return res.status(400).json({ error: fields.error });
 

@@ -2,6 +2,7 @@ import express from 'express';
 import { healthRouter } from './health.js';
 import { authRouter } from './auth/routes.js';
 import { accountsRouter } from './accounts/routes.js';
+import { categoriesRouter } from './categories/routes.js';
 
 const app = express();
 
@@ -9,6 +10,7 @@ app.use(express.json());
 app.use('/api', healthRouter);
 app.use('/api', authRouter);
 app.use('/api', accountsRouter);
+app.use('/api', categoriesRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });

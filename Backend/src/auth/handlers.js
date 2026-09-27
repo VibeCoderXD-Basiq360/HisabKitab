@@ -7,6 +7,7 @@ import {
   updatePasswordAndEndOtherSessions,
 } from './queries.js';
 import { startSession, endSession } from '../session.js';
+import { unknownFieldError } from '../fields.js';
 
 const scryptAsync = promisify(scrypt);
 const SCRYPT_COST = { N: 32768, r: 8, p: 1 };
@@ -78,6 +79,8 @@ function toPublicUser(row) {
 }
 
 export async function register(req, res) {
+  const unknown = unknownFieldError(req.body ?? {}, ['email', 'password', 'displayName']);
+  if (unknown) return res.status(400).json(unknown);
   const email = normaliseEmail(req.body?.email);
   const displayName = typeof req.body?.displayName === 'string' ? req.body.displayName.trim() : '';
   const password = req.body?.password;
@@ -100,6 +103,8 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
+  const unknown = unknownFieldError(req.body ?? {}, ['email', 'password']);
+  if (unknown) return res.status(400).json(unknown);
   const email = normaliseEmail(req.body?.email);
   const password = req.body?.password;
   const attemptKey = attemptKeyFor(email, req);
@@ -127,6 +132,8 @@ export function getCurrentUser(req, res) {
 }
 
 export async function changePassword(req, res) {
+  const unknown = unknownFieldError(req.body ?? {}, ['currentPassword', 'newPassword']);
+  if (unknown) return res.status(400).json(unknown);
   const { currentPassword, newPassword } = req.body ?? {};
   if (!isValidPassword(newPassword)) {
     return res.status(400).json({ error: 'New password must be at least 8 characters' });

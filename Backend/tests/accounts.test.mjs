@@ -1,41 +1,13 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
-import { once } from 'node:events';
-import { fileURLToPath } from 'node:url';
-import pg from 'pg';
+import { db, startTestServer, stopTestServer, call as callAs, registerAndLogIn } from './harness.mjs';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? '';
-const databaseName = testDatabaseUrl ? new URL(testDatabaseUrl).pathname.slice(1) : '';
-// These tests empty users and every table that refers to it. Refusing every other
-// database is what stops them ever running against real data.
-if (!databaseName.endsWith('_test')) {
-  throw new Error(`Refusing to run: TEST_DATABASE_URL must name a database ending in _test (got "${databaseName}")`);
-}
-
-const PORT = '3999';
-const baseUrl = `http://localhost:${PORT}/api`;
-const backendDir = fileURLToPath(new URL('..', import.meta.url));
-const testEnv = { ...process.env, DATABASE_URL: testDatabaseUrl, PORT };
-const db = new pg.Client({ connectionString: testDatabaseUrl });
-let server;
 let me;
 let stranger;
 
-async function call(method, path, { body, cookie = me } = {}) {
-  const headers = { 'content-type': 'application/json' };
-  if (cookie) headers.cookie = cookie;
-  const response = await fetch(baseUrl + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-  const text = await response.text();
-  return { status: response.status, json: text ? JSON.parse(text) : null };
-}
-
-async function newUser(email) {
-  await call('POST', '/auth/register', { cookie: null, body: { email, password: 'password1', displayName: email } });
-  const response = await fetch(`${baseUrl}/auth/login`, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, password: 'password1' }),
-  });
-  return response.headers.get('set-cookie').split(';')[0];
+// Most calls here are as `me`; pass `cookie` to act as someone else, or null for nobody.
+function call(method, path, { cookie = me, ...options } = {}) {
+  return callAs(method, path, { cookie, ...options });
 }
 
 const bank = { name: ' HDFC savings ', kind: 'bank', openingBalance: '31000', openingDate: '2026-09-01' };
@@ -43,26 +15,12 @@ const card = { name: 'HDFC credit card', kind: 'credit_card', openingOutstanding
 const ids = {};
 
 before(async () => {
-  execFileSync(process.execPath, ['src/migrate.js'], { cwd: backendDir, env: testEnv });
-  await db.connect();
-  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
-  await new Promise((resolve, reject) => {
-    server = spawn(process.execPath, ['src/server.js'], { cwd: backendDir, env: testEnv });
-    server.stderr.pipe(process.stderr);
-    server.stdout.once('data', resolve);
-    server.once('exit', (code) => reject(new Error(`exit ${code}`)));
-  });
-  me = await newUser('me@example.com');
-  stranger = await newUser('stranger@example.com');
+  await startTestServer();
+  me = await registerAndLogIn('me@example.com');
+  stranger = await registerAndLogIn('stranger@example.com');
 });
 
-after(async () => {
-  // Wait for the port to be released before the next test file starts.
-  server.kill();
-  await once(server, 'exit');
-  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
-  await db.end();
-});
+after(stopTestServer);
 
 test('create bank, card, cash', async () => {
   let r = await call('POST', '/accounts', { body: bank });
@@ -142,6 +100,17 @@ test('edit', async () => {
   assert.equal((await call('PATCH', `/accounts/${ids.card}`, { body: { dueDay: 0 } })).status, 400);
   assert.equal((await call('PATCH', `/accounts/${ids.bank}`, { body: { dueDay: 3 } })).status, 400);
   assert.equal((await call('PATCH', `/accounts/${ids.bank}`, { body: { name: 'Cash' } })).status, 409, 'rename onto existing name');
+});
+
+test('unknown fields are rejected, not ignored', async () => {
+  let response = await call('POST', '/accounts', { body: { ...bank, name: 'X', colour: 'sky' } });
+  assert.equal(response.status, 400);
+  assert.match(response.json.error, /^Unknown field "colour"\. Allowed: /);
+
+  response = await call('PATCH', `/accounts/${ids.bank}`, { body: { balance: '0' } });
+  assert.equal(response.status, 400, 'balance is calculated, never set');
+  assert.match(response.json.error, /^Unknown field "balance"/);
+  assert.equal((await call('GET', `/accounts/${ids.bank}`)).json.balance, '-500.00', 'nothing changed');
 });
 
 test('archive is blocked unless balance is zero, and says the balance', async () => {

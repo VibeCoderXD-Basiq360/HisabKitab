@@ -12,13 +12,12 @@ worse than none.
 
 **Current step: 1 — Accounts, categories, transfers, adjustments**
 
-**Status: accounts done and committed.** Next: categories, then transfers,
-then adjustments.
+**Status: accounts and categories done.** Next: transfers, then adjustments.
 
 | Step | State |
 |---|---|
 | 0 — Auth | Done |
-| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts done |
+| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories done |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
@@ -207,3 +206,14 @@ accounts tests in `Backend/tests/`, test files run one at a time;
 `design-brief.md` notes the separate category palette
 Unsure: nothing
 Next: categories
+
+### 2026-09-27 — Step 1, categories
+Built: shared test harness (`tests/harness.mjs`), both test files moved onto
+it; `categories` table; the four categories endpoints; categories tests
+Decided: eight colour keys, no icon until the frontend picks an icon set,
+edits apply to past expenses — in `ARCHITECTURE.md`, plus one "for review"
+Then: unknown fields rejected everywhere (auth, accounts, categories), rule
+in `ARCHITECTURE.md`, checks in `src/fields.js`; test that the colour list
+in the handler matches the database constraint
+Unsure: nothing
+Next: transfers

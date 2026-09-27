@@ -1,66 +1,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
-import { once } from 'node:events';
 import { createHash } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import pg from 'pg';
+import { db, startTestServer, stopTestServer, call, logIn } from './harness.mjs';
 
-const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? '';
-const databaseName = testDatabaseUrl ? new URL(testDatabaseUrl).pathname.slice(1) : '';
-// These tests empty users and every table that refers to it. Refusing every other
-// database is what stops them ever running against real data.
-if (!databaseName.endsWith('_test')) {
-  throw new Error(`Refusing to run: TEST_DATABASE_URL must name a database ending in _test (got "${databaseName}")`);
-}
-
-const PORT = '3999';
-const baseUrl = `http://localhost:${PORT}/api`;
-const backendDir = fileURLToPath(new URL('..', import.meta.url));
-const testEnv = { ...process.env, DATABASE_URL: testDatabaseUrl, PORT };
-const db = new pg.Client({ connectionString: testDatabaseUrl });
-let server;
-
-function startServer() {
-  return new Promise((resolve, reject) => {
-    server = spawn(process.execPath, ['src/server.js'], { cwd: backendDir, env: testEnv });
-    server.stderr.pipe(process.stderr);
-    server.stdout.once('data', resolve);
-    server.once('exit', (code) => reject(new Error(`Server exited with code ${code}`)));
-  });
-}
-
-async function call(method, path, { body, cookie, rawBody } = {}) {
-  const headers = {};
-  if (body !== undefined || rawBody !== undefined) headers['content-type'] = 'application/json';
-  if (cookie) headers.cookie = cookie;
-  const response = await fetch(baseUrl + path, { method, headers, body: rawBody ?? JSON.stringify(body) });
-  const text = await response.text();
-  return { status: response.status, json: text ? JSON.parse(text) : null, setCookie: response.headers.get('set-cookie') };
-}
-
-function cookieFrom(response) {
-  return response.setCookie.split(';')[0];
-}
-
-async function logIn(email, password) {
-  return cookieFrom(await call('POST', '/auth/login', { body: { email, password } }));
-}
-
-before(async () => {
-  execFileSync(process.execPath, ['src/migrate.js'], { cwd: backendDir, env: testEnv });
-  await db.connect();
-  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
-  await startServer();
-});
-
-after(async () => {
-  // Wait for the port to be released before the next test file starts.
-  server.kill();
-  await once(server, 'exit');
-  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
-  await db.end();
-});
+before(startTestServer);
+after(stopTestServer);
 
 // Tests run in order and share the user registered in the first one.
 
@@ -88,6 +32,18 @@ test('register', async () => {
   assert.equal((await call('POST', '/auth/register')).status, 400, 'no body');
 });
 
+test('unknown fields are rejected, not ignored', async () => {
+  let response = await call('POST', '/auth/register', {
+    body: { email: 'x@example.com', password: 'hunter22', displayname: 'X' },
+  });
+  assert.equal(response.status, 400);
+  assert.equal(response.json.error, 'Unknown field "displayname". Allowed: email, password, displayName');
+
+  response = await call('POST', '/auth/login', { body: { email: 'avinash@example.com', password: 'hunter22', remember: true } });
+  assert.equal(response.status, 400);
+  assert.equal(response.setCookie, null, 'no session started');
+});
+
 test('unreadable body gets a fixed message, not the parser text', async () => {
   const response = await call('POST', '/auth/register', { rawBody: '{bad json' });
   assert.equal(response.status, 400);
@@ -107,7 +63,7 @@ test('login', async () => {
   assert.match(response.setCookie, /SameSite=Lax/i);
   assert.match(response.setCookie, /Max-Age=2592000/, '30 days');
 
-  const token = cookieFrom(response).split('=')[1];
+  const token = response.setCookie.split(';')[0].split('=')[1];
   const sessions = await db.query('SELECT token_hash FROM sessions');
   assert.ok(sessions.rows.every((row) => row.token_hash !== token), 'raw token is not stored');
 
@@ -148,6 +104,11 @@ test('change password logs out every other device', async () => {
   assert.equal((await change(phoneA, 'wrongpass', 'newpass99')).status, 400);
   assert.equal((await change(phoneA, 'hunter22', 'short')).status, 400);
   assert.equal((await change(null, 'hunter22', 'newpass99')).status, 401);
+  const withExtra = await call('POST', '/auth/password', {
+    cookie: phoneA,
+    body: { currentPassword: 'hunter22', newPassword: 'newpass99', confirmPassword: 'newpass99' },
+  });
+  assert.equal(withExtra.status, 400, 'unknown field rejected before anything changes');
   assert.equal((await change(phoneA, 'hunter22', 'newpass99')).status, 204);
 
   assert.equal((await call('GET', '/auth/me', { cookie: phoneA })).status, 200, 'this device stays in');

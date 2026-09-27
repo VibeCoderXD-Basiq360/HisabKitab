@@ -70,7 +70,11 @@ Revoking permission does **not** remove expenses already logged. History
 survives.
 
 ### Category
-Name, colour, icon. Nothing else.
+Name and colour. Nothing else.
+
+Icon comes later, as a new column, when the frontend chooses an icon set.
+Storing unchecked icon keys before then would make the later CHECK
+constraint fail on existing rows.
 
 ### Expense
 What was bought, how much, from which account, on what date.
@@ -294,6 +298,16 @@ No service layer, no repository layer. Three files per module, maximum.
 v1 put SQL directly in controllers and produced an 819-line file. Separating
 queries out is the minimum structure needed to prevent that.
 
+### Request rules — every module
+
+- **Unknown fields are rejected** with 400 naming the field and listing the
+  allowed ones. Otherwise a misspelt field (`{"color": "sky"}` for `colour`)
+  is silently ignored and the request appears to succeed while changing
+  nothing.
+- Ids in URLs and bodies are strings of digits, as the API returns them.
+  Anything else is treated as not found (URL) or rejected (body).
+- Both checks live in `src/fields.js`.
+
 ### Backend skeleton decisions
 
 - Folder: `Backend/`, matching the old repo so the two can be compared
@@ -303,8 +317,12 @@ queries out is the minimum structure needed to prevent that.
   Variables: `DATABASE_URL`, `PORT`, `TEST_DATABASE_URL`
 - Tests: `npm test` runs `Backend/tests/` with Node's built-in test runner,
   one file at a time — each file starts its own server on the same port and
-  empties the same tables. They run migrations on the test database first. They refuse to start unless the database name
-  ends in `_test`.
+  empties the same tables. They run migrations on the test database first.
+  They refuse to start unless the database name ends in `_test`.
+- Shared test setup lives in `Backend/tests/harness.mjs`: the `_test` guard
+  (runs on import), the test database client, starting and stopping the
+  server, one request helper, and logging in. Nothing else. Its name does not
+  match the runner's test-file patterns, so it never runs as a test.
 - `GET /api/health` runs `SELECT 1`. `{ ok: true }` if Postgres answers,
   `503 { error }` if not
 - No colour token file until the frontend exists
@@ -424,6 +442,13 @@ balance and again on its own.
   user_id)`.
 - `DELETE /transfers/:id` soft-deletes (`deleted_at`). Deleted transfers drop
   out of the view, so out of balances and ledgers.
+- Amount is positive; the direction is the from/to pair. From and to must
+  differ. The note is optional; a blank note is stored as no note.
+- Both accounts must be the requester's, unarchived, and opened on or before
+  the transfer's date.
+- **A transfer touching an archived account cannot be edited or deleted.** An
+  account is archived only at a zero balance; changing one of its transfers
+  would silently make it non-zero.
 
 **Adjustments**
 
@@ -431,10 +456,21 @@ balance and again on its own.
 - Counts in balances, never in spending.
 - Create and list only — a wrong adjustment is corrected by another one.
 
-**Category colours.** About eight palette colours, stored on each category as a
-key name and checked against a fixed list. They are separate from the sixteen
-UI tokens. The key names are fixed when the categories module is built; the
-colour values go in the token file when the frontend exists.
+**Categories**
+
+- Columns: name, colour, `archived_at`. Names are unique among a user's
+  unarchived categories.
+- **Colour** is one of eight key names, checked by the database:
+  `saffron`, `sand`, `rose`, `plum`, `indigo`, `sky`, `teal`, `slate`.
+  Required, no default. They are hue words, not meanings, and deliberately
+  avoid lime (actions), mint (owed to you) and coral (you owe), so a category
+  dot is never mistaken for money direction. Rose must stay a cool pink, away
+  from coral. The colour values go in the token file when the frontend
+  exists; they are separate from the sixteen UI tokens.
+- Name and colour can be edited. Expenses point at the category rather than
+  copying it, so an edit shows on past expenses too — accepted.
+- Archiving has no precondition. `GET /categories` hides archived ones.
+- No icon yet — see the Category entity.
 
 **`src/money.js`** is the decimal helper. At step 1 it only validates money
 coming in (a string, at most 2 decimal places, within `NUMERIC(12,2)`, never a
@@ -446,13 +482,17 @@ Decided while building step 1 (for review):
 
 - Adjustments are their own module, built after transfers. Module order:
   accounts → categories → transfers → adjustments.
-- The ledger is paginated: 50 rows per page, `?page=N`, newest first, returned
-  as `{ entries, hasMore }`.
+- Every paginated list — so far the ledger and `GET /transfers` — returns 50
+  rows per page, takes `?page=N`, is newest first, and replies
+  `{ entries, hasMore }`. Transfers order by date, then id.
 - Postgres `DATE` columns come back as `YYYY-MM-DD` strings, never JavaScript
   `Date` objects, which would shift days across timezones. Set once in
   `db.js`.
 - An id that does not exist, or belongs to someone else, is 404. Both look the
   same, so a response never reveals that someone else's row exists.
+- Categories are listed in the order they were created, like accounts. The
+  response carries no `archivedAt`: the list only shows unarchived ones, and
+  there is no endpoint to fetch one by id.
 
 ### Frontend
 
