@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env src/server.js"
+    "start": "node --env-file=.env src/server.js",
+    "migrate": "node --env-file=.env src/migrate.js",
+    "test": "node --env-file=.env --test tests/"
   },
   "dependencies": {
     "express": "^5.2.1",

@@ -12,18 +12,16 @@ worse than none.
 
 **Current step: 1 — Accounts, categories, transfers**
 
-**Status: not started. Nothing is built yet.**
-
-Design is complete. Stack is chosen. No code exists.
+**Status: not started.** Step 0 (auth) is done and committed.
 
 | Step | State |
 |---|---|
-| 0 — Auth | Not started |
+| 0 — Auth | Done |
 | 1 — Accounts, categories, transfers | **Current** |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
-| 4 — People and linking | Not started |
+| 4 — People and linking | Not started. **Close registration to invite-only here** — it is open until then |
 | 5 — Shares, items, comments | Not started |
 | 6 — Settlements | Not started |
 | 7 — Account permissions | Not started |
@@ -86,6 +84,17 @@ not to skim it**.
 - **Credit card sign convention** — step 1, and step 6 depends on it
 - **Session length and re-auth** — step 0
 - **Backups** — before any real data is entered
+
+## To decide at deploy
+
+- **Proxy setting.** The password rate limit keys on the requester's IP.
+  Behind a hosting proxy every request shows the proxy's IP, so Express's
+  `trust proxy` setting must match the host — or every user shares one
+  counter.
+- **HTTPS on the local network.** The session cookie is `Secure`. Browsers
+  allow that on `localhost`, but a phone reaching the laptop by its network
+  IP over plain HTTP will never be logged in. Needs HTTPS, or testing on the
+  deployed site.
 
 ## Open questions
 
@@ -170,3 +179,17 @@ Node's --env-file, no token file until the frontend exists (recorded in
 to sixteen
 Unsure: nothing
 Next: review skeleton, then step 0 — auth
+
+### 2026-09-27 — Step 0, auth
+Built: migrations runner + `users`, `sessions` tables; the five auth
+endpoints; `session.js` with `requireAuth`; JSON error handler
+Decided: see "Migrations" and "Auth and sessions" in `ARCHITECTURE.md`,
+including the five marked "for review"
+Then: change-password shares the login rate-limit counter; error handler
+sends fixed messages only; console exceptions recorded in `CLAUDE.md` §9;
+proxy and local-network HTTPS moved to "To decide at deploy"
+Then: tests kept as `Backend/tests/auth.test.mjs` (`npm test`, Node's
+built-in runner, `hisabkitab_test` database, refuses any name not ending in
+`_test`); `CLAUDE.md` §9 rewritten as a principle, §13 allows tests
+Unsure: expired session rows are never cleaned up
+Next: step 1 — accounts module

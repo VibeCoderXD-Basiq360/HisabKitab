@@ -293,10 +293,64 @@ queries out is the minimum structure needed to prevent that.
 - ES modules (`import`), not CommonJS
 - Dependencies: `express`, `pg`. Nothing else.
 - Config from `Backend/.env`, loaded by Node's built-in `--env-file` flag.
-  Variables: `DATABASE_URL`, `PORT`
+  Variables: `DATABASE_URL`, `PORT`, `TEST_DATABASE_URL`
+- Tests: `npm test` runs `Backend/tests/` with Node's built-in test runner.
+  They run migrations on the test database, start their own server against
+  it, and empty its tables. They refuse to start unless the database name
+  ends in `_test`.
 - `GET /api/health` runs `SELECT 1`. `{ ok: true }` if Postgres answers,
   `503 { error }` if not
 - No colour token file until the frontend exists
+
+### Migrations
+
+- Numbered plain-SQL files in `Backend/migrations/` (`001_users.sql`, …),
+  run in filename order by `npm run migrate` (`Backend/src/migrate.js`)
+- `schema_migrations` records each filename that has run
+- Each file runs in its own transaction; the runner stops at the first failure
+- Run by hand, never on server start
+- A file never changes once it has run. Fix forward with a new file. No down
+  migrations.
+
+### Auth and sessions (step 0)
+
+- **Session token**: random, 32 bytes. Only its SHA-256 hash is stored, in
+  `sessions`. A leaked database cannot be used to log in.
+- **Expiry**: 30 days of inactivity. Each use extends it; the "last used" time
+  is written at most once a day. No absolute lifetime.
+- **Logout** deletes that one session.
+- **Changing password** deletes every other session of that user. This is the
+  lost-phone remedy.
+- **Cookie**: `httpOnly`, `Secure`, `SameSite=Lax`. Lax, not Strict, because
+  notification links tapped from email and WhatsApp must arrive logged in.
+  Frontend and API are therefore served from the same site.
+- **Passwords**: Node's built-in `scrypt`. The cost parameters are stored with
+  each hash (`scrypt:N:r:p:salt:hash`), so they can be raised later without
+  breaking existing passwords.
+- **Password rate limit**: in-memory counter keyed on email plus IP. 5 failed
+  attempts locks that pair out for 15 minutes. Resets on server restart —
+  accepted. One counter covers both login and the current-password check on
+  change-password, so a thief holding an unlocked phone cannot guess the
+  password there instead.
+- **Registration** asks for email, password, display name. Email is trimmed
+  and lowercased, and the database rejects any that is not. Password minimum 8
+  characters, no other rules.
+- **Registration is open** until step 4, when it closes to invite-only.
+- No new packages. JWT rejected: it cannot be invalidated on logout.
+
+Decided while building step 0 (for review):
+
+- IDs are `BIGINT` identity columns. Scoped queries make guessing an ID
+  harmless, so UUIDs add nothing.
+- JSON responses use camelCase (`displayName`); columns use snake_case.
+- `Backend/src/session.js` sits beside `db.js` as shared code: it reads and
+  sets the session cookie and holds `requireAuth`, which every later module
+  uses. The auth module itself is the usual three files.
+- Register creates the account but does not log in. The client calls login
+  next.
+- Unexpected errors return `500 { error: "Something went wrong" }`, never the
+  real error text. Unreadable request bodies (bad JSON, too large) return
+  their 4xx status with a fixed message. Logging: see `CLAUDE.md` §9.
 
 ### Frontend
 
@@ -376,7 +430,7 @@ affected expenses, the month summary, the notification count.
 - **Pagination and summaries are server-side from day one.** After a year
   there will be thousands of expenses. Never fetch them all to total them.
 - **Sessions must last.** This app is opened several times a day; weekly
-  logouts will kill the habit. Decide the approach in step 0.
+  logouts will kill the habit. Decided in step 0 — see "Auth and sessions".
 - **Backups before real data.** There is no migration from v1, so every rupee
   in v2 is typed by hand. Managed Postgres with automatic backups, or a
   scheduled dump, set up before you start entering anything.

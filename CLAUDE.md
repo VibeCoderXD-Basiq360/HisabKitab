@@ -162,7 +162,10 @@ in component state.
 - No commented-out code. Delete it; git remembers.
 - No `TODO` or `FIXME` left in merged code. Either do it or raise it.
 - No dead code. If nothing calls it, remove it.
-- No console logging left in. Use the logger or nothing.
+- Output is for the person running the code, never leftover debugging.
+  Server code prints only the startup line and unexpected errors in the
+  error handler (the user only ever sees a generic message). Command-line
+  scripts may print their results.
 - No comments explaining *what* the code does. Comment only *why*, and only
   when the why is not obvious.
 - Names say what the thing is. No `data`, `info`, `handle`, `process`, `temp`,
@@ -220,7 +223,10 @@ complicated and should be rewritten.
 - Refactor code you were not asked to touch
 - Rename things across the codebase unprompted
 - "Improve" or "clean up" a module while working on another
-- Add tests, CI, Docker, linting, or tooling unless asked
+- Add CI, Docker, linting, or tooling unless asked
+- Run tests against anything but a test database. Tests are allowed; they
+  live in `Backend/tests/`, run with `npm test`, and must refuse to start
+  unless the database name ends in `_test`
 - Generate seed or demo data unless asked
 - Write migration scripts to or from the old app — there is no data migration
 - Copy code from the old repository. Read it for reference; write fresh.
