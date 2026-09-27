@@ -12,13 +12,14 @@ worse than none.
 
 **Current step: 1 — Accounts, categories, transfers, adjustments**
 
-**Status: transfers built, awaiting review** (accounts and categories
-committed). Next: adjustments.
+**Status: adjustments built, awaiting review** — the last module of step 1.
+Next: the frontend for steps 0 and 1.
 
 | Step | State |
 |---|---|
 | 0 — Auth | Done |
-| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories done; transfers built |
+| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories, transfers done; adjustments built |
+| — Frontend for steps 0 and 1 | Next |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
@@ -33,13 +34,14 @@ committed). Next: adjustments.
 
 In order. Do not skip ahead.
 
-1. **New, empty repository.** Not a clone or a branch of the old one.
-2. Add `CLAUDE.md`, `ARCHITECTURE.md`, `API-BREAKDOWN.md`, and this file.
-3. Project skeleton: Express server, Postgres connection, one health endpoint.
-   Nothing else. Review it.
-4. Step 0 — auth. Five endpoints. Review.
-5. Step 1, module by module: accounts → categories → transfers. Review each
-   separately.
+1. Review adjustments, then commit. That completes step 1.
+2. **Frontend for steps 0 and 1 — not expenses.** Propose the setup first and
+   wait: React and Vite, how the colour tokens are stored (Tailwind config or
+   plain CSS), React Query, and what the PWA needs at this stage.
+3. Only then, step 2.
+
+Done so far: repository, the four documents, project skeleton, step 0, and
+step 1's accounts, categories and transfers.
 
 **The old repository is now at
 `VibeCoderXD-Basiq360/HisabKitab-Discarded-`** and stays live and untouched.
@@ -232,5 +234,16 @@ transfers endpoints, transfers tests; `callAs` moved into the test harness;
 `isPositive` in `money.js`
 Decided: transfers touching an archived account are frozen; every view
 branch's amount is cast to NUMERIC(12,2) — both in `ARCHITECTURE.md`
-Unsure: see summary
-Next: review transfers. Not committed yet.
+Then: committed. Migration freeze rule in `CLAUDE.md`; archive race recorded
+under "Known gaps"
+Unsure: nothing
+Next: adjustments
+
+### 2026-09-27 — Step 1, adjustments
+Built: `adjustments` table and its branch in `account_movements`; list and
+create endpoints; adjustments tests
+Decided: stored as amount plus direction; archived account is 409; list not
+paginated — all in `ARCHITECTURE.md`. Frontend for steps 0–1 added to the
+build order, before step 2
+Unsure: nothing
+Next: review adjustments and commit; then propose the frontend setup

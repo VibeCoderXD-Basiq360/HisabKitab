@@ -459,6 +459,20 @@ balance and again on its own.
 - One account, a positive amount, a direction, a date, a required note.
 - Counts in balances, never in spending.
 - Create and list only — a wrong adjustment is corrected by another one.
+- **When to use which.** If the opening balance was wrong from the start,
+  edit the opening balance. If it was right and the balance drifted later,
+  add an adjustment. Using one for the other's job corrupts history: a
+  wrong opening balance "fixed" by an adjustment leaves every day before
+  the adjustment wrong, and a drift "fixed" by editing the opening balance
+  rewrites days that were correct.
+- Stored as a positive amount plus `direction` (`in` or `out`), the same words
+  the API uses; the view turns them into a signed amount. `in` raises a
+  balance; on a card, `out` raises what you owe.
+- The account must be the requester's (a composite foreign key, as for
+  transfers), unarchived (409 otherwise), and open on the adjustment's date.
+- `GET /accounts/:id/adjustments` works on archived accounts too, since
+  history stays readable. It is not paginated — adjustments are rare — and is
+  newest first, by date then id.
 
 **Categories**
 
@@ -515,7 +529,8 @@ Each step is independently usable. Nothing later changes anything earlier.
 
 | Step | What | Why here |
 |---|---|---|
-| 1 | Accounts, categories, transfers | No dependencies |
+| 1 | Accounts, categories, transfers, adjustments | No dependencies |
+| — | **Frontend for steps 0 and 1** | The plan pauses after step 3 for two weeks of real daily use, which needs an interface |
 | 2 | Expenses (single-user), receipts | 70% of daily use |
 | 3 | Income | Balances now mean something |
 | — | **Use it for two weeks** | If 1–3 are not pleasant, nothing else matters |

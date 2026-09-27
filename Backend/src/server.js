@@ -4,6 +4,7 @@ import { authRouter } from './auth/routes.js';
 import { accountsRouter } from './accounts/routes.js';
 import { categoriesRouter } from './categories/routes.js';
 import { transfersRouter } from './transfers/routes.js';
+import { adjustmentsRouter } from './adjustments/routes.js';
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use('/api', authRouter);
 app.use('/api', accountsRouter);
 app.use('/api', categoriesRouter);
 app.use('/api', transfersRouter);
+app.use('/api', adjustmentsRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
