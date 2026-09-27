@@ -64,6 +64,9 @@ shadows.
 
 Use these exactly. Do not introduce a seventeenth colour.
 
+Category colours are a separate palette of about eight, apart from these
+sixteen UI tokens.
+
 ```
 bg           #0C1611    app background
 surface      #121F18    cards, panels

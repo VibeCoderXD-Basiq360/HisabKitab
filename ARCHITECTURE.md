@@ -34,7 +34,8 @@ and bearer differ.
 
 ## Entities
 
-Fourteen. (Earlier conversations said "ten" — that was loose counting.)
+Fifteen. (Earlier conversations said "ten" — that was loose counting.
+Adjustment was added in step 1.)
 
 ### User
 Someone with a login. You, your father, your friends who join.
@@ -125,6 +126,12 @@ Money moving between two of your own accounts.
 Paying a credit card bill **is a transfer**, bank to card. Not an expense, no
 category.
 
+### Adjustment
+A correction on a single account, for when the app and the real balance
+disagree. Amount, direction, date, and a **required** note saying why.
+
+Counts in balances, never in spending.
+
 ### Income
 Money coming in. Account, amount, date, source.
 
@@ -182,7 +189,7 @@ An expense amount changes **only** if edited, never as a side effect of
 payment. The expense list shows recovered progress ("₹4,000 · ₹2,000
 recovered"); spending totals count only your portion.
 
-### Settlements and transfers never touch spending totals
+### Settlements, transfers and adjustments never touch spending totals
 
 They move balances only. Counting a settlement as spending double-counts.
 
@@ -294,9 +301,9 @@ queries out is the minimum structure needed to prevent that.
 - Dependencies: `express`, `pg`. Nothing else.
 - Config from `Backend/.env`, loaded by Node's built-in `--env-file` flag.
   Variables: `DATABASE_URL`, `PORT`, `TEST_DATABASE_URL`
-- Tests: `npm test` runs `Backend/tests/` with Node's built-in test runner.
-  They run migrations on the test database, start their own server against
-  it, and empty its tables. They refuse to start unless the database name
+- Tests: `npm test` runs `Backend/tests/` with Node's built-in test runner,
+  one file at a time — each file starts its own server on the same port and
+  empties the same tables. They run migrations on the test database first. They refuse to start unless the database name
   ends in `_test`.
 - `GET /api/health` runs `SELECT 1`. `{ ok: true }` if Postgres answers,
   `503 { error }` if not
@@ -352,6 +359,101 @@ Decided while building step 0 (for review):
   real error text. Unreadable request bodies (bad JSON, too large) return
   their 4xx status with a fixed message. Logging: see `CLAUDE.md` §9.
 
+### Money movements and balances (step 1)
+
+**Sign convention.** Every stored amount means *money in the account*. Money
+leaving any account is negative; money arriving is positive. Credit cards are
+therefore negative when you owe: ₹8,200 outstanding is stored as `-8200.00`.
+A card bill payment is a transfer, bank −, card +.
+
+- **At the API**, cards speak "outstanding" in both directions: requests send
+  `openingOutstanding`, responses return `outstanding`. Other accounts use
+  `openingBalance` and `balance`. A card never gets both. The flip happens in
+  SQL, in the accounts queries only. The client never does arithmetic.
+- **Ledger rows and adjustments** use a positive `amount` plus
+  `direction: in | out` — money into or out of that account. No flip needed.
+- Step 6 follows the same rule: a settlement is + on the receiving account and
+  − on the paying account, if one is recorded.
+
+**Balances.** The view `account_movements (account_id, amount, date, source,
+source_id)` lists every movement of money with its signed amount. A balance
+is the sum of an account's rows. It is calculated on every request and never
+stored. The ledger is the same view filtered to one account, so the two cannot
+disagree.
+
+- Each movement type adds one branch to the view, in its own migration
+  (`CREATE OR REPLACE VIEW` restates the view with the new branch). The
+  balance and ledger queries never change.
+- Branches: opening balance (accounts), transfer out and in (transfers),
+  adjustment (adjustments). Later: expense (step 2), income (step 3),
+  settlement (step 6).
+- The view has no user scoping. Every query on it joins `accounts` and filters
+  by owner.
+
+**No movement before its account's opening date.** Applies to every movement
+type — transfers, adjustments, and in later steps expenses, income and
+settlements. The handler's account lookup checks it and returns 400 naming the
+opening date. Otherwise the movement would count twice: inside the opening
+balance and again on its own.
+
+**Accounts**
+
+- `kind` and `opening_date` are fixed at creation. The opening balance can be
+  edited; balances simply shift.
+- The client always sends the opening date. The server never defaults a date,
+  because "today" depends on a timezone.
+- Card fields (billing day, due day, last four) are required for credit cards
+  and empty for every other kind, enforced by a database constraint.
+- Unarchived account names are unique per user.
+
+**Archiving** (accounts and categories)
+
+- Sets `archived_at`. Nothing is deleted.
+- Archived items cannot be edited or used by any new or edited movement.
+  Everything already recorded stays, and still counts.
+- An account can be archived only when its balance is exactly zero. The error
+  states the balance.
+- `GET /accounts` hides archived accounts. They stay reachable by id, with
+  their ledger.
+- No un-archive — the spec has no endpoint for it.
+
+**Transfers**
+
+- Always between two accounts of the same user. Enforced by the database: the
+  transfer's `(account, user)` pairs are foreign keys to `accounts (id,
+  user_id)`.
+- `DELETE /transfers/:id` soft-deletes (`deleted_at`). Deleted transfers drop
+  out of the view, so out of balances and ledgers.
+
+**Adjustments**
+
+- One account, a positive amount, a direction, a date, a required note.
+- Counts in balances, never in spending.
+- Create and list only — a wrong adjustment is corrected by another one.
+
+**Category colours.** About eight palette colours, stored on each category as a
+key name and checked against a fixed list. They are separate from the sixteen
+UI tokens. The key names are fixed when the categories module is built; the
+colour values go in the token file when the frontend exists.
+
+**`src/money.js`** is the decimal helper. At step 1 it only validates money
+coming in (a string, at most 2 decimal places, within `NUMERIC(12,2)`, never a
+JSON number) and formats rupees Indian-style (₹31,00,000.00) for error
+messages. All sums and sign flips happen in SQL. Arithmetic joins money.js
+when something first needs it in JavaScript.
+
+Decided while building step 1 (for review):
+
+- Adjustments are their own module, built after transfers. Module order:
+  accounts → categories → transfers → adjustments.
+- The ledger is paginated: 50 rows per page, `?page=N`, newest first, returned
+  as `{ entries, hasMore }`.
+- Postgres `DATE` columns come back as `YYYY-MM-DD` strings, never JavaScript
+  `Date` objects, which would shift days across timezones. Set once in
+  `db.js`.
+- An id that does not exist, or belongs to someone else, is 404. Both look the
+  same, so a response never reveals that someone else's row exists.
+
 ### Frontend
 
 ```
@@ -399,6 +501,9 @@ owed-to-you  #7FD1A0      you-owe      #E8846A      settled #4E6357
 
 Sixteen tokens. Typeface is Inter, tabular figures on every number.
 
+Category colours are a separate palette of about eight — see "Money movements
+and balances (step 1)".
+
 - **Lime is for actions only.** Money direction uses the mint/coral pair.
 - **Never show direction by colour alone** — always pair it with a word
   ("owes you", "you owe").
@@ -429,6 +534,13 @@ affected expenses, the month summary, the notification count.
   server runs UTC.
 - **Pagination and summaries are server-side from day one.** After a year
   there will be thousands of expenses. Never fetch them all to total them.
+- **Every paginated list orders by a unique key.** Sort by date, then by a
+  tiebreaker that is unique within the list (for the ledger: source, then
+  source id). Rows sharing a date would otherwise come back in any order, and
+  pages would overlap or skip rows. For the ledger this relies on each
+  `account_movements` branch producing at most one row per account for a
+  given source id — a new branch that breaks this needs a different
+  tiebreaker.
 - **Sessions must last.** This app is opened several times a day; weekly
   logouts will kill the habit. Decided in step 0 — see "Auth and sessions".
 - **Backups before real data.** There is no migration from v1, so every rupee

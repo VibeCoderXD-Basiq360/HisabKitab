@@ -10,14 +10,15 @@ worse than none.
 
 ## Where things stand
 
-**Current step: 1 — Accounts, categories, transfers**
+**Current step: 1 — Accounts, categories, transfers, adjustments**
 
-**Status: not started.** Step 0 (auth) is done and committed.
+**Status: accounts done and committed.** Next: categories, then transfers,
+then adjustments.
 
 | Step | State |
 |---|---|
 | 0 — Auth | Done |
-| 1 — Accounts, categories, transfers | **Current** |
+| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts done |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
@@ -193,3 +194,16 @@ built-in runner, `hisabkitab_test` database, refuses any name not ending in
 `_test`); `CLAUDE.md` §9 rewritten as a principle, §13 allows tests
 Unsure: expired session rows are never cleaned up
 Next: step 1 — accounts module
+
+### 2026-09-27 — Step 1, accounts
+Built: `accounts` table and the `account_movements` view (opening-balance
+branch only); the six accounts endpoints; `money.js` (validate, format
+rupees); `days.js`; `db.js` returns DATE as a string
+Decided: sign convention, archiving, opening-date rule for every movement,
+adjustments as a new entity, category palette — all in `ARCHITECTURE.md`,
+including four marked "for review"
+Then: ledger tiebreaker written up as a rule for every paginated list;
+accounts tests in `Backend/tests/`, test files run one at a time;
+`design-brief.md` notes the separate category palette
+Unsure: nothing
+Next: categories

@@ -1,13 +1,14 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
+import { once } from 'node:events';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL ?? '';
 const databaseName = testDatabaseUrl ? new URL(testDatabaseUrl).pathname.slice(1) : '';
-// These tests empty the users and sessions tables. Refusing every other
+// These tests empty users and every table that refers to it. Refusing every other
 // database is what stops them ever running against real data.
 if (!databaseName.endsWith('_test')) {
   throw new Error(`Refusing to run: TEST_DATABASE_URL must name a database ending in _test (got "${databaseName}")`);
@@ -49,13 +50,15 @@ async function logIn(email, password) {
 before(async () => {
   execFileSync(process.execPath, ['src/migrate.js'], { cwd: backendDir, env: testEnv });
   await db.connect();
-  await db.query('TRUNCATE sessions, users RESTART IDENTITY');
+  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
   await startServer();
 });
 
 after(async () => {
+  // Wait for the port to be released before the next test file starts.
   server.kill();
-  await db.query('TRUNCATE sessions, users RESTART IDENTITY');
+  await once(server, 'exit');
+  await db.query('TRUNCATE users RESTART IDENTITY CASCADE');
   await db.end();
 });
 

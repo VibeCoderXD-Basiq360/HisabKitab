@@ -1,6 +1,6 @@
 # API-BREAKDOWN.md
 
-Every endpoint in v1, grouped by build step. **63 endpoints across 7 steps.**
+Every endpoint in v1, grouped by build step. **70 endpoints across steps 0–7.**
 
 Do not build an endpoint before its step. If something you need is missing,
 stop and ask — do not add it.
@@ -35,7 +35,7 @@ Keep it boring. No WebAuthn, no PIN, no biometrics in v1.
 
 ---
 
-## Step 1 — Accounts, categories, transfers (13)
+## Step 1 — Accounts, categories, transfers, adjustments (15)
 
 ### Accounts
 
@@ -71,6 +71,20 @@ with the sign convention applied consistently.
 
 Verify **both** accounts belong to the user. This is the first place the
 ownership rule bites.
+
+`DELETE` soft-deletes: the transfer drops out of balances and ledgers, but the
+row stays.
+
+### Adjustments
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/accounts/:id/adjustments` | List an account's adjustments |
+| POST | `/accounts/:id/adjustments` | Correct the balance when it disagrees with the bank |
+
+Takes amount, direction (`in` or `out`), date and a **required** note. Counts
+in balances, never in spending. No edit, no delete — correct a wrong
+adjustment with another one.
 
 ---
 
@@ -236,14 +250,14 @@ existing endpoints.
 | Step | Endpoints |
 |---|---|
 | 0 — Auth | 5 |
-| 1 — Accounts, categories, transfers | 13 |
+| 1 — Accounts, categories, transfers, adjustments | 15 |
 | 2 — Expenses | 8 |
 | 3 — Income | 4 |
 | 4 — People | 9 |
 | 5 — Shares, items, comments | 15 |
 | 6 — Settlements | 9 |
 | 7 — Permissions | 5 |
-| **Total** | **68** |
+| **Total** | **70** |
 
 v1 had roughly 120 endpoints across 34 modules. If this number grows much past
-68, something is being built that was not asked for.
+70, something is being built that was not asked for.
