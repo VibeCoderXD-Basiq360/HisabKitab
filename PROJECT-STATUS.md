@@ -10,16 +10,15 @@ worse than none.
 
 ## Where things stand
 
-**Current step: 1 — Accounts, categories, transfers, adjustments**
+**Current step: frontend for steps 0 and 1**
 
-**Status: adjustments built, awaiting review** — the last module of step 1.
-Next: the frontend for steps 0 and 1.
+**Status: setup proposed, awaiting approval.** Steps 0 and 1 are done.
 
 | Step | State |
 |---|---|
 | 0 — Auth | Done |
-| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories, transfers done; adjustments built |
-| — Frontend for steps 0 and 1 | Next |
+| 1 — Accounts, categories, transfers, adjustments | Done |
+| — Frontend for steps 0 and 1 | **Current** |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
@@ -34,14 +33,13 @@ Next: the frontend for steps 0 and 1.
 
 In order. Do not skip ahead.
 
-1. Review adjustments, then commit. That completes step 1.
-2. **Frontend for steps 0 and 1 — not expenses.** Propose the setup first and
+1. **Frontend for steps 0 and 1 — not expenses.** Propose the setup first and
    wait: React and Vite, how the colour tokens are stored (Tailwind config or
    plain CSS), React Query, and what the PWA needs at this stage.
-3. Only then, step 2.
+2. Only then, step 2.
 
-Done so far: repository, the four documents, project skeleton, step 0, and
-step 1's accounts, categories and transfers.
+Done so far: repository, the four documents, project skeleton, step 0 and
+step 1.
 
 **The old repository is now at
 `VibeCoderXD-Basiq360/HisabKitab-Discarded-`** and stays live and untouched.
@@ -246,4 +244,6 @@ Decided: stored as amount plus direction; archived account is 409; list not
 paginated — all in `ARCHITECTURE.md`. Frontend for steps 0–1 added to the
 build order, before step 2
 Unsure: nothing
-Next: review adjustments and commit; then propose the frontend setup
+Then: committed, with "when to use which" and the reason for the frontend
+step in `ARCHITECTURE.md`
+Next: frontend setup proposal
