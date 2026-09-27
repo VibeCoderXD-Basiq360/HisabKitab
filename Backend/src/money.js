@@ -9,6 +9,11 @@ export function parseMoney(value) {
   return `${whole}.${paise.padEnd(2, '0')}`;
 }
 
+// Takes an amount from parseMoney. A string check, so no arithmetic is needed.
+export function isPositive(amount) {
+  return !amount.startsWith('-') && /[1-9]/.test(amount);
+}
+
 // Indian grouping: the last three digits, then pairs. "3100000.00" → "₹31,00,000.00".
 export function formatRupees(amount) {
   const negative = amount.startsWith('-');

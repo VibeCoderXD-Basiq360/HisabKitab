@@ -50,6 +50,12 @@ export async function call(method, path, { body, rawBody, cookie } = {}) {
   return { status: response.status, json: text ? JSON.parse(text) : null, setCookie: response.headers.get('set-cookie') };
 }
 
+// Returns a `call` that sends this cookie, unless the options name another
+// cookie (or null for nobody).
+export function callAs(cookie) {
+  return (method, path, options = {}) => call(method, path, { cookie, ...options });
+}
+
 export async function logIn(email, password) {
   const response = await call('POST', '/auth/login', { body: { email, password } });
   return response.setCookie.split(';')[0];

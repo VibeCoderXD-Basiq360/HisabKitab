@@ -1,21 +1,20 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { db, startTestServer, stopTestServer, call as callAs, registerAndLogIn } from './harness.mjs';
+import { db, startTestServer, stopTestServer, callAs, registerAndLogIn } from './harness.mjs';
 import { COLOURS } from '../src/categories/handlers.js';
 
 let me;
 let stranger;
 const ids = {};
 
-// Most calls here are as `me`; pass `cookie` to act as someone else, or null for nobody.
-function call(method, path, { cookie = me, ...options } = {}) {
-  return callAs(method, path, { cookie, ...options });
-}
+// Calls are as `me` unless they pass `cookie`.
+let call;
 
 before(async () => {
   await startTestServer();
   me = await registerAndLogIn('me@example.com');
   stranger = await registerAndLogIn('stranger@example.com');
+  call = callAs(me);
 });
 
 after(stopTestServer);

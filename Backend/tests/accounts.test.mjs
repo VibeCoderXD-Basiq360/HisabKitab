@@ -1,14 +1,12 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { db, startTestServer, stopTestServer, call as callAs, registerAndLogIn } from './harness.mjs';
+import { db, startTestServer, stopTestServer, callAs, registerAndLogIn } from './harness.mjs';
 
 let me;
 let stranger;
 
-// Most calls here are as `me`; pass `cookie` to act as someone else, or null for nobody.
-function call(method, path, { cookie = me, ...options } = {}) {
-  return callAs(method, path, { cookie, ...options });
-}
+// Calls are as `me` unless they pass `cookie`.
+let call;
 
 const bank = { name: ' HDFC savings ', kind: 'bank', openingBalance: '31000', openingDate: '2026-09-01' };
 const card = { name: 'HDFC credit card', kind: 'credit_card', openingOutstanding: '8200', openingDate: '2026-09-01', billingDay: 5, dueDay: 18, lastFour: '4821' };
@@ -18,6 +16,7 @@ before(async () => {
   await startTestServer();
   me = await registerAndLogIn('me@example.com');
   stranger = await registerAndLogIn('stranger@example.com');
+  call = callAs(me);
 });
 
 after(stopTestServer);

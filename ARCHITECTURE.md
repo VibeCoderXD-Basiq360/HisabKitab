@@ -334,8 +334,9 @@ queries out is the minimum structure needed to prevent that.
 - `schema_migrations` records each filename that has run
 - Each file runs in its own transaction; the runner stops at the first failure
 - Run by hand, never on server start
-- A file never changes once it has run. Fix forward with a new file. No down
-  migrations.
+- A file never changes once it is frozen — committed, or run on any database
+  not ending in `_test` (see `CLAUDE.md` §13). Fix forward with a new file. No
+  down migrations.
 
 ### Auth and sessions (step 0)
 
@@ -407,6 +408,9 @@ disagree.
   settlement (step 6).
 - The view has no user scoping. Every query on it joins `accounts` and filters
   by owner.
+- Every branch's amount must be `NUMERIC(12,2)` exactly — cast it, e.g.
+  `(-amount)::numeric(12,2)`. A replaced view cannot change a column's type,
+  and negation drops the `(12,2)`.
 
 **No movement before its account's opening date.** Applies to every movement
 type — transfers, adjustments, and in later steps expenses, income and

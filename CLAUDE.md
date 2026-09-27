@@ -227,6 +227,11 @@ complicated and should be rewritten.
 - Run tests against anything but a test database. Tests are allowed; they
   live in `Backend/tests/`, run with `npm test`, and must refuse to start
   unless the database name ends in `_test`
+- Edit a migration once it is frozen. A migration is frozen once it is
+  committed, or once it has run on any database whose name does not end in
+  `_test`. Before that it may be edited, and the test database is dropped and
+  rebuilt so no database holds an old version. After that, fix forward with a
+  new file.
 - Generate seed or demo data unless asked
 - Write migration scripts to or from the old app — there is no data migration
 - Copy code from the old repository. Read it for reference; write fresh.

@@ -12,12 +12,13 @@ worse than none.
 
 **Current step: 1 — Accounts, categories, transfers, adjustments**
 
-**Status: accounts and categories done.** Next: transfers, then adjustments.
+**Status: transfers built, awaiting review** (accounts and categories
+committed). Next: adjustments.
 
 | Step | State |
 |---|---|
 | 0 — Auth | Done |
-| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories done |
+| 1 — Accounts, categories, transfers, adjustments | **Current** — accounts, categories done; transfers built |
 | 2 — Expenses | Not started |
 | 3 — Income | Not started |
 | — Two weeks of real use | — |
@@ -95,6 +96,13 @@ not to skim it**.
   allow that on `localhost`, but a phone reaching the laptop by its network
   IP over plain HTTP will never be logged in. Needs HTTPS, or testing on the
   deployed site.
+
+## Known gaps
+
+- **Archive race.** If an account is archived at the same moment a movement
+  on it is saved, it can end up archived with a non-zero balance. Harmless
+  while only one person acts on an account. **Fix at step 6**, when two
+  people can act on the same money — lock the account row while checking.
 
 ## Open questions
 
@@ -217,3 +225,12 @@ in `ARCHITECTURE.md`, checks in `src/fields.js`; test that the colour list
 in the handler matches the database constraint
 Unsure: nothing
 Next: transfers
+
+### 2026-09-27 — Step 1, transfers
+Built: `transfers` table, its two branches in `account_movements`, the four
+transfers endpoints, transfers tests; `callAs` moved into the test harness;
+`isPositive` in `money.js`
+Decided: transfers touching an archived account are frozen; every view
+branch's amount is cast to NUMERIC(12,2) — both in `ARCHITECTURE.md`
+Unsure: see summary
+Next: review transfers. Not committed yet.
