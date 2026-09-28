@@ -1,0 +1,58 @@
+/*
+  The only place colours are defined. Everything else uses var(--…).
+
+  Files that cannot read CSS variables copy values from here. Keep them in
+  step when a colour changes:
+    --bg  →  index.html (theme-color), public/manifest.webmanifest
+*/
+
+:root {
+  /* Surfaces */
+  --bg: #0C1611;
+  --surface: #121F18;
+  --raised: #1A2C22;
+  --line: #243A2D;
+
+  /* Text */
+  --ink: #EDF4EE;
+  --ink-2: #9FB5A6;
+  --ink-3: #6B8175;
+
+  /* Actions only — never money direction */
+  --lime: #B3DD62;
+  --lime-dim: #8FC244;
+  --on-lime: #14240A;
+
+  /* Account kinds */
+  --bank: #2C5E54;
+  --card: #DDAD71;
+  --cash: #3B4A42;
+
+  /* Money direction — always paired with a word, never colour alone */
+  --owed-to-you: #7FD1A0;
+  --you-owe: #E8846A;
+  --settled: #4E6357;
+
+  /* Category palette — separate from the UI tokens above */
+  --category-saffron: #F0B429;
+  --category-sand: #CBB994;
+  --category-rose: #D98BB0;
+  --category-plum: #9C7BC4;
+  --category-indigo: #6F7FD6;
+  --category-sky: #7DB8E8;
+  --category-teal: #3AA6A6;
+  --category-slate: #8C98A6;
+
+  /* Spacing and corners */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --radius-small: 12px;
+  --radius: 16px;
+  --radius-large: 28px;
+
+  --font: 'Inter', system-ui, sans-serif;
+}

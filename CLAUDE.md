@@ -126,12 +126,25 @@ v1 declared design tokens and then bypassed them **3,236 times**. These two
 rules are absolute because they are the only styling rules that can be
 mechanically checked:
 
-- **No hex colour literal anywhere except the token file.** Not in JSX, not in
-  CSS, not "just this once" for a gradient stop.
+- **Hex colours live only in `Web/src/tokens.css`** — and in files that cannot
+  read CSS variables, which copy their values from it. Today those are the
+  web manifest and the `theme-color` tag in `index.html`; `tokens.css` lists
+  every copy. Not in JSX, not in CSS, not "just this once" for a gradient
+  stop.
 - **No inline `style={{}}` objects. Ever.** Classes only.
 
-Both are checkable with a single grep. If a grep for `style={{` or `#[0-9a-fA-F]{6}`
-outside the token file returns anything, the code is wrong.
+Both are checkable with a single grep over the styling code — every `.css`,
+`.js` and `.jsx` file in `Web/src` except `tokens.css`. If either of these
+returns anything, the code is wrong:
+
+```
+grep -rnE '#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})' Web/src --include='*.css' --include='*.js' --include='*.jsx' | grep -v 'Web/src/tokens.css'
+grep -rn 'style={{' Web/src
+```
+
+The pattern catches 3, 4, 6 and 8 digit hex. Backend tests may use hex as
+test data (e.g. to check that a hex code is refused as a category colour);
+that is not styling.
 
 Also:
 

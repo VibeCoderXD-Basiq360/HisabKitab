@@ -12,7 +12,8 @@ worse than none.
 
 **Current step: frontend for steps 0 and 1**
 
-**Status: setup proposed, awaiting approval.** Steps 0 and 1 are done.
+**Status: scaffold committed; building block 1** (building blocks, login,
+register, the login check). Steps 0 and 1 are done.
 
 | Step | State |
 |---|---|
@@ -96,6 +97,10 @@ not to skim it**.
   allow that on `localhost`, but a phone reaching the laptop by its network
   IP over plain HTTP will never be logged in. Needs HTTPS, or testing on the
   deployed site.
+
+- **Serving the frontend.** The session cookie needs `Web/` and the API on the
+  same site. Either Express serves the built `Web/dist`, or a proxy puts both
+  behind one domain.
 
 ## Known gaps
 
@@ -247,3 +252,16 @@ Unsure: nothing
 Then: committed, with "when to use which" and the reason for the frontend
 step in `ARCHITECTURE.md`
 Next: frontend setup proposal
+
+### 2026-09-27 — Frontend scaffold
+Built: `Web/` — Vite, React, React Query, React Router (URLs only);
+`tokens.css` with 16 UI tokens, 8 category colours and a spacing and radius
+scale; `global.css`; `api.js`; manifest, `theme-color` and placeholder icons
+Decided: saffron moved to `#F0B429` (read as `card` on the dark surface);
+hex allowed in files that cannot read CSS variables (`CLAUDE.md` §8b);
+router for URLs only; plain CSS modules — all in `ARCHITECTURE.md`
+Then: hex grep widened to 3, 4, 6 and 8 digits and scoped to `Web/src`;
+mutations never auto-retry; screen answers recorded; scaffold checked in a
+real browser — renders, no console errors
+Unsure: nothing
+Next: block 1

@@ -521,6 +521,52 @@ page → hook → api client
 One hook per backend module. `useExpenses` talks to the `expense` module.
 Finding the hook tells you the endpoint.
 
+### Frontend setup
+
+- Folder `Web/`, matching the old repo. Plain JavaScript, ES modules, Vite.
+- Runtime packages: `react`, `react-dom`, `@tanstack/react-query`,
+  `react-router`. Dev: `vite`, `@vitejs/plugin-react`. Nothing else without
+  asking.
+- **React Router is for URLs only.** It is used in declarative mode
+  (`<BrowserRouter>`, `<Routes>`), which has no loaders or actions — never
+  `createBrowserRouter`. React Query owns all server data; router loaders
+  would be a second data layer.
+- **Styling is plain CSS.** `src/tokens.css` holds every colour as a CSS
+  variable, plus a short spacing and radius scale. Components use CSS
+  Modules (`Name.module.css`) and refer to colours only through `var(--…)`.
+  No Tailwind: its arbitrary values (`bg-[#1a2c22]`) are how v1 bypassed its
+  tokens.
+- **`src/api.js`** is the only place that calls `fetch`. It sends and reads
+  JSON and turns any non-2xx reply into an error carrying the server's
+  message and status. The session cookie travels on its own, same site.
+- **No money arithmetic on the client.** Amounts arrive and leave as strings.
+  The client only formats them for display; that formatter copies the
+  backend's `formatRupees`, because `Web/` and `Backend/` share no code.
+- **Mutations never auto-retry.** A create that timed out may still have
+  been saved; retrying it can record the same money twice. Set once, on the
+  query client. Queries retry only on network failures and server errors,
+  never on a 4xx.
+- **Inter is self-hosted** in `Web/public/fonts/`, with its licence. No
+  request to an outside font service.
+- **Development**: Vite passes `/api` through to Express on port 3000, so the
+  browser sees one site and the session cookie works on `localhost`.
+- **PWA, for now**: a manifest, placeholder icons and `theme-color`. No
+  service worker until push notifications need one in step 5 — a caching
+  one invites "the app did not update" bugs, and offline mode is excluded.
+
+### Screens for steps 0 and 1
+
+- **Home's hero** is the stack of account cards, each with its balance, and
+  **no total**. At step 5 the hero becomes "Coming back to you" — what
+  others owe — and the account cards move behind it.
+- **Bottom bar: Home and Settings only.** Transfer is an action on Home and
+  on each account. Categories are reached from Settings. The bar gains
+  entries as frequent actions arrive (expenses, people).
+- Built in five blocks, reviewed one at a time: building blocks with login,
+  register and the login check; home and accounts; account detail with
+  ledger and adjustments; transfers; categories and settings.
+- **Testing is manual** — in a browser at phone width — until step 5.
+
 ---
 
 ## Build order
@@ -560,8 +606,17 @@ owed-to-you  #7FD1A0      you-owe      #E8846A      settled #4E6357
 
 Sixteen tokens. Typeface is Inter, tabular figures on every number.
 
-Category colours are a separate palette of about eight — see "Money movements
-and balances (step 1)".
+Category colours are a separate palette of eight — see "Money movements and
+balances (step 1)". First-pass values, in `Web/src/tokens.css`:
+
+```
+saffron      #F0B429      sand         #CBB994      rose    #D98BB0
+plum         #9C7BC4      indigo       #6F7FD6      sky     #7DB8E8
+teal         #3AA6A6      slate        #8C98A6
+```
+
+Saffron was moved from `#E3A437` to `#F0B429` because on the dark surface it
+read as the same colour as `card`.
 
 - **Lime is for actions only.** Money direction uses the mint/coral pair.
 - **Never show direction by colour alone** — always pair it with a word
