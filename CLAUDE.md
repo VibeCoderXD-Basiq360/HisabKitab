@@ -58,8 +58,12 @@ and three overlapping ways to record the same thing, all from this failure.
 ## 4. Abstraction
 
 - Write the thing directly. Do not add a layer "for flexibility".
-- Do not abstract until the same code appears a **third** time. Twice is a
-  coincidence.
+- Code that merely **looks alike**: do not share it until it appears a
+  **third** time. Twice is a coincidence.
+- Code that **must never differ**: share it at the **second** copy. Two
+  copies of form checks that have to match the server's rules, or two
+  copies of a building block, will drift apart — and then one of them is
+  wrong. Say which case it is when you share early.
 - No base classes, generic handlers, factories, or wrappers unless explicitly
   asked for.
 - Prefer boring, obvious code over concise or elegant code.
