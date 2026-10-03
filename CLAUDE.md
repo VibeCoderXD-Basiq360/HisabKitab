@@ -18,21 +18,25 @@ clever, complete, or impressive.
 
 ---
 
-## 2. Size limits — hard
+## 2. Size limits — an alarm, not a wall
 
-| Thing | Limit | If exceeded |
-|---|---|---|
-| Any file | 300 lines | Split it, or stop and ask |
-| Route handler | 60 lines | Extract or simplify |
-| Any function | 40 lines | Split it |
-| Function parameters | 4 | Pass an object, or rethink |
-| Nesting depth | 3 | Return early instead |
+| Thing | Alarm at |
+|---|---|
+| Any file | 300 lines |
+| Route handler | 60 lines |
+| Any function | 40 lines |
+| Function parameters | 4 |
+| Nesting depth | 3 |
 
 The previous codebase had a 1,017-line page component and an 819-line
-controller. That is the failure mode these limits prevent.
+controller. That is the failure mode these limits catch.
 
-If a limit is genuinely wrong for a case, say so and ask. Do not silently
-exceed it.
+- **Going over is allowed when the code genuinely needs it — never
+  silently.** Say which file, how long, and why, in one sentence. The owner
+  decides.
+- **Never split code just to meet a number.** Split when a file or function
+  does two separate jobs. Pieces cut to fit a limit are harder to read than
+  the whole they came from.
 
 ---
 

@@ -298,4 +298,8 @@ account and a wallet added and shown; a duplicate name in the server box;
 no console errors
 Unsure: `Login` (58 lines) and `Register` (68) from block 1 break the
 40-line function limit — found while checking block 2
+Then: size limits rewritten as an alarm, not a wall (`CLAUDE.md` §2);
+login, register and add-account now share `hooks/useForm.js` (third copy),
+which also settles the two long functions. All three forms rechecked in the
+browser
 Next: review block 2, then push

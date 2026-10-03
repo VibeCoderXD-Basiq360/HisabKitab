@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
 import { Link, Navigate, useLocation } from 'react-router';
 import { useCurrentUser, useRegister } from '../hooks/useAuth.js';
+import { useForm } from '../hooks/useForm.js';
 import { Card } from '../components/Card.jsx';
 import { Field } from '../components/Field.jsx';
 import { Button } from '../components/Button.jsx';
@@ -23,57 +23,28 @@ export function Register() {
   const { data: user } = useCurrentUser();
   const register = useRegister();
   const location = useLocation();
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [problems, setProblems] = useState({});
-  const nameRef = useRef(null);
-  const emailRef = useRef(null);
-  const passwordRef = useRef(null);
+  const { fieldProps, submit } = useForm({
+    initial: { displayName: '', email: '', password: '' },
+    findProblems,
+    fieldOrder: ['displayName', 'email', 'password'],
+    onValid: (values) => register.mutate(values),
+  });
 
   if (user) return <Navigate to={location.state?.from ?? '/'} replace />;
-
-  function submit(event) {
-    event.preventDefault();
-    const found = findProblems({ displayName, email, password });
-    setProblems(found);
-    if (found.displayName) return nameRef.current.focus();
-    if (found.email) return emailRef.current.focus();
-    if (found.password) return passwordRef.current.focus();
-    register.mutate({ displayName, email, password });
-  }
 
   return (
     <main className={styles.screen}>
       <h1 className={styles.title}>Create your account</h1>
       <Card>
         <form className={styles.form} onSubmit={submit} noValidate>
+          <Field label="Your name" autoComplete="name" {...fieldProps('displayName')} />
+          <Field label="Email" type="email" autoComplete="email" {...fieldProps('email')} />
           <Field
-            ref={nameRef}
-            label="Your name"
-            autoComplete="name"
-            error={problems.displayName}
-            value={displayName}
-            onChange={(event) => setDisplayName(event.target.value)}
-          />
-          <Field
-            ref={emailRef}
-            label="Email"
-            type="email"
-            autoComplete="email"
-            error={problems.email}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <Field
-            ref={passwordRef}
             label="Password"
             type="password"
             autoComplete="new-password"
             hint="At least 8 characters"
-            error={problems.password}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            {...fieldProps('password')}
           />
           {register.error && <p className={styles.error} role="alert">{register.error.message}</p>}
           <Button type="submit" wide disabled={register.isPending}>

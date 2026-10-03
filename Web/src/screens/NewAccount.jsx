@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useCreateAccount } from '../hooks/useAccounts.js';
+import { useForm } from '../hooks/useForm.js';
 import { Card } from '../components/Card.jsx';
 import { Field } from '../components/Field.jsx';
 import { MoneyInput } from '../components/MoneyInput.jsx';
@@ -84,53 +84,23 @@ function CardFields({ fieldProps }) {
   );
 }
 
-// The form's state, its checks, and submitting it. Kept apart from the
-// screen so each stays short enough to read in one go.
-function useAccountForm(onValid) {
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, openingDate: today() }));
-  const [problems, setProblems] = useState({});
-  const inputs = useRef({});
-
-  const change = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  // What every field needs: its value, its problem, a way to focus it, and —
-  // for digit-only fields — a limit on what can be typed.
-  const fieldProps = (field, maxDigits) => ({
-    ref: (element) => { inputs.current[field] = element; },
-    value: form[field],
-    error: problems[field],
-    onChange: (event) => {
-      const typed = event.target.value;
-      if (maxDigits && (!/^\d*$/.test(typed) || typed.length > maxDigits)) return;
-      change(field, typed);
-    },
-  });
-
-  function submit(event) {
-    event.preventDefault();
-    const found = findProblems(form);
-    setProblems(found);
-    const first = FIELD_ORDER.find((field) => found[field]);
-    if (first) return inputs.current[first].focus();
-    onValid(toRequest(form));
-  }
-
-  return { form, change, fieldProps, submit };
-}
-
 export function NewAccount() {
   const createAccount = useCreateAccount();
   const navigate = useNavigate();
-  const { form, change, fieldProps, submit } = useAccountForm((account) => {
-    createAccount.mutate(account, { onSuccess: () => navigate('/') });
+  const { values, change, fieldProps, submit } = useForm({
+    initial: () => ({ ...EMPTY_FORM, openingDate: today() }),
+    findProblems,
+    fieldOrder: FIELD_ORDER,
+    onValid: (account) => createAccount.mutate(toRequest(account), { onSuccess: () => navigate('/') }),
   });
-  const isCard = form.kind === 'credit_card';
+  const isCard = values.kind === 'credit_card';
 
   return (
     <main className={formStyles.screen}>
       <h1 className={formStyles.title}>Add an account</h1>
       <Card>
         <form className={formStyles.form} onSubmit={submit} noValidate>
-          <KindPicker value={form.kind} onChange={(kind) => change('kind', kind)} />
+          <KindPicker value={values.kind} onChange={(kind) => change('kind', kind)} />
           <Field label="Name" hint="As you'd say it, like HDFC savings" autoComplete="off" {...fieldProps('name')} />
           <Field label="Start tracking from" type="date" {...fieldProps('openingDate')} />
           <MoneyInput

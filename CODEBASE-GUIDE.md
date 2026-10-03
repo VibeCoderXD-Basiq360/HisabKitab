@@ -97,7 +97,8 @@ HisabKitab/
         ├── global.css     page-wide styles, and the font
         ├── hooks/
         │   ├── useAuth.js     who am I, log in, register
-        │   └── useAccounts.js the accounts list, adding an account
+        │   ├── useAccounts.js the accounts list, adding an account
+        │   └── useForm.js     the shape every form shares
         ├── components/    the building blocks screens are made of
         │   ├── Card.jsx       a flat bordered surface
         │   ├── Row.jsx        one line of a list
@@ -474,6 +475,14 @@ so these are the only ones. Errors from the server — "That email is already
 registered", "Too many attempts" — appear in one box above the button,
 because the server doesn't say which field they belong to.
 
+**Every form has one shape (`useForm.js`, 39 lines).** Login, register and
+add-account all hand it four things: their starting values, their own
+checks, the order their fields appear on screen, and what to do once the
+checks pass. It keeps the values, puts each problem beside its field, and
+moves focus to the first one. Everything a form *decides* stays in that
+form's own file; only the machinery is shared. It became shared when the
+third form needed the same machinery.
+
 The login error is deliberately vague: "Wrong email or password", never
 "No account with that email". Saying which was wrong would tell a stranger
 which emails have accounts.
@@ -523,7 +532,7 @@ credit" for a card you've overpaid, shown without the minus sign. The home
 cards and the list both use it, so they can never describe the same account
 two different ways.
 
-**One form that changes with the kind (`NewAccount.jsx`, 151 lines).** You
+**One form that changes with the kind (`NewAccount.jsx`, 121 lines).** You
 pick the kind first. A credit card changes the amount question to "How much
 did you owe on it that day?" and adds its last four digits, the day the bill
 comes and the day it's due. Everything else asks "How much was in it that
@@ -534,8 +543,9 @@ day?". Two details:
 - The start date is filled in with today *by the phone's own calendar*. The
   server never picks a date, because "today" depends on where you are.
 
-The form's state and checks live in a small `useAccountForm` function at the
-top of the file, so the screen itself is only what you see.
+Like every form, it uses `useForm` for the machinery. Its own file holds
+only what's particular to it: the kind picker, the card fields, its checks,
+and turning the answers into a request.
 
 **One refresh covers every balance (`useAccounts.js`, 18 lines).** Everything
 about accounts is remembered under one name, `accounts`. Adding an account
@@ -586,12 +596,14 @@ Answer these out loud. Each one tests a section.
 15. A form shows "Use at least 8 characters" under the password, but "That
     email is already registered" in a box above the button. Why the
     difference?
+16. What does `useForm` do for every form, and what does each form still
+    decide for itself?
 
 **Frontend block 2**
-16. Why does Home show no total balance?
-17. A card has been overpaid by ₹500. What does it say, and which one file
+17. Why does Home show no total balance?
+18. A card has been overpaid by ₹500. What does it say, and which one file
     decides that?
-18. Why does the start date come before the amount on the add-account form,
+19. Why does the start date come before the amount on the add-account form,
     and who picks the date — the phone or the server?
 
 If you can answer all of these, you understand v2 better than you understood

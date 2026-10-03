@@ -613,6 +613,11 @@ Finding the hook tells you the endpoint.
   the only ones.
 - **Errors from the server sit in one box above the button.** Server replies
   carry no field name today.
+- **Every form has one shape: `hooks/useForm.js`.** It holds the values,
+  runs the form's own checks on submit, moves focus to the first problem,
+  and calls the form's submit only when there are none. Each form still
+  decides its own fields, its own checks, and what submitting does. Shared
+  because login, register and add-account were the third copy of it.
 - **Login errors never name a field.** "Wrong email or password", never
   "No account with that email" — naming the field would reveal which emails
   have accounts.
