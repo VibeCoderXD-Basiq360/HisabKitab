@@ -142,13 +142,19 @@ Both are checkable with a single grep over the styling code — every `.css`,
 returns anything, the code is wrong:
 
 ```
-grep -rnE '#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})' Web/src --include='*.css' --include='*.js' --include='*.jsx' | grep -v 'Web/src/tokens.css'
+grep -rnE '#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b|\b(rgba?|hsla?)\(' Web/src --include='*.css' --include='*.js' --include='*.jsx' | grep -v 'Web/src/tokens.css'
 grep -rn 'style={{' Web/src
 ```
 
-The pattern catches 3, 4, 6 and 8 digit hex. Backend tests may use hex as
-test data (e.g. to check that a hex code is refused as a category colour);
-that is not styling.
+The first catches 3, 4, 6 and 8 digit hex, and `rgb(`, `rgba(`, `hsl(` and
+`hsla(`. Backend tests may use hex as test data (e.g. to check that a hex code
+is refused as a category colour); that is not styling.
+
+**Named colour words — `black`, `white`, `red` and the rest — cannot be
+grepped reliably**: the same words appear in ordinary text and class names.
+They are a review rule instead: no named colour outside `tokens.css`, and
+none inside it either — derived shades are mixed from existing tokens.
+`transparent` is not a colour and is fine anywhere.
 
 Also:
 

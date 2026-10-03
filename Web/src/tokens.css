@@ -45,7 +45,7 @@
 
   /* Shades for the decorated home screen only. Mixes of the tokens above,
      not new colours. */
-  --shadow: color-mix(in srgb, var(--bg) 40%, black);
+  --shadow: var(--bg);
   --sheen: color-mix(in srgb, var(--ink) 14%, transparent);
   --glow: color-mix(in srgb, var(--bank) 60%, transparent);
 

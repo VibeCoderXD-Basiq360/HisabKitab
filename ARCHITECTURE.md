@@ -579,9 +579,10 @@ Finding the hook tells you the endpoint.
   both are money in hand. Text on the light `--card` face uses `--bg`.
 - **The decoration is home-only** (directional gradient, sheen, top
   highlight, deep shadow, film grain, one glow at the top). Its extra shades
-  — shadow, sheen, glow — are **derived from existing tokens with
-  `color-mix()` and defined in `tokens.css`**, so components still only use
-  `var(--…)`. They are mixes of existing tokens, not new colours. The one
+  — shadow, sheen, glow — are **derived from existing tokens and defined in
+  `tokens.css`**, so components still only use `var(--…)`. The shadow is
+  `--bg` itself; sheen and glow are `color-mix()` of a token with
+  `transparent`. No named colours. They are mixes of existing tokens, not new colours. The one
   exception is each card's gradient end, which depends on its own face
   colour, so the card mixes it itself — still only from `var(--…)`.
 - **What a card or row says:** a card shows "outstanding"; a card whose
@@ -600,8 +601,8 @@ Finding the hook tells you the endpoint.
   it's due. The start date is prefilled with today's date on the phone, and
   the client always sends it.
 - **The form cannot enter a negative opening amount** (an overdrawn account,
-  or a card in credit) — money inputs accept digits only. Rare enough to
-  leave until it is needed.
+  or a card in credit) — money inputs accept digits only. An adjustment
+  covers it; listed under "Known gaps" in `PROJECT-STATUS.md`.
 - **Form screens share one stylesheet** (`FormScreen.module.css`): login,
   register and add-account are its third use.
 

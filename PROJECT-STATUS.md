@@ -104,6 +104,10 @@ not to skim it**.
 
 ## Known gaps
 
+- **Negative opening amounts.** The add-account form can't enter one — an
+  overdrawn account, or a card already in credit — because money inputs
+  accept digits only. Workaround: add the account at zero, then an
+  adjustment for the real amount.
 - **Archive race.** If an account is archived at the same moment a movement
   on it is saved, it can end up archived with a non-zero balance. Harmless
   while only one person acts on an account. **Fix at step 6**, when two
