@@ -12,8 +12,7 @@ worse than none.
 
 **Current step: frontend for steps 0 and 1**
 
-**Status: scaffold committed; building block 1** (building blocks, login,
-register, the login check). Steps 0 and 1 are done.
+**Status: block 1 committed.** Next: block 2, home and accounts.
 
 | Step | State |
 |---|---|
@@ -265,3 +264,21 @@ mutations never auto-retry; screen answers recorded; scaffold checked in a
 real browser — renders, no console errors
 Unsure: nothing
 Next: block 1
+
+### 2026-09-28 — Frontend block 1
+Built: Inter self-hosted with its licence; building blocks (Card, Row, Chip,
+Button, Field, MoneyInput, Amount) and `money.js`/`days.js` formatters;
+`useAuth`; the login check (`RequireLogin`, and any 401 clears the current
+user); login and register screens; a placeholder home
+Checked in a real browser, against the test database: logged-out `/` goes
+to `/login`; register logs in; a reload keeps the session; a session ended on
+the server sends you back to login; wrong password shows the server's
+message and is sent once; the unused blocks shown on a temporary page, since
+removed. No console errors
+Then, after review: not-found screen; errors from the form's own checks
+beside their field with focus on the first; server errors in one box; the
+cache wiped when a logged-in person's session ends (after their screens close
+— wiping first was tried and failed); `CODEBASE-GUIDE.md` updated, and the
+rule that every module updates it added to `CLAUDE.md` §12
+Unsure: nothing
+Next: block 2, home and accounts

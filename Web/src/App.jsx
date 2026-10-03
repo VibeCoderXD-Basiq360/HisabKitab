@@ -1,10 +1,20 @@
 import { Routes, Route } from 'react-router';
+import { RequireLogin } from './RequireLogin.jsx';
+import { Login } from './screens/Login.jsx';
+import { Register } from './screens/Register.jsx';
+import { Home } from './screens/Home.jsx';
+import { NotFound } from './screens/NotFound.jsx';
 
-// One route per screen. The placeholder goes when the first screen arrives.
+// One route per screen. Everything inside RequireLogin needs a session.
 export function App() {
   return (
     <Routes>
-      <Route path="*" element={<h1>HisabKitab</h1>} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route element={<RequireLogin />}>
+        <Route index element={<Home />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

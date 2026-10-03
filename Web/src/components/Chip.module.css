@@ -1,0 +1,24 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--raised);
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.saffron { background: var(--category-saffron); }
+.sand { background: var(--category-sand); }
+.rose { background: var(--category-rose); }
+.plum { background: var(--category-plum); }
+.indigo { background: var(--category-indigo); }
+.sky { background: var(--category-sky); }
+.teal { background: var(--category-teal); }
+.slate { background: var(--category-slate); }

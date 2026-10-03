@@ -229,6 +229,14 @@ After every module, write a short plain-English summary:
 No code in the summary. If you cannot explain it in plain English, it is too
 complicated and should be rewritten.
 
+**A module is not done until `CODEBASE-GUIDE.md` is updated**, in the same
+commit:
+
+- Its files are added to the folder tree in section 2.
+- It gets a plain-English section explaining what is different about it, in
+  the same style as the existing ones — the why, not a list of functions.
+- Section 9 gains at least one "explain without looking" question about it.
+
 ---
 
 ## 13. Things you must never do here

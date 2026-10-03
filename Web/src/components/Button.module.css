@@ -1,0 +1,33 @@
+.button {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-small);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.primary {
+  background: var(--lime);
+  color: var(--on-lime);
+  border: none;
+}
+
+.primary:active:not(:disabled) {
+  background: var(--lime-dim);
+}
+
+.quiet {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.wide {
+  width: 100%;
+}

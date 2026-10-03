@@ -567,6 +567,32 @@ Finding the hook tells you the endpoint.
   ledger and adjustments; transfers; categories and settings.
 - **Testing is manual** — in a browser at phone width — until step 5.
 
+### Forms, errors and sessions on the frontend
+
+- **Errors from the form's own checks sit beside their field** — blank,
+  email shape, too short — and focus moves to the first field with a
+  problem. The browser's own validation pop-ups are turned off so these are
+  the only ones.
+- **Errors from the server sit in one box above the button.** Server replies
+  carry no field name today.
+- **Login errors never name a field.** "Wrong email or password", never
+  "No account with that email" — naming the field would reveal which emails
+  have accounts.
+- **Whether error replies carry an optional `field` is decided at step 2**,
+  when forms first have server rules that belong to one field.
+- **Unknown addresses show a "not found" screen** with a way home, not a
+  silent redirect.
+- **When a logged-in person's session ends, the cache is wiped.** Any
+  request answered 401 while someone is logged in marks them logged out, so
+  the login check sends them to the login screen. Once their screens have
+  closed, the login check removes every cached query except "who am I", and
+  every finished form submission (those keep what was typed, passwords
+  included). Wiping while their screens were still open made those screens
+  fetch again — that order was tried and failed. A 401 while nobody is
+  logged in changes nothing: "who am I" returns 401 to every logged-out
+  visitor, and acting on that could refetch it in a loop. Logout itself
+  (block 5) wipes the cache the same way.
+
 ---
 
 ## Build order
