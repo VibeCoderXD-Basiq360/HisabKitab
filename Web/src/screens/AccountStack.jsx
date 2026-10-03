@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { Amount } from '../components/Amount.jsx';
 import { dayWithSuffix } from '../days.js';
 import { kindLabel, headlineFigure } from '../describeAccount.js';
@@ -8,10 +9,9 @@ const FACES = { bank: styles.bank, credit_card: styles.card, cash: styles.cash, 
 
 function AccountCard({ account, position }) {
   const { word, amount } = headlineFigure(account);
-  // The cards behind are decoration: everything on them is in the list below.
-  const isBehind = position !== 'front';
-  return (
-    <article className={`${styles.face} ${FACES[account.kind]} ${styles[position]}`} aria-hidden={isBehind || undefined}>
+  const className = `${styles.face} ${FACES[account.kind]} ${styles[position]}`;
+  const face = (
+    <>
       <div className={styles.top}>
         <span className={styles.name}>{account.name}</span>
         <span className={styles.quiet}>{kindLabel(account)}</span>
@@ -23,7 +23,17 @@ function AccountCard({ account, position }) {
           <span className={styles.quiet}>Bill due on the {dayWithSuffix(account.dueDay)}</span>
         )}
       </div>
-    </article>
+    </>
+  );
+  // The front card opens the account. The cards behind are decoration:
+  // everything on them is in the list below.
+  if (position !== 'front') {
+    return <article className={className} aria-hidden="true">{face}</article>;
+  }
+  return (
+    <Link to={`/accounts/${account.id}`} className={`${className} ${styles.link}`}>
+      {face}
+    </Link>
   );
 }
 

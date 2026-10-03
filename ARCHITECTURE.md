@@ -606,6 +606,43 @@ Finding the hook tells you the endpoint.
 - **Form screens share one stylesheet** (`FormScreen.module.css`): login,
   register and add-account are its third use.
 
+### Account detail, ledger and adjustments (block 3)
+
+- **Home now links in.** The front card and every list row open the
+  account (`/accounts/:id`). The cards behind stay decoration.
+- **The account screen is flat** — not decorated. Top: name, kind, the
+  headline figure with its word (and the due day for a card). Then the
+  action "Correct the balance", then the ledger.
+- **Ledger rows say what each movement was, in words:**
+  - Opening: "Starting balance" (a card: "Owed at the start"), with
+    "balance" / "overdrawn" (a card: "owed" / "in credit").
+  - Transfer: "Transfer", with "in" / "out" (a card: "paid off" /
+    "charged"). The other account is not named yet — the ledger only gives
+    the transfer's id; block 4 can add it.
+  - Adjustment: its note as the title, "Correction" in the detail, the same
+    words as a transfer. The note comes from the adjustments list, fetched
+    on the same screen.
+  - The date sits in each row's detail. No colour for direction — the words
+    carry it.
+- **"Show more"** fetches the next page of the ledger and adds it below.
+- **Correcting a balance (`/accounts/:id/adjust`)** asks the question the
+  way you notice the problem: "There's more in it than the app shows" /
+  "There's less in it than the app shows" — for a card, "I owe more than
+  the app shows" / "I owe less than the app shows". Then by how much, on
+  which day (today prefilled) and why (required). The screen says it is
+  for a balance that drifted, not a starting balance that was wrong.
+- **An archived account** can still be opened by its address, shows that
+  it is archived, and has no "Correct the balance".
+- **An account that doesn't exist, or isn't yours,** shows "We couldn't
+  find that account" with a way home.
+- **`Choices` is a building block** — pick one of a few options, as
+  buttons over real radio inputs. The add-account kind picker and the
+  correct-the-balance question both use it. Made shared at its second use,
+  not its third, because CLAUDE.md §8b says to build primitives rather than
+  restyle one-offs.
+- **Editing and archiving an account are not in block 3.** They are in
+  the step 1 API but no screen block has claimed them yet.
+
 ### Forms, errors and sessions on the frontend
 
 - **Errors from the form's own checks sit beside their field** — blank,

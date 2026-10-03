@@ -2,7 +2,8 @@
 
 A plain-English walk through every file in HisabKitab v2. Written from the
 actual code, not from summaries of it, and updated in the same commit as every
-module (`CLAUDE.md` §12). Last updated for: **frontend block 2** — home and accounts.
+module (`CLAUDE.md` §12). Last updated for: **frontend block 3** — account detail, ledger and
+adjustments.
 
 **How to use this.** Read a section, then close it and answer the questions at
 the end of that section out loud, without looking. If you can't, read the real
@@ -92,17 +93,19 @@ HisabKitab/
         ├── RequireLogin.jsx  the login check around protected screens
         ├── money.js       showing rupees (display only)
         ├── days.js        showing dates, and today's date on the phone
-        ├── describeAccount.js  the words an account is shown with
+        ├── describeAccount.js  the words an account and its movements are shown with
         ├── tokens.css     every colour, the only place hex lives
         ├── global.css     page-wide styles, and the font
         ├── hooks/
         │   ├── useAuth.js     who am I, log in, register
-        │   ├── useAccounts.js the accounts list, adding an account
+        │   ├── useAccounts.js the accounts list, one account, its ledger, adding
+        │   ├── useAdjustments.js  an account's corrections, adding one
         │   └── useForm.js     the shape every form shares
         ├── components/    the building blocks screens are made of
         │   ├── Card.jsx       a flat bordered surface
-        │   ├── Row.jsx        one line of a list
+        │   ├── Row.jsx        one line of a list, or a link
         │   ├── Chip.jsx       a small pill, with a category colour dot
+        │   ├── Choices.jsx    pick one of a few options, as buttons
         │   ├── Button.jsx     lime for the action, quiet for the other
         │   ├── Field.jsx      a labelled input, with its error
         │   ├── MoneyInput.jsx a Field that only accepts money
@@ -113,6 +116,8 @@ HisabKitab/
             ├── Home.jsx       the card stack, the list, "Add an account"
             ├── AccountStack.jsx  the decorated hero cards (home only)
             ├── NewAccount.jsx    adding an account
+            ├── AccountDetail.jsx one account: its figure and its ledger
+            ├── AdjustBalance.jsx correcting a balance that drifted
             └── NotFound.jsx   for addresses that match nothing
 ```
 
@@ -518,14 +523,15 @@ everything on them is in the list underneath.
 **The only decorated screen.** The cards get the material look from the
 design brief — a diagonal sheen, a gradient, a soft top highlight, a deep
 shadow — and Home gets one glow at the top and a faint film grain over
-everything. Every other screen stays flat. The extra shades this needs
-(shadow, sheen, glow) are mixed from existing colours in `tokens.css`, so no
-new colours were invented and the hex rule still holds.
+everything. Every other screen stays flat. The extra shades this needs are
+defined in `tokens.css` from existing colours: the shadow is the background
+colour itself, and the sheen and glow are faded versions of existing tokens.
+No new colours, and no named ones like `black`.
 
 Each kind of account has its own colour token — except wallet, which has
 none, so it borrows cash's. Both are money in your hand.
 
-**Words always travel with numbers (`describeAccount.js`, 17 lines).** One
+**Words always travel with numbers (`describeAccount.js`, 45 lines).** One
 small file decides what an account is called and which figure it leads with:
 "balance" for a bank, cash or wallet; "outstanding" for a card; and "in
 credit" for a card you've overpaid, shown without the minus sign. The home
@@ -544,18 +550,70 @@ day?". Two details:
   server never picks a date, because "today" depends on where you are.
 
 Like every form, it uses `useForm` for the machinery. Its own file holds
-only what's particular to it: the kind picker, the card fields, its checks,
+only what's particular to it: its kind choices, the card fields, its checks,
 and turning the answers into a request.
 
-**One refresh covers every balance (`useAccounts.js`, 18 lines).** Everything
+**One refresh covers every balance (`useAccounts.js`, 36 lines).** Everything
 about accounts is remembered under one name, `accounts`. Adding an account
 tells React Query to forget that name, so every balance on screen is fetched
 fresh. Later, a transfer or an adjustment will do the same with one line.
 
-**Not done yet, deliberately.** Tapping a card or a row does nothing — the
-account's own screen is block 3. There's no bottom bar yet — its only other
+**Not done yet, deliberately.** There's no bottom bar yet — its only other
 entry, Settings, is block 5. And the form can't take a negative opening
-amount (an overdrawn account); money inputs only accept digits.
+amount (an overdrawn account); money inputs only accept digits. The way
+round it is to add the account at zero, then correct the balance.
+
+### Block 3: account detail, ledger and adjustments
+
+What's different about the screen for one account.
+
+**Home now leads somewhere.** The front card and every list row open that
+account. The cards peeking out behind still do nothing — they're decoration.
+
+**The ledger speaks in words, not signs (`describeAccount.js`).** The server
+sends each movement as an amount and a direction, `in` or `out`. On a bank
+account those words are fine. On a card they're backwards to how you think:
+money *out* of a card is spending you now owe for, and money *in* pays it
+off. So the same file that names accounts also turns each ledger row into
+plain words:
+
+- the opening row is "Starting balance" — or, on a card, "Owed at the start"
+- a transfer says "in" or "out" — on a card, "paid off" or "charged"
+- a correction is titled by its note, so you see *why* it was made
+
+The note isn't in the ledger itself; the screen also fetches the account's
+corrections and looks each one up. No colours show direction — the words do.
+
+**The ledger comes in pages (`useAccounts.js`).** The server sends 50 rows at
+a time, newest first. "Show more" asks for the next 50 and adds them below.
+The button disappears when there's nothing left.
+
+**Correcting a balance asks how you noticed (`AdjustBalance.jsx`, 95
+lines).** Not "in or out", but "There's more in it than the app shows" or
+"There's less". On a card: "I owe more than the app shows" or "I owe less".
+The same `in`/`out` sits underneath, but the sentence matches what you're
+looking at. Nothing is picked for you — guessing the direction would record
+money the wrong way. Then by how much, on which day, and why. The why is
+required, because a correction with no reason is a mystery a month later.
+
+The screen says it's for a balance that *drifted*. If the starting balance
+was wrong from day one, that's a different fix (editing the account, not
+built yet) — using a correction for it would make every day before it wrong.
+
+**`Choices` became a building block.** Picking one of a few options — the
+kind of account, or what's wrong with the balance — looks and works the same
+everywhere: buttons on top of real radio inputs, so keyboards and screen
+readers work. It became shared at its second use rather than its third,
+because building blocks are never restyled per screen.
+
+**Accounts you can't see look like accounts that don't exist.** Someone
+else's account, a deleted address, a typo — all show "We couldn't find that
+account". The app never hints that a row exists but isn't yours. An archived
+account still opens by its address, says it's archived, and offers no
+correction.
+
+**Not in this block:** editing or archiving an account. The server can do
+both; no screen does yet.
 
 ---
 
@@ -605,6 +663,13 @@ Answer these out loud. Each one tests a section.
     decides that?
 19. Why does the start date come before the amount on the add-account form,
     and who picks the date — the phone or the server?
+
+**Frontend block 3**
+20. On a card's ledger, a row says "charged". What did the server actually
+    send, and where did the word come from?
+21. Why does the correction form never pick a direction for you?
+22. You open `/accounts/4` and it's someone else's account. What do you
+    see, and why exactly that?
 
 If you can answer all of these, you understand v2 better than you understood
 v1.

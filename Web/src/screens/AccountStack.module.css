@@ -62,3 +62,7 @@
   font-size: 14px;
   opacity: 0.8;
 }
+
+.link {
+  text-decoration: none;
+}

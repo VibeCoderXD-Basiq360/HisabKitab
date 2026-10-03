@@ -19,7 +19,15 @@ function AccountList({ accounts }) {
             <span className={styles.word}>{word}</span>
           </span>
         );
-        return <Row key={account.id} title={account.name} detail={kindLabel(account)} trailing={figure} />;
+        return (
+          <Row
+            key={account.id}
+            to={`/accounts/${account.id}`}
+            title={account.name}
+            detail={kindLabel(account)}
+            trailing={figure}
+          />
+        );
       })}
     </Card>
   );

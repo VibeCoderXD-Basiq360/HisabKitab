@@ -4,6 +4,8 @@ import { Login } from './screens/Login.jsx';
 import { Register } from './screens/Register.jsx';
 import { Home } from './screens/Home.jsx';
 import { NewAccount } from './screens/NewAccount.jsx';
+import { AccountDetail } from './screens/AccountDetail.jsx';
+import { AdjustBalance } from './screens/AdjustBalance.jsx';
 import { NotFound } from './screens/NotFound.jsx';
 
 // One route per screen. Everything inside RequireLogin needs a session.
@@ -15,6 +17,8 @@ export function App() {
       <Route element={<RequireLogin />}>
         <Route index element={<Home />} />
         <Route path="/accounts/new" element={<NewAccount />} />
+        <Route path="/accounts/:id" element={<AccountDetail />} />
+        <Route path="/accounts/:id/adjust" element={<AdjustBalance />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

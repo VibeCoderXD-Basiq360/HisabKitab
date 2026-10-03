@@ -1,0 +1,48 @@
+.screen {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  padding-top: max(var(--space-5), env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.back {
+  align-self: flex-start;
+}
+
+.name {
+  margin: 0 0 var(--space-1);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.headline {
+  margin: var(--space-4) 0 var(--space-1);
+}
+
+.quiet {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.heading {
+  margin: var(--space-2) 0 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}

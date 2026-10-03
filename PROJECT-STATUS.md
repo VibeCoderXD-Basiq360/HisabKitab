@@ -12,8 +12,8 @@ worse than none.
 
 **Current step: frontend for steps 0 and 1**
 
-**Status: block 2 committed, not pushed — awaiting review.** Next: block 3,
-account detail with ledger and adjustments.
+**Status: block 3 committed, not pushed — awaiting review.** Next: block 4,
+transfers.
 
 | Step | State |
 |---|---|
@@ -307,3 +307,16 @@ login, register and add-account now share `hooks/useForm.js` (third copy),
 which also settles the two long functions. All three forms rechecked in the
 browser
 Next: review block 2, then push
+
+### 2026-10-03 — Colour rules, then frontend block 3
+Built: shadow based on `--bg`; the CLAUDE.md grep fixed (a control
+character had replaced ``) and widened to `rgb(`, `rgba(`, `hsl(`,
+`hsla(`; named colours made a review rule; negative opening amounts listed
+as a known gap. Pushed with blocks 2 and the form change. Then block 3: home
+cards and rows link to the account; the account screen with its ledger in
+words and "Show more"; correcting a balance; `Choices` as a building block
+Checked in a real browser, against the test database: 57 ledger rows across
+two pages; a bank and a card corrected, with the right words and balances;
+archived, missing and someone else's account; no console errors
+Unsure: the card shadow, now plain `--bg`, barely shows against the page
+Next: review block 3, then push

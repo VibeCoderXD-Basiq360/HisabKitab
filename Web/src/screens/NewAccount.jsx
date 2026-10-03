@@ -5,6 +5,7 @@ import { Card } from '../components/Card.jsx';
 import { Field } from '../components/Field.jsx';
 import { MoneyInput } from '../components/MoneyInput.jsx';
 import { Button } from '../components/Button.jsx';
+import { Choices } from '../components/Choices.jsx';
 import { today } from '../days.js';
 import formStyles from './FormScreen.module.css';
 import styles from './NewAccount.module.css';
@@ -50,28 +51,6 @@ function toRequest(form) {
   };
 }
 
-function KindPicker({ value, onChange }) {
-  return (
-    <fieldset className={styles.picker}>
-      <legend className={styles.legend}>What kind of account?</legend>
-      <div className={styles.choices}>
-        {KIND_CHOICES.map(([kind, label]) => (
-          <label key={kind} className={styles.choice}>
-            <input
-              type="radio"
-              name="kind"
-              className={styles.radio}
-              checked={value === kind}
-              onChange={() => onChange(kind)}
-            />
-            {label}
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
 function CardFields({ fieldProps }) {
   return (
     <>
@@ -100,7 +79,12 @@ export function NewAccount() {
       <h1 className={formStyles.title}>Add an account</h1>
       <Card>
         <form className={formStyles.form} onSubmit={submit} noValidate>
-          <KindPicker value={values.kind} onChange={(kind) => change('kind', kind)} />
+          <Choices
+            legend="What kind of account?"
+            options={KIND_CHOICES}
+            value={values.kind}
+            onChange={(kind) => change('kind', kind)}
+          />
           <Field label="Name" hint="As you'd say it, like HDFC savings" autoComplete="off" {...fieldProps('name')} />
           <Field label="Start tracking from" type="date" {...fieldProps('openingDate')} />
           <MoneyInput

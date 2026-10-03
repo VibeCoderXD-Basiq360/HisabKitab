@@ -1,0 +1,8 @@
+.back {
+  align-self: flex-start;
+}
+
+.lead {
+  margin: 0;
+  color: var(--ink-2);
+}
