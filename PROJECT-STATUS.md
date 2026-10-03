@@ -310,7 +310,7 @@ Next: review block 2, then push
 
 ### 2026-10-03 — Colour rules, then frontend block 3
 Built: shadow based on `--bg`; the CLAUDE.md grep fixed (a control
-character had replaced ``) and widened to `rgb(`, `rgba(`, `hsl(`,
+character had replaced `\b`) and widened to `rgb(`, `rgba(`, `hsl(`,
 `hsla(`; named colours made a review rule; negative opening amounts listed
 as a known gap. Pushed with blocks 2 and the form change. Then block 3: home
 cards and rows link to the account; the account screen with its ledger in
