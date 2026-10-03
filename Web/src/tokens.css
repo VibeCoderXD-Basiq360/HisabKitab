@@ -43,6 +43,12 @@
   --category-teal: #3AA6A6;
   --category-slate: #8C98A6;
 
+  /* Shades for the decorated home screen only. Mixes of the tokens above,
+     not new colours. */
+  --shadow: color-mix(in srgb, var(--bg) 40%, black);
+  --sheen: color-mix(in srgb, var(--ink) 14%, transparent);
+  --glow: color-mix(in srgb, var(--bank) 60%, transparent);
+
   /* Spacing and corners */
   --space-1: 4px;
   --space-2: 8px;

@@ -567,6 +567,44 @@ Finding the hook tells you the endpoint.
   ledger and adjustments; transfers; categories and settings.
 - **Testing is manual** — in a browser at phone width — until step 5.
 
+### Home and accounts (block 2)
+
+- **Home, top to bottom:** the hero stack of account cards; every account as
+  a list; "Add an account". No total anywhere.
+- **The stack** shows the first account in list order at the front, with up
+  to two more peeking out behind it. It is static. With no accounts it is
+  one empty card inviting you to add one.
+- **Card faces use the account-kind tokens:** bank → `--bank`, credit card →
+  `--card`, cash → `--cash`. **Wallet has no token, so it uses `--cash`** —
+  both are money in hand. Text on the light `--card` face uses `--bg`.
+- **The decoration is home-only** (directional gradient, sheen, top
+  highlight, deep shadow, film grain, one glow at the top). Its extra shades
+  — shadow, sheen, glow — are **derived from existing tokens with
+  `color-mix()` and defined in `tokens.css`**, so components still only use
+  `var(--…)`. They are mixes of existing tokens, not new colours. The one
+  exception is each card's gradient end, which depends on its own face
+  colour, so the card mixes it itself — still only from `var(--…)`.
+- **What a card or row says:** a card shows "outstanding"; a card whose
+  outstanding is negative says "in credit" and shows the amount without the
+  minus; every other kind shows "balance". A credit card also shows its last
+  four digits and "Bill due on the 18th".
+- **Rows and cards are not links yet.** Account detail arrives in block 3;
+  linking now would lead to "Nothing here".
+- **No bottom bar yet.** Its only other entry, Settings, arrives in block 5,
+  and the Transfer action arrives with transfers in block 4.
+- **Adding an account (`/accounts/new`):** the kind is chosen first, and the
+  form changes with it. Then the name, the day tracking starts, and the
+  amount on that day — "How much did you owe on it that day?" for a credit
+  card, "How much was in it that day?" for everything else. A credit card
+  also asks for its last four digits, the day the bill comes and the day
+  it's due. The start date is prefilled with today's date on the phone, and
+  the client always sends it.
+- **The form cannot enter a negative opening amount** (an overdrawn account,
+  or a card in credit) — money inputs accept digits only. Rare enough to
+  leave until it is needed.
+- **Form screens share one stylesheet** (`FormScreen.module.css`): login,
+  register and add-account are its third use.
+
 ### Forms, errors and sessions on the frontend
 
 - **Errors from the form's own checks sit beside their field** — blank,

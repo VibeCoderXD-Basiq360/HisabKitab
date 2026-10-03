@@ -1,0 +1,64 @@
+/* The only decorated surfaces in the app. Everything else is flat. */
+
+.stack {
+  display: grid;
+  /* Room above the front card for the ones peeking out behind it. */
+  padding-top: var(--space-6);
+}
+
+.face {
+  grid-area: 1 / 1;
+  min-height: 190px;
+  padding: var(--space-5);
+  border-radius: var(--radius-large);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-4);
+  color: var(--ink);
+  transform-origin: top center;
+  /* A diagonal sheen across the face, over a directional gradient. */
+  background:
+    linear-gradient(115deg, transparent 35%, var(--sheen) 48%, transparent 62%),
+    linear-gradient(135deg, var(--face), color-mix(in srgb, var(--face) 62%, var(--bg)));
+  /* A soft highlight along the top edge, and a deep shadow beneath. */
+  box-shadow: inset 0 1px 0 var(--sheen), 0 18px 40px var(--shadow);
+}
+
+.bank { --face: var(--bank); }
+.cash { --face: var(--cash); }
+.empty { --face: var(--raised); }
+
+.card {
+  --face: var(--card);
+  color: var(--bg);
+}
+
+.front { z-index: 3; }
+
+.second {
+  z-index: 2;
+  transform: translateY(-16px) scale(0.94);
+}
+
+.third {
+  z-index: 1;
+  transform: translateY(-32px) scale(0.88);
+}
+
+.top,
+.bottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.quiet {
+  font-size: 14px;
+  opacity: 0.8;
+}

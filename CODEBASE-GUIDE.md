@@ -2,7 +2,7 @@
 
 A plain-English walk through every file in HisabKitab v2. Written from the
 actual code, not from summaries of it, and updated in the same commit as every
-module (`CLAUDE.md` §12). Last updated for: **frontend block 1** — logging in.
+module (`CLAUDE.md` §12). Last updated for: **frontend block 2** — home and accounts.
 
 **How to use this.** Read a section, then close it and answer the questions at
 the end of that section out loud, without looking. If you can't, read the real
@@ -91,11 +91,13 @@ HisabKitab/
         ├── api.js         the only place that calls the backend
         ├── RequireLogin.jsx  the login check around protected screens
         ├── money.js       showing rupees (display only)
-        ├── days.js        showing dates (display only)
+        ├── days.js        showing dates, and today's date on the phone
+        ├── describeAccount.js  the words an account is shown with
         ├── tokens.css     every colour, the only place hex lives
         ├── global.css     page-wide styles, and the font
         ├── hooks/
-        │   └── useAuth.js     who am I, log in, register
+        │   ├── useAuth.js     who am I, log in, register
+        │   └── useAccounts.js the accounts list, adding an account
         ├── components/    the building blocks screens are made of
         │   ├── Card.jsx       a flat bordered surface
         │   ├── Row.jsx        one line of a list
@@ -107,11 +109,14 @@ HisabKitab/
         └── screens/
             ├── Login.jsx
             ├── Register.jsx
-            ├── Home.jsx       placeholder until block 2
+            ├── Home.jsx       the card stack, the list, "Add an account"
+            ├── AccountStack.jsx  the decorated hero cards (home only)
+            ├── NewAccount.jsx    adding an account
             └── NotFound.jsx   for addresses that match nothing
 ```
 
 Each component and screen has a `.module.css` file beside it with its styles.
+Login, Register and NewAccount share one: `FormScreen.module.css`.
 
 ---
 
@@ -488,6 +493,60 @@ backend's `formatRupees` — the two folders share no code. `days.js` turns
 `2026-09-18` into "18 Sep" by reading the text itself; turning it into a
 JavaScript date first could shift it a day across timezones.
 
+### Block 2: home and accounts
+
+What's different about the first screens that show money.
+
+**The hero has no total — on purpose (`AccountStack.jsx`, 51 lines).** Most
+finance apps lead with one big "total balance". This one leads with your
+accounts as a stack of cards: the first one in front, up to two peeking out
+behind it. A total would add a bank balance to a card you owe on, which
+means nothing. At step 5 the hero becomes "Coming back to you" instead.
+
+The two cards behind are hidden from screen readers. They're decoration;
+everything on them is in the list underneath.
+
+**The only decorated screen.** The cards get the material look from the
+design brief — a diagonal sheen, a gradient, a soft top highlight, a deep
+shadow — and Home gets one glow at the top and a faint film grain over
+everything. Every other screen stays flat. The extra shades this needs
+(shadow, sheen, glow) are mixed from existing colours in `tokens.css`, so no
+new colours were invented and the hex rule still holds.
+
+Each kind of account has its own colour token — except wallet, which has
+none, so it borrows cash's. Both are money in your hand.
+
+**Words always travel with numbers (`describeAccount.js`, 17 lines).** One
+small file decides what an account is called and which figure it leads with:
+"balance" for a bank, cash or wallet; "outstanding" for a card; and "in
+credit" for a card you've overpaid, shown without the minus sign. The home
+cards and the list both use it, so they can never describe the same account
+two different ways.
+
+**One form that changes with the kind (`NewAccount.jsx`, 151 lines).** You
+pick the kind first. A credit card changes the amount question to "How much
+did you owe on it that day?" and adds its last four digits, the day the bill
+comes and the day it's due. Everything else asks "How much was in it that
+day?". Two details:
+
+- The start date comes first, so the amount question can say "that day"
+  rather than "today" — you might be starting from last week.
+- The start date is filled in with today *by the phone's own calendar*. The
+  server never picks a date, because "today" depends on where you are.
+
+The form's state and checks live in a small `useAccountForm` function at the
+top of the file, so the screen itself is only what you see.
+
+**One refresh covers every balance (`useAccounts.js`, 18 lines).** Everything
+about accounts is remembered under one name, `accounts`. Adding an account
+tells React Query to forget that name, so every balance on screen is fetched
+fresh. Later, a transfer or an adjustment will do the same with one line.
+
+**Not done yet, deliberately.** Tapping a card or a row does nothing — the
+account's own screen is block 3. There's no bottom bar yet — its only other
+entry, Settings, is block 5. And the form can't take a negative opening
+amount (an overdrawn account); money inputs only accept digits.
+
 ---
 
 ## 9. Explain without looking
@@ -527,6 +586,13 @@ Answer these out loud. Each one tests a section.
 15. A form shows "Use at least 8 characters" under the password, but "That
     email is already registered" in a box above the button. Why the
     difference?
+
+**Frontend block 2**
+16. Why does Home show no total balance?
+17. A card has been overpaid by ₹500. What does it say, and which one file
+    decides that?
+18. Why does the start date come before the amount on the add-account form,
+    and who picks the date — the phone or the server?
 
 If you can answer all of these, you understand v2 better than you understood
 v1.

@@ -4,7 +4,7 @@ import { useCurrentUser, useLogin } from '../hooks/useAuth.js';
 import { Card } from '../components/Card.jsx';
 import { Field } from '../components/Field.jsx';
 import { Button } from '../components/Button.jsx';
-import styles from './AuthScreen.module.css';
+import styles from './FormScreen.module.css';
 
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+$/;
 

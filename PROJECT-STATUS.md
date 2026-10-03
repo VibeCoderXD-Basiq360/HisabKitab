@@ -12,7 +12,8 @@ worse than none.
 
 **Current step: frontend for steps 0 and 1**
 
-**Status: block 1 committed.** Next: block 2, home and accounts.
+**Status: block 2 committed, not pushed — awaiting review.** Next: block 3,
+account detail with ledger and adjustments.
 
 | Step | State |
 |---|---|
@@ -282,3 +283,19 @@ cache wiped when a logged-in person's session ends (after their screens close
 rule that every module updates it added to `CLAUDE.md` §12
 Unsure: nothing
 Next: block 2, home and accounts
+
+### 2026-10-03 — Frontend block 2, home and accounts
+Built: the hero card stack (no total; decorated — sheen, gradient, shadow,
+grain, one glow); the accounts list; adding an account, with the form
+changing for a credit card; `useAccounts`, `describeAccount.js`;
+`FormScreen.module.css` now shared by login, register and add-account
+Decided: wallet borrows the cash colour; derived shades in `tokens.css`;
+rows and cards not links until block 3; no bottom bar until block 5;
+negative opening amounts can't be entered — all in `ARCHITECTURE.md`
+Checked in a real browser, against the test database: empty state; field
+problems with focus on the first, card fields included; a card, a bank
+account and a wallet added and shown; a duplicate name in the server box;
+no console errors
+Unsure: `Login` (58 lines) and `Register` (68) from block 1 break the
+40-line function limit — found while checking block 2
+Next: review block 2, then push
