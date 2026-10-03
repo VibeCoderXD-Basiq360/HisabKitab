@@ -484,7 +484,7 @@ balance and again on its own.
   avoid lime (actions), mint (owed to you) and coral (you owe), so a category
   dot is never mistaken for money direction. Rose must stay a cool pink, away
   from coral. The colour values go in the token file when the frontend
-  exists; they are separate from the sixteen UI tokens.
+  exists; they are separate from the seventeen UI tokens.
 - Name and colour can be edited. Expenses point at the category rather than
   copying it, so an edit shows on past expenses too — accepted.
 - Archiving has no precondition. `GET /categories` hides archived ones.
@@ -580,8 +580,9 @@ Finding the hook tells you the endpoint.
 - **The decoration is home-only** (directional gradient, sheen, top
   highlight, deep shadow, film grain, one glow at the top). Its extra shades
   — shadow, sheen, glow — are **derived from existing tokens and defined in
-  `tokens.css`**, so components still only use `var(--…)`. The shadow is
-  `--bg` itself; sheen and glow are `color-mix()` of a token with
+  `tokens.css`**, so components still only use `var(--…)`. The shadow is its
+  own token, `--shadow` — darker than the page, so the cards have depth on
+  the glow and off it. Sheen and glow are `color-mix()` of a token with
   `transparent`. No named colours. They are mixes of existing tokens, not new colours. The one
   exception is each card's gradient end, which depends on its own face
   colour, so the card mixes it itself — still only from `var(--…)`.
@@ -640,8 +641,25 @@ Finding the hook tells you the endpoint.
   correct-the-balance question both use it. Made shared at its second use,
   not its third, because CLAUDE.md §8b says to build primitives rather than
   restyle one-offs.
-- **Editing and archiving an account are not in block 3.** They are in
-  the step 1 API but no screen block has claimed them yet.
+- **Editing an account (`/accounts/:id/edit`)** changes its name, its
+  starting amount, and a card's last four, bill day and due day. Kind and
+  start date are shown but can't change. The starting amount says when to
+  touch it: only if it was wrong from the day you started — a balance that
+  drifted since is corrected instead.
+- **Archiving** sits on the account screen, under the edit action. It asks
+  first, on the screen itself (no browser pop-up): the account leaves Home,
+  can't be used again, keeps its history, and there's no un-archive. With a
+  balance that isn't zero, the server refuses; the screen shows its message
+  and suggests correcting the balance to zero first, with a link. After
+  archiving, you're taken Home.
+- **Add and edit share their account fields and checks**
+  (`AccountFields.jsx`): name, the amount, and a card's three fields, with
+  the same rules. Shared at the second use, because two copies of the same
+  checks could drift apart — and the server would then refuse what one form
+  allowed.
+- **Transfer rows gain the other account in block 4** — "Transfer to HDFC
+  card", "Transfer from HDFC savings" — once transfers are fetched on their
+  own. Until then a ledger row says only "Transfer".
 
 ### Forms, errors and sessions on the frontend
 
@@ -709,9 +727,12 @@ ink          #EDF4EE      ink-2        #9FB5A6      ink-3   #6B8175
 lime         #B3DD62      lime-dim     #8FC244      on-lime #14240A
 bank         #2C5E54      card         #DDAD71      cash    #3B4A42
 owed-to-you  #7FD1A0      you-owe      #E8846A      settled #4E6357
+shadow       #020403
 ```
 
-Sixteen tokens. Typeface is Inter, tabular figures on every number.
+Seventeen tokens. Typeface is Inter, tabular figures on every number.
+`shadow` was added in block 3: the home cards need a shadow darker than the
+page to have any depth, and no existing token is.
 
 Category colours are a separate palette of eight — see "Money movements and
 balances (step 1)". First-pass values, in `Web/src/tokens.css`:

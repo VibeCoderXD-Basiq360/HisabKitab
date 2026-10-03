@@ -141,7 +141,7 @@ gains.
 | Whose expense is it | Payer's until settled, then bearer's |
 | Monthly totals | Frozen. Month of the expense, plus a second "came back" figure |
 | Netted settlement | One record for the real payment, not one per direction |
-| Colour | Dark green, lime accent, 16 tokens — see `ARCHITECTURE.md` |
+| Colour | Dark green, lime accent, 17 tokens — see `ARCHITECTURE.md` |
 | Styling enforcement | No hex literals outside the token file, no inline styles |
 | Frontend state | React Query owns server data; nothing derived on the client |
 | Schema | Written step by step, not designed up front |
@@ -319,4 +319,11 @@ Checked in a real browser, against the test database: 57 ledger rows across
 two pages; a bank and a card corrected, with the right words and balances;
 archived, missing and someone else's account; no console errors
 Unsure: the card shadow, now plain `--bg`, barely shows against the page
+Then: `--shadow` became the seventeenth token (#020403, chosen against the
+glow; depth checked in the browser); CLAUDE.md §9b — routine checks, a
+control-character scan, and the rule that every documented check is proven
+by planting a violation (all three proven); editing and archiving an account
+added to block 3, with the archive refusal suggesting a correction; transfer
+labels gain the other account in block 4
+Unsure: nothing
 Next: review block 3, then push

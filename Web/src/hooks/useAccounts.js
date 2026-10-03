@@ -34,3 +34,19 @@ export function useCreateAccount() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   });
 }
+
+export function useEditAccount(accountId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes) => api('PATCH', `/accounts/${accountId}`, changes),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  });
+}
+
+export function useArchiveAccount(accountId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api('POST', `/accounts/${accountId}/archive`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  });
+}

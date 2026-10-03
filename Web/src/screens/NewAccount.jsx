@@ -8,7 +8,7 @@ import { Button } from '../components/Button.jsx';
 import { Choices } from '../components/Choices.jsx';
 import { today } from '../days.js';
 import formStyles from './FormScreen.module.css';
-import styles from './NewAccount.module.css';
+import { CardFields, findAccountProblems } from './AccountFields.jsx';
 
 const KIND_CHOICES = [
   ['bank', 'Bank'],
@@ -20,20 +20,11 @@ const EMPTY_FORM = { kind: 'bank', name: '', openingDate: '', opening: '', lastF
 // The order the fields appear on screen, so focus goes to the first problem.
 const FIELD_ORDER = ['name', 'openingDate', 'opening', 'lastFour', 'billingDay', 'dueDay'];
 
-function isDayOfMonth(text) {
-  return /^\d{1,2}$/.test(text) && Number(text) >= 1 && Number(text) <= 31;
-}
-
-// Checked before sending, with the same rules as the server.
-function findProblems(form) {
-  const problems = {};
-  if (!form.name.trim()) problems.name = 'Give it a name';
-  if (!form.openingDate) problems.openingDate = 'Pick the day you start from';
-  if (!/^\d{1,10}(\.\d{1,2})?$/.test(form.opening)) problems.opening = 'Enter an amount, like 1200 or 0';
-  if (form.kind !== 'credit_card') return problems;
-  if (!/^\d{4}$/.test(form.lastFour)) problems.lastFour = 'Enter the last 4 digits';
-  if (!isDayOfMonth(form.billingDay)) problems.billingDay = 'A day from 1 to 31';
-  if (!isDayOfMonth(form.dueDay)) problems.dueDay = 'A day from 1 to 31';
+// Adding also asks for the start date; everything else is checked the same
+// way as editing.
+function findProblems(values) {
+  const problems = findAccountProblems(values);
+  if (!values.openingDate) problems.openingDate = 'Pick the day you start from';
   return problems;
 }
 
@@ -49,18 +40,6 @@ function toRequest(form) {
     billingDay: Number(form.billingDay),
     dueDay: Number(form.dueDay),
   };
-}
-
-function CardFields({ fieldProps }) {
-  return (
-    <>
-      <Field label="Last 4 digits of the card" inputMode="numeric" {...fieldProps('lastFour', 4)} />
-      <div className={styles.days}>
-        <Field label="Day the bill comes" hint="1 to 31" inputMode="numeric" {...fieldProps('billingDay', 2)} />
-        <Field label="Day it's due" hint="1 to 31" inputMode="numeric" {...fieldProps('dueDay', 2)} />
-      </div>
-    </>
-  );
 }
 
 export function NewAccount() {

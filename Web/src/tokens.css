@@ -28,6 +28,10 @@
   --card: #DDAD71;
   --cash: #3B4A42;
 
+  /* The shadow under the home cards. Darker than --bg, so it shows on the
+     page and on the glow alike. */
+  --shadow: #020403;
+
   /* Money direction — always paired with a word, never colour alone */
   --owed-to-you: #7FD1A0;
   --you-owe: #E8846A;
@@ -45,7 +49,6 @@
 
   /* Shades for the decorated home screen only. Mixes of the tokens above,
      not new colours. */
-  --shadow: var(--bg);
   --sheen: color-mix(in srgb, var(--ink) 14%, transparent);
   --glow: color-mix(in srgb, var(--bank) 60%, transparent);
 

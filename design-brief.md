@@ -62,10 +62,10 @@ shadows.
 
 ## Colour tokens
 
-Use these exactly. Do not introduce a seventeenth colour.
+Use these exactly. Do not introduce an eighteenth colour.
 
 Category colours are a separate palette of about eight, apart from these
-sixteen UI tokens.
+seventeen UI tokens.
 
 ```
 bg           #0C1611    app background
@@ -88,6 +88,8 @@ cash         #3B4A42    cash
 owed-to-you  #7FD1A0    money coming back
 you-owe      #E8846A    money going out
 settled      #4E6357    closed, done, inactive
+
+shadow       #020403    the shadow under the home cards
 ```
 
 Lime is for actions only. Money direction uses the mint/coral pair, never lime.

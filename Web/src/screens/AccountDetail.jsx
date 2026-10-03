@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { useAccount, useLedger } from '../hooks/useAccounts.js';
+import { useAccount, useLedger, useArchiveAccount } from '../hooks/useAccounts.js';
 import { useAdjustments } from '../hooks/useAdjustments.js';
 import { Card } from '../components/Card.jsx';
 import { Row } from '../components/Row.jsx';
@@ -22,6 +23,41 @@ function Summary({ account }) {
         <p className={styles.quiet}>Bill due on the {dayWithSuffix(account.dueDay)}</p>
       )}
       {account.archivedAt && <p className={styles.quiet}>Archived — kept for its history.</p>}
+    </Card>
+  );
+}
+
+// Archiving can't be undone, so it asks first — on the screen, not in a
+// browser pop-up. The server refuses while the balance isn't zero.
+function ArchiveAccount({ account }) {
+  const archiveAccount = useArchiveAccount(account.id);
+  const navigate = useNavigate();
+  const [isAsking, setIsAsking] = useState(false);
+
+  if (!isAsking) {
+    return <Button quiet wide onClick={() => setIsAsking(true)}>Archive this account</Button>;
+  }
+  return (
+    <Card>
+      <p className={styles.ask}>
+        Archive {account.name}? It leaves Home and can't be used for anything new. Its history stays.
+        There's no way to bring it back.
+      </p>
+      {archiveAccount.error && (
+        <p className={styles.refused} role="alert">
+          {archiveAccount.error.message} If the money has already gone,{' '}
+          <Link to={`/accounts/${account.id}/adjust`}>correct the balance</Link> to zero first.
+        </p>
+      )}
+      <div className={styles.choices}>
+        <Button quiet onClick={() => setIsAsking(false)}>Keep it</Button>
+        <Button
+          disabled={archiveAccount.isPending}
+          onClick={() => archiveAccount.mutate(undefined, { onSuccess: () => navigate('/') })}
+        >
+          {archiveAccount.isPending ? 'Archiving…' : 'Archive it'}
+        </Button>
+      </div>
     </Card>
   );
 }
@@ -79,7 +115,11 @@ export function AccountDetail() {
       <Link to="/" className={styles.back}>Home</Link>
       <Summary account={account.data} />
       {!account.data.archivedAt && (
-        <Button wide onClick={() => navigate(`/accounts/${id}/adjust`)}>Correct the balance</Button>
+        <>
+          <Button wide onClick={() => navigate(`/accounts/${id}/adjust`)}>Correct the balance</Button>
+          <Button quiet wide onClick={() => navigate(`/accounts/${id}/edit`)}>Edit details</Button>
+          <ArchiveAccount account={account.data} />
+        </>
       )}
       <Ledger account={account.data} />
     </main>

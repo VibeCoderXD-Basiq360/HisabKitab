@@ -116,7 +116,9 @@ HisabKitab/
             ├── Home.jsx       the card stack, the list, "Add an account"
             ├── AccountStack.jsx  the decorated hero cards (home only)
             ├── NewAccount.jsx    adding an account
-            ├── AccountDetail.jsx one account: its figure and its ledger
+            ├── EditAccount.jsx   changing an account's details
+            ├── AccountFields.jsx the fields and checks add and edit share
+            ├── AccountDetail.jsx one account: figure, actions, ledger, archiving
             ├── AdjustBalance.jsx correcting a balance that drifted
             └── NotFound.jsx   for addresses that match nothing
 ```
@@ -523,10 +525,10 @@ everything on them is in the list underneath.
 **The only decorated screen.** The cards get the material look from the
 design brief — a diagonal sheen, a gradient, a soft top highlight, a deep
 shadow — and Home gets one glow at the top and a faint film grain over
-everything. Every other screen stays flat. The extra shades this needs are
-defined in `tokens.css` from existing colours: the shadow is the background
-colour itself, and the sheen and glow are faded versions of existing tokens.
-No new colours, and no named ones like `black`.
+everything. Every other screen stays flat. The shadow is its own colour
+token, `--shadow` — the seventeenth — because nothing else is darker than the
+page, and a shadow the colour of the page is invisible. The sheen and glow are
+faded versions of existing tokens. No named colours like `black`.
 
 Each kind of account has its own colour token — except wallet, which has
 none, so it borrows cash's. Both are money in your hand.
@@ -538,7 +540,7 @@ credit" for a card you've overpaid, shown without the minus sign. The home
 cards and the list both use it, so they can never describe the same account
 two different ways.
 
-**One form that changes with the kind (`NewAccount.jsx`, 121 lines).** You
+**One form that changes with the kind (`NewAccount.jsx`, 84 lines).** You
 pick the kind first. A credit card changes the amount question to "How much
 did you owe on it that day?" and adds its last four digits, the day the bill
 comes and the day it's due. Everything else asks "How much was in it that
@@ -549,11 +551,12 @@ day?". Two details:
 - The start date is filled in with today *by the phone's own calendar*. The
   server never picks a date, because "today" depends on where you are.
 
-Like every form, it uses `useForm` for the machinery. Its own file holds
-only what's particular to it: its kind choices, the card fields, its checks,
-and turning the answers into a request.
+Like every form, it uses `useForm` for the machinery. The card fields and
+the checks it shares with editing live in `AccountFields.jsx`; its own file
+holds the kind choices, the start date, and turning the answers into a
+request.
 
-**One refresh covers every balance (`useAccounts.js`, 36 lines).** Everything
+**One refresh covers every balance (`useAccounts.js`, 52 lines).** Everything
 about accounts is remembered under one name, `accounts`. Adding an account
 tells React Query to forget that name, so every balance on screen is fetched
 fresh. Later, a transfer or an adjustment will do the same with one line.
@@ -584,6 +587,10 @@ plain words:
 The note isn't in the ledger itself; the screen also fetches the account's
 corrections and looks each one up. No colours show direction — the words do.
 
+A transfer row says only "Transfer" for now. The ledger gives the transfer's
+id but not the other account; block 4, which fetches transfers themselves,
+makes it "Transfer to HDFC card".
+
 **The ledger comes in pages (`useAccounts.js`).** The server sends 50 rows at
 a time, newest first. "Show more" asks for the next 50 and adds them below.
 The button disappears when there's nothing left.
@@ -612,8 +619,26 @@ account". The app never hints that a row exists but isn't yours. An archived
 account still opens by its address, says it's archived, and offers no
 correction.
 
-**Not in this block:** editing or archiving an account. The server can do
-both; no screen does yet.
+**Editing changes what you can safely change (`EditAccount.jsx`, 100
+lines).** Name, starting amount, and a card's last four, bill day and due
+day. The kind and start date are shown but fixed — changing them would
+rewrite what every past movement meant. The starting amount says when to
+touch it: only if it was wrong from the day you started. A balance that was
+right and drifted is corrected instead, so the days before the drift stay
+true.
+
+The fields and checks are the same ones adding an account uses
+(`AccountFields.jsx`, 33 lines). Two forms checking the same rules in two
+places would sooner or later disagree — and the server would refuse what one
+of them allowed.
+
+**Archiving asks first, and can be refused (`AccountDetail.jsx`, 127
+lines).** There's no un-archive, so the account screen asks on the screen
+itself — no browser pop-up — and spells out what happens: the account leaves
+Home, can't be used again, and keeps its history. The server only archives
+an account at exactly zero. If it isn't, the screen shows the server's
+message and suggests correcting the balance to zero first, with a link —
+for when the money has genuinely gone and the app just doesn't know yet.
 
 ---
 
@@ -670,6 +695,10 @@ Answer these out loud. Each one tests a section.
 21. Why does the correction form never pick a direction for you?
 22. You open `/accounts/4` and it's someone else's account. What do you
     see, and why exactly that?
+23. When do you edit an account's starting amount, and when do you correct
+    its balance instead? What goes wrong if you mix them up?
+24. You try to archive an account with ₹500 in it. What happens, and what
+    does the screen suggest?
 
 If you can answer all of these, you understand v2 better than you understood
 v1.

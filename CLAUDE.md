@@ -194,6 +194,28 @@ in component state.
 - Names say what the thing is. No `data`, `info`, `handle`, `process`, `temp`,
   `manager`, `helper`.
 
+## 9b. Routine checks
+
+Run before every commit. Each returns nothing when the code is clean.
+
+- The two styling greps in §8b.
+- **Control characters** in any text file in the repository, committed or
+  not:
+
+```
+git ls-files --cached --others --exclude-standard | grep -vE '\.(png|woff2)$' | xargs grep -lP '[\x00-\x08\x0B\x0C\x0E-\x1F]'
+```
+
+Scripts that write files can turn an escape like `\b` into an invisible
+control character. It happened twice — once inside the §8b grep itself.
+
+**Every check written in this file is proven before it is trusted.** Plant
+a violation the check is meant to catch, run the check exactly as written
+here, confirm it reports the violation, then remove it. A check that has
+never caught anything may be catching nothing: the §8b grep was broken from
+the day it was written, and nobody knew, because it had never been run
+against a known violation.
+
 ---
 
 ## 10. Working method
